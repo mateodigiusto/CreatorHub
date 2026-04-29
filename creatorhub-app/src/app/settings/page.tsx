@@ -1,0 +1,208 @@
+"use client";
+
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { useAppState } from "@/lib/store";
+import { Sun, Moon } from "lucide-react";
+import { cn } from "@/lib/cn";
+
+export default function SettingsPage() {
+  const { theme, setTheme } = useAppState();
+
+  return (
+    <>
+      <PageHeader
+        title="Settings"
+        description="Account, workspace, and preferences."
+      />
+
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="col-span-2">
+          <CardHeader title="Profile" description="How you appear in CreatorHub" />
+          <div className="space-y-4">
+            <Field label="Name" value="Mateo Garcia" />
+            <Field label="Email" value="mateo@mdg-growth.com" />
+            <Field label="Workspace" value="Mateo · Personal" />
+          </div>
+          <div className="flex items-center gap-2 mt-6 pt-5 border-t border-border">
+            <Button>Save changes</Button>
+            <Button variant="ghost">Cancel</Button>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Plan" description="Pro · monthly" />
+          <div className="text-[26px] font-semibold tracking-tight text-text">
+            $29<span className="text-[14px] text-muted font-normal">/mo</span>
+          </div>
+          <ul className="mt-4 space-y-2 text-[13px] text-muted">
+            <li>• 1 Instagram account</li>
+            <li>• Unlimited content items</li>
+            <li>• Weekly + monthly reports</li>
+            <li>• AI ideas & insights</li>
+          </ul>
+          <Button variant="outline" className="mt-5 w-full">
+            Manage subscription
+          </Button>
+        </Card>
+
+        <Card className="col-span-2">
+          <CardHeader
+            title="Appearance"
+            description="Choose how CreatorHub looks on this device"
+          />
+          <div className="grid grid-cols-2 gap-2.5">
+            <ThemeOption
+              label="Light"
+              hint="Warm off-white surfaces, navy text"
+              icon={<Sun className="w-4 h-4" />}
+              active={theme === "light"}
+              onClick={() => setTheme("light")}
+              preview="light"
+            />
+            <ThemeOption
+              label="Dark"
+              hint="Premium midnight navy"
+              icon={<Moon className="w-4 h-4" />}
+              active={theme === "dark"}
+              onClick={() => setTheme("dark")}
+              preview="dark"
+            />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Workspace" />
+          <div className="text-[13px] text-muted leading-relaxed">
+            Single workspace.{" "}
+            <span className="text-text font-medium">Team mode</span> coming soon.
+          </div>
+          <div className="mt-4">
+            <Badge tone="neutral">v0.1 · Demo</Badge>
+          </div>
+        </Card>
+
+        <Card className="col-span-2">
+          <CardHeader title="Notifications" description="Choose what you hear about" />
+          <div className="space-y-3.5">
+            <Toggle label="Weekly report ready" checked />
+            <Toggle label="Top post detected" checked />
+            <Toggle label="Content overdue" checked />
+            <Toggle label="New AI ideas available" />
+          </div>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[12px] text-muted mb-1">{label}</div>
+      <input
+        defaultValue={value}
+        className="w-full h-10 px-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+      />
+    </div>
+  );
+}
+
+function Toggle({
+  label,
+  checked = false,
+}: {
+  label: string;
+  checked?: boolean;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 cursor-pointer">
+      <span className="text-[13.5px] text-text">{label}</span>
+      <span
+        className={cn(
+          "relative w-9 h-5 rounded-full transition-colors",
+          checked ? "bg-accent" : "bg-surface-3"
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
+            checked && "translate-x-4"
+          )}
+        />
+      </span>
+    </label>
+  );
+}
+
+function ThemeOption({
+  label,
+  hint,
+  icon,
+  active,
+  onClick,
+  preview,
+}: {
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+  preview: "light" | "dark";
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "lift text-left rounded-[12px] border p-3 bg-surface card-base flex items-center gap-3 transition-colors",
+        active
+          ? "border-accent/40 ring-2 ring-accent/15"
+          : "border-border"
+      )}
+    >
+      <div
+        className="w-12 h-9 rounded-md shrink-0 flex flex-col overflow-hidden"
+        style={{
+          background:
+            preview === "light"
+              ? "linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 60%)"
+              : "linear-gradient(180deg, #070B14 0%, #0B1220 60%)",
+          border:
+            preview === "light"
+              ? "1px solid #D8E0EA"
+              : "1px solid #1F2A3D",
+        }}
+      >
+        <div
+          className="h-2"
+          style={{
+            background: preview === "light" ? "#0B1220" : "#172033",
+          }}
+        />
+        <div className="flex-1 flex items-center gap-1 px-1.5">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ background: "#2563EB" }}
+          />
+          <div
+            className="flex-1 h-1 rounded-full"
+            style={{
+              background: preview === "light" ? "#E2E8F0" : "#1F2A3D",
+            }}
+          />
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-text/70">{icon}</span>
+          <span className="text-[13px] font-medium text-text">{label}</span>
+        </div>
+        <div className="text-[11.5px] text-muted mt-0.5 leading-snug">
+          {hint}
+        </div>
+      </div>
+    </button>
+  );
+}
