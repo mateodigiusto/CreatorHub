@@ -261,6 +261,17 @@ body::before {
 }
 .dot-pulse { animation: dot-pulse 2.2s ease-in-out infinite; }
 
+/* ─── Sequence Studio — slide reveal + smart-pick shimmer ───────────── */
+@keyframes slide-reveal {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes smart-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--accent-glow); }
+  60%  { box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+  100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lift, .lift:hover, .lift-strong:hover { transform: none; transition: none; }
   body::before { display: none; }

@@ -9,6 +9,7 @@ import {
   useCallback,
 } from "react";
 import { Post } from "@/lib/mock/types";
+import { Asset } from "@/lib/mock/story";
 
 type Theme = "light" | "dark";
 
@@ -20,6 +21,8 @@ type AppState = {
   toggleTheme: () => void;
   extraPosts: Post[];
   appendContentItem: (post: Post) => void;
+  extraAssets: Asset[];
+  appendAsset: (asset: Asset) => void;
   toast: { id: number; message: string } | null;
   showToast: (message: string) => void;
 };
@@ -42,6 +45,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected] = useState(true);
   const [theme, setThemeState] = useState<Theme>("light");
   const [extraPosts, setExtraPosts] = useState<Post[]>([]);
+  const [extraAssets, setExtraAssets] = useState<Asset[]>([]);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
     null
   );
@@ -71,6 +75,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setExtraPosts((prev) => [post, ...prev]);
   }, []);
 
+  const appendAsset = useCallback((asset: Asset) => {
+    setExtraAssets((prev) => [asset, ...prev]);
+  }, []);
+
   const showToast = useCallback((message: string) => {
     const id = Date.now();
     setToast({ id, message });
@@ -89,6 +97,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         toggleTheme,
         extraPosts,
         appendContentItem,
+        extraAssets,
+        appendAsset,
         toast,
         showToast,
       }}

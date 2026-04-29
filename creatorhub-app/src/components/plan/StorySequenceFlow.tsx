@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
 import { useAppState } from "@/lib/store";
 import {
@@ -16,20 +16,32 @@ import {
   X,
   Image as ImageIcon,
   Pencil,
-  Lock,
+  Lock as LockIcon,
+  Unlock as UnlockIcon,
+  Wand2,
+  Users,
+  Play,
+  Plus,
+  Library as LibraryIcon,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   sampleAssets,
   sequenceTypes,
   sequenceStyles,
   sequenceGoals,
-  brandContextDefault,
   generateSequence,
+  copyForCell,
+  hookFromPrompt,
+  personas,
+  isVideoUsableInSequence,
+  MAX_VIDEO_SECONDS,
   Asset,
   SequenceType,
   SequenceStyle,
   SequenceGoal,
   GeneratedSequence,
+  PersonaKey,
 } from "@/lib/mock/story";
 import { Post } from "@/lib/mock/types";
 import { PlanContentDrawerEntry } from "./PlanContentDrawer";
@@ -52,22 +64,25 @@ export function StorySequenceFlow({
   slotDate?: Date;
   onDone: () => void;
 }) {
-  const { appendContentItem, showToast } = useAppState();
+  const { appendContentItem, showToast, extraAssets } = useAppState();
+
+  /* Library = uploaded assets + mock samples, with too-long videos hidden. */
+  const availableAssets = useMemo(
+    () => [...extraAssets, ...sampleAssets].filter(isVideoUsableInSequence),
+    [extraAssets]
+  );
 
   const [step, setStep] = useState<Step>("assets");
-  const [selected, setSelected] = useState<string[]>([
-    "a1",
-    "a3",
-    "a2",
-    "a6",
-    "a8",
-  ]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [smartPicking, setSmartPicking] = useState(false);
+
   const [type, setType] = useState<SequenceType>("educational");
   const [style, setStyle] = useState<SequenceStyle>("premium");
   const [goal, setGoal] = useState<SequenceGoal>("dms");
   const [prompt, setPrompt] = useState(
     "Why most creators' content isn't converting to DMs."
   );
+  const [persona, setPersona] = useState<PersonaKey>("coach");
   const [useBrand, setUseBrand] = useState(true);
   const [brandOpen, setBrandOpen] = useState(false);
 
@@ -81,6 +96,24 @@ export function StorySequenceFlow({
     );
   }
 
+  function smartPick() {
+    setSmartPicking(true);
+    setSelected([]);
+    const ranked = [...availableAssets]
+      .sort((a, b) => b.aestheticScore - a.aestheticScore)
+      .slice(0, 5)
+      .map((a) => a.id);
+    // Reveal one-by-one for the shimmer effect.
+    ranked.forEach((id, i) => {
+      window.setTimeout(() => {
+        setSelected((s) => (s.includes(id) ? s : [...s, id]));
+        if (i === ranked.length - 1) {
+          window.setTimeout(() => setSmartPicking(false), 200);
+        }
+      }, 110 * (i + 1));
+    });
+  }
+
   async function handleGenerate() {
     setGenerating(true);
     setStage(0);
@@ -89,21 +122,35 @@ export function StorySequenceFlow({
       setStage(i);
       await wait(580);
     }
-    const seq = generateSequence(selected, goal, type, style);
+    const seq = generateSequence(selected, goal, type, style, persona, prompt);
     setSequence(seq);
     setGenerating(false);
   }
 
   function regenerateAll() {
+    if (!sequence) return;
     setGenerating(true);
     setStage(0);
+    const lockedSlides = sequence.slides.filter((s) => s.locked);
     setSequence(null);
     void (async () => {
       for (let i = 0; i < stages.length; i++) {
         setStage(i);
         await wait(420);
       }
-      setSequence(generateSequence(selected, goal, type, style));
+      const fresh = generateSequence(selected, goal, type, style, persona, prompt);
+      // Bump variant on each non-locked slide so copy actually rotates.
+      const merged = fresh.slides.map((slide) => {
+        const wasLocked = lockedSlides.find((l) => l.purpose === slide.purpose);
+        if (wasLocked) return wasLocked;
+        const nextVariant = 1;
+        const overlay =
+          slide.purpose === "Hook" && hookFromPrompt(prompt)
+            ? hookFromPrompt(prompt)!
+            : copyForCell(persona, goal, slide.purpose, nextVariant);
+        return { ...slide, overlay, variant: nextVariant };
+      });
+      setSequence({ ...fresh, slides: merged });
       setGenerating(false);
     })();
   }
@@ -123,9 +170,21 @@ export function StorySequenceFlow({
   }
   function regenerateSlide(idx: number) {
     if (!sequence) return;
-    const fresh = generateSequence(selected, goal, type, style);
+    const slide = sequence.slides[idx];
+    if (slide.locked) return;
+    const nextVariant = slide.variant + 1;
+    const overlay =
+      slide.purpose === "Hook" && hookFromPrompt(prompt) && nextVariant % 3 === 0
+        ? hookFromPrompt(prompt)!
+        : copyForCell(persona, goal, slide.purpose, nextVariant);
     const next = [...sequence.slides];
-    next[idx] = { ...fresh.slides[idx % fresh.slides.length], id: `s-${Date.now()}-r${idx}` };
+    next[idx] = { ...slide, overlay, variant: nextVariant };
+    setSequence({ ...sequence, slides: next });
+  }
+  function toggleLock(idx: number) {
+    if (!sequence) return;
+    const next = [...sequence.slides];
+    next[idx] = { ...next[idx], locked: !next[idx].locked };
     setSequence({ ...sequence, slides: next });
   }
   function editOverlay(idx: number, text: string) {
@@ -145,8 +204,8 @@ export function StorySequenceFlow({
       platform: "Instagram" as const,
       status: action === "schedule" ? "Scheduled" : "Review",
       thumbnail:
-        sampleAssets.find((a) => a.id === sequence.slides[0]?.assetId)
-          ?.gradient ?? sampleAssets[0].gradient,
+        availableAssets.find((a) => a.id === sequence.slides[0]?.assetId)
+          ?.gradient ?? availableAssets[0]?.gradient ?? sampleAssets[0].gradient,
       publishedAt: undefined,
       scheduledAt:
         action === "schedule" && slotDate ? slotDate.toISOString() : undefined,
@@ -170,11 +229,14 @@ export function StorySequenceFlow({
     <div className="flex flex-col h-full">
       <Stepper step={step} />
 
-      <div className="flex-1 overflow-y-auto px-6 pb-24">
+      <div className="flex-1 overflow-y-auto px-6 pb-28">
         {step === "assets" && (
           <StepAssets
+            assets={availableAssets}
             selected={selected}
             onToggle={toggle}
+            onSmartPick={smartPick}
+            smartPicking={smartPicking}
           />
         )}
         {step === "direction" && (
@@ -187,6 +249,8 @@ export function StorySequenceFlow({
             setGoal={setGoal}
             prompt={prompt}
             setPrompt={setPrompt}
+            persona={persona}
+            setPersona={setPersona}
             useBrand={useBrand}
             setUseBrand={setUseBrand}
             brandOpen={brandOpen}
@@ -195,12 +259,14 @@ export function StorySequenceFlow({
         )}
         {step === "preview" && (
           <StepPreview
+            assets={availableAssets}
             generating={generating}
             stage={stage}
             sequence={sequence}
             onReorder={reorder}
             onRemove={removeSlide}
             onRegenerateSlide={regenerateSlide}
+            onToggleLock={toggleLock}
             onEditOverlay={editOverlay}
           />
         )}
@@ -215,6 +281,9 @@ export function StorySequenceFlow({
         onRegenerate={regenerateAll}
         canCommit={!!sequence && !generating}
         entry={entry}
+        summaryGoal={goal}
+        summaryStyle={style}
+        useBrand={useBrand}
       />
     </div>
   );
@@ -228,13 +297,13 @@ function wait(ms: number) {
 
 function Stepper({ step }: { step: Step }) {
   const items: { key: Step; label: string }[] = [
-    { key: "assets", label: "Pick assets" },
-    { key: "direction", label: "Set direction" },
-    { key: "preview", label: "Generate & preview" },
+    { key: "assets", label: "Pick the visuals" },
+    { key: "direction", label: "Direction & brand" },
+    { key: "preview", label: "Build the sequence" },
   ];
   const idx = items.findIndex((i) => i.key === step);
   return (
-    <div className="px-6 pt-5 pb-4 border-b border-border bg-bg/30">
+    <div className="px-6 pt-5 pb-4 border-b border-border bg-bg/30 shrink-0">
       <div className="flex items-center gap-2">
         {items.map((i, k) => {
           const isActive = k === idx;
@@ -246,9 +315,9 @@ function Stepper({ step }: { step: Step }) {
                   className={cn(
                     "w-5 h-5 rounded-full grid place-items-center text-[10.5px] font-semibold border transition-colors",
                     isDone
-                      ? "bg-teal text-white border-teal"
+                      ? "bg-accent text-white border-accent"
                       : isActive
-                      ? "bg-surface text-accent border-accent/50 shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
+                      ? "bg-surface text-accent border-accent/50 shadow-[0_0_0_3px_var(--accent-soft)]"
                       : "bg-surface text-muted border-border"
                   )}
                 >
@@ -257,7 +326,7 @@ function Stepper({ step }: { step: Step }) {
                 <span
                   className={cn(
                     "text-[12.5px] font-medium",
-                    isActive ? "text-navy" : isDone ? "text-teal" : "text-muted"
+                    isActive ? "text-text" : isDone ? "text-accent" : "text-muted"
                   )}
                 >
                   {i.label}
@@ -267,7 +336,7 @@ function Stepper({ step }: { step: Step }) {
                 <div
                   className={cn(
                     "w-8 h-px",
-                    isDone ? "bg-teal/40" : "bg-border"
+                    isDone ? "bg-accent/40" : "bg-border"
                   )}
                 />
               )}
@@ -282,35 +351,67 @@ function Stepper({ step }: { step: Step }) {
 /* ─── Step 1: Pick assets ─────────────────────────────────────────── */
 
 function StepAssets({
+  assets,
   selected,
   onToggle,
+  onSmartPick,
+  smartPicking,
 }: {
+  assets: Asset[];
   selected: string[];
   onToggle: (id: string) => void;
+  onSmartPick: () => void;
+  smartPicking: boolean;
 }) {
   return (
     <div className="pt-5">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h4 className="text-[14px] font-semibold tracking-tight text-navy">
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <div className="min-w-0">
+          <h4 className="text-[14px] font-semibold tracking-tight text-text">
             Choose 3–5 assets
           </h4>
           <p className="text-[12.5px] text-muted">
-            CreatorHub analyzes mood, scene, and aesthetic score to suggest the
-            right slide for each.
+            From your Asset Library — scored on mood, scene, and aesthetic.
           </p>
         </div>
-        <span className="text-[12px] font-medium text-teal bg-teal/10 border border-teal/20 px-2 py-0.5 rounded-full">
-          {selected.length}/5 selected
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/library"
+            className="inline-flex items-center gap-1 text-[12px] font-medium text-accent hover:text-accent-2 cursor-pointer"
+          >
+            <LibraryIcon className="w-3.5 h-3.5" />
+            Choose from Library
+            <ArrowUpRight className="w-3 h-3" />
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSmartPick}
+            disabled={smartPicking}
+            title="Auto-pick 5 high-aesthetic assets"
+          >
+            <Sparkles
+              className={cn(
+                "w-3.5 h-3.5",
+                smartPicking && "animate-pulse"
+              )}
+            />
+            Smart pick
+          </Button>
+          <span className="text-[12px] font-medium text-accent bg-accent-soft border border-accent-border px-2 py-0.5 rounded-full tabular-nums">
+            {selected.length}/5
+          </span>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {sampleAssets.map((a) => (
+        <AddAssetTile onUploaded={onToggle} />
+        {assets.map((a) => (
           <AssetCard
             key={a.id}
             asset={a}
             selected={selected.includes(a.id)}
             order={selected.indexOf(a.id)}
+            shimmer={smartPicking && selected.includes(a.id)}
             onToggle={() => onToggle(a.id)}
           />
         ))}
@@ -323,11 +424,13 @@ function AssetCard({
   asset,
   selected,
   order,
+  shimmer,
   onToggle,
 }: {
   asset: Asset;
   selected: boolean;
   order: number;
+  shimmer: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -335,13 +438,32 @@ function AssetCard({
       onClick={onToggle}
       className={cn(
         "lift text-left rounded-[12px] border bg-surface card-base overflow-hidden relative transition-colors",
-        selected ? "border-teal/55" : "border-border"
+        selected ? "border-accent/55" : "border-border",
+        shimmer && "ring-2 ring-accent/40"
       )}
+      style={shimmer ? { animation: "smart-pulse 600ms ease-out" } : undefined}
     >
       <div
         className="aspect-[4/5] relative"
         style={{ background: asset.gradient }}
       >
+        {asset.src && asset.kind !== "video" && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={asset.src}
+            alt={asset.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        {asset.src && asset.kind === "video" && (
+          <video
+            src={asset.src}
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
         <div className="absolute top-2 left-2">
           <span className="bg-black/30 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide">
@@ -353,7 +475,7 @@ function AssetCard({
             className={cn(
               "w-5 h-5 rounded-full border grid place-items-center transition-colors",
               selected
-                ? "bg-teal border-teal text-white"
+                ? "bg-accent border-accent text-white"
                 : "bg-white/85 border-white/70 text-transparent"
             )}
           >
@@ -364,25 +486,179 @@ function AssetCard({
             )}
           </div>
         </div>
-        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white">
+        {asset.kind === "video" && (
+          <div className="absolute bottom-2 left-2">
+            <span className="inline-flex items-center gap-1 bg-black/45 backdrop-blur-sm text-white text-[10.5px] px-1.5 py-0.5 rounded font-medium tabular-nums">
+              <Play className="w-3 h-3" fill="currentColor" />
+              0:{String(Math.round(asset.duration ?? 0)).padStart(2, "0")}
+            </span>
+          </div>
+        )}
+        <div className="absolute bottom-2 right-2 max-w-[60%] flex items-center gap-1.5 text-white">
           <span className="text-[12px] font-semibold drop-shadow truncate">
             {asset.title}
           </span>
-          <span className="text-[11px] bg-black/30 backdrop-blur-sm px-1.5 py-0.5 rounded">
+          <span className="text-[11px] bg-black/30 backdrop-blur-sm px-1.5 py-0.5 rounded shrink-0">
             {asset.aestheticScore.toFixed(1)}
           </span>
         </div>
       </div>
       <div className="p-3 space-y-1.5">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10.5px] text-teal bg-teal/10 px-1.5 py-0.5 rounded font-medium">
+          <span className="text-[10.5px] text-accent bg-accent-soft px-1.5 py-0.5 rounded font-medium">
             {asset.mood}
           </span>
           <span className="text-[10.5px] text-muted">{asset.scene}</span>
         </div>
         <div className="text-[11px] text-muted leading-snug">
-          <span className="text-navy/80 font-medium">Use as:</span>{" "}
+          <span className="text-text/80 font-medium">Use as:</span>{" "}
           {asset.recommendedUse}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* Inline upload tile — matches AssetCard's shape, lives at the start of the
+   grid so users can add to the picker without leaving the drawer. Also
+   appends to the global Library (extraAssets). */
+function AddAssetTile({ onUploaded }: { onUploaded: (id: string) => void }) {
+  const { appendAsset, showToast } = useAppState();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function readVideoDuration(file: File): Promise<number> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.muted = true;
+      v.src = url;
+      v.onloadedmetadata = () => {
+        const d = v.duration;
+        URL.revokeObjectURL(url);
+        resolve(Number.isFinite(d) ? d : 0);
+      };
+      v.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(0);
+      };
+    });
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    let added = 0;
+    let tooLong = 0;
+    const usableIds: string[] = [];
+    const list = Array.from(files);
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i];
+      const isVideo = file.type.startsWith("video/");
+      const isImage = file.type.startsWith("image/");
+      if (!isVideo && !isImage) continue;
+      const src = URL.createObjectURL(file);
+      const baseTitle = file.name.replace(/\.[^.]+$/, "").slice(0, 60);
+      const id = `up-${Date.now()}-${i}`;
+      const gradient = "linear-gradient(135deg,#1E293B,#3B82F6)";
+
+      if (isVideo) {
+        const duration = await readVideoDuration(file);
+        const asset: Asset = {
+          id,
+          title: baseTitle || "Uploaded video",
+          kind: "video",
+          gradient,
+          mood: "Custom upload",
+          scene: "User asset",
+          aestheticScore: 7.5,
+          tags: ["upload"],
+          recommendedUse:
+            duration > MAX_VIDEO_SECONDS
+              ? "Trim before using in a sequence"
+              : "Hook or supporting slide",
+          duration,
+          src,
+        };
+        appendAsset(asset);
+        added++;
+        if (duration > MAX_VIDEO_SECONDS) tooLong++;
+        else usableIds.push(id);
+      } else {
+        const asset: Asset = {
+          id,
+          title: baseTitle || "Uploaded photo",
+          kind: "photo",
+          gradient,
+          mood: "Custom upload",
+          scene: "User asset",
+          aestheticScore: 7.5,
+          tags: ["upload"],
+          recommendedUse: "Hook or supporting slide",
+          src,
+        };
+        appendAsset(asset);
+        added++;
+        usableIds.push(id);
+      }
+    }
+    setBusy(false);
+
+    /* Auto-select usable uploads — capped to 5 by the toggle handler. */
+    usableIds.forEach((id) => onUploaded(id));
+
+    if (tooLong > 0) {
+      showToast(
+        `${added} added · ${tooLong} too long for sequences (saved to Library)`
+      );
+    } else if (added > 0) {
+      showToast(`${added} asset${added === 1 ? "" : "s"} added`);
+    }
+  }
+
+  return (
+    <button
+      onClick={() => inputRef.current?.click()}
+      disabled={busy}
+      className={cn(
+        "lift text-left rounded-[12px] border-2 border-dashed border-border bg-surface/40 card-base overflow-hidden relative cursor-pointer hover:border-accent/45 disabled:cursor-wait disabled:opacity-60"
+      )}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
+      />
+      <div className="aspect-[4/5] relative grid place-items-center bg-surface-2/50">
+        <div className="flex flex-col items-center gap-2.5 px-3 text-center">
+          <div className="w-12 h-12 rounded-full bg-accent-soft border border-accent-border grid place-items-center text-accent">
+            <Plus className="w-5 h-5" />
+          </div>
+          <div className="text-[12.5px] font-semibold text-text">
+            Add new asset
+          </div>
+          <div className="text-[10.5px] text-muted leading-snug">
+            Photo or video — max {MAX_VIDEO_SECONDS}s
+          </div>
+        </div>
+      </div>
+      <div className="p-3 space-y-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10.5px] text-muted bg-surface-2 px-1.5 py-0.5 rounded font-medium">
+            Upload
+          </span>
+          <span className="text-[10.5px] text-muted">From your device</span>
+        </div>
+        <div className="text-[11px] text-muted leading-snug">
+          <span className="text-text/80 font-medium">Saves to:</span> Library +
+          this picker
         </div>
       </div>
     </button>
@@ -400,6 +676,8 @@ function StepDirection(props: {
   setGoal: (g: SequenceGoal) => void;
   prompt: string;
   setPrompt: (p: string) => void;
+  persona: PersonaKey;
+  setPersona: (p: PersonaKey) => void;
   useBrand: boolean;
   setUseBrand: (v: boolean) => void;
   brandOpen: boolean;
@@ -407,7 +685,7 @@ function StepDirection(props: {
 }) {
   return (
     <div className="pt-5 space-y-5">
-      <Field label="Goal" hint="What should this sequence move forward?">
+      <Field label="Goal" hint="What's the goal?">
         <ChipRow
           value={props.goal}
           options={sequenceGoals}
@@ -415,7 +693,7 @@ function StepDirection(props: {
         />
       </Field>
 
-      <Field label="Sequence type">
+      <Field label="Format">
         <ChipRow
           value={props.type}
           options={sequenceTypes}
@@ -431,14 +709,18 @@ function StepDirection(props: {
         />
       </Field>
 
-      <Field label="What should it be about?">
+      <Field
+        label="In a sentence — what's the story?"
+        hint="The first line becomes your Hook"
+      >
         <textarea
           value={props.prompt}
           onChange={(e) => props.setPrompt(e.target.value)}
           rows={3}
-          className="w-full p-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-navy leading-relaxed focus:outline-none focus:border-teal/40 focus:ring-2 focus:ring-teal/20 resize-none"
-          placeholder="Describe what this story sequence should be about…"
+          className="w-full p-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text leading-relaxed focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20 resize-none"
+          placeholder="One sentence. The Hook slide will use this directly…"
         />
+        <PromptExamples onPick={props.setPrompt} />
       </Field>
 
       <BrandPanel
@@ -446,9 +728,30 @@ function StepDirection(props: {
         setOpen={props.setBrandOpen}
         use={props.useBrand}
         setUse={props.setUseBrand}
+        persona={props.persona}
+        setPersona={props.setPersona}
       />
+    </div>
+  );
+}
 
-      <AutoModeCard />
+function PromptExamples({ onPick }: { onPick: (s: string) => void }) {
+  const examples = [
+    "90 days of content — what actually moved the needle.",
+    "Why my offer works while others stall at week 2.",
+    "Behind the build — the boring weeks nobody films.",
+  ];
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {examples.map((e) => (
+        <button
+          key={e}
+          onClick={() => onPick(e)}
+          className="text-[11px] px-2 py-1 rounded-md bg-surface-2 text-muted border border-border cursor-pointer hover:text-text hover:border-accent/30 transition-colors"
+        >
+          {e}
+        </button>
+      ))}
     </div>
   );
 }
@@ -464,8 +767,8 @@ function Field({
 }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <label className="text-[12.5px] font-semibold text-navy">{label}</label>
+      <div className="flex items-baseline justify-between mb-2 gap-2">
+        <label className="text-[12.5px] font-semibold text-text">{label}</label>
         {hint && <span className="text-[11.5px] text-muted">{hint}</span>}
       </div>
       {children}
@@ -491,10 +794,10 @@ function ChipRow<T extends string>({
             key={o.key}
             onClick={() => onChange(o.key)}
             className={cn(
-              "h-8 px-3 rounded-[8px] text-[12.5px] font-medium border transition-colors",
+              "h-8 px-3 rounded-[8px] text-[12.5px] font-medium border cursor-pointer transition-colors",
               active
-                ? "bg-teal/10 text-teal border-teal/35"
-                : "bg-surface text-navy/70 border-border hover:border-teal/25 hover:text-navy"
+                ? "bg-accent-soft text-accent border-accent/35"
+                : "bg-surface text-text/70 border-border hover:border-accent/25 hover:text-text"
             )}
           >
             {o.label}
@@ -510,46 +813,93 @@ function BrandPanel({
   setOpen,
   use,
   setUse,
+  persona,
+  setPersona,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
   use: boolean;
   setUse: (v: boolean) => void;
+  persona: PersonaKey;
+  setPersona: (p: PersonaKey) => void;
 }) {
+  const ctx = personas[persona].brandContext;
   return (
     <div className="rounded-[12px] border border-border bg-surface card-base">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-teal/10 text-teal grid place-items-center">
+      <div className="flex items-center justify-between px-4 py-3 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-md bg-accent-soft text-accent grid place-items-center shrink-0">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
-          <div>
-            <div className="text-[13px] font-semibold text-navy">
+          <div className="min-w-0">
+            <div className="text-[13px] font-semibold text-text truncate">
               Brand context
             </div>
-            <div className="text-[11.5px] text-muted">
-              {use ? "Using saved context" : "Off — using prompt only"}
+            <div className="text-[11.5px] text-muted truncate">
+              {use ? `Using ${personas[persona].label}` : "Off — using prompt only"}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Toggle checked={use} onChange={setUse} />
           <button
             onClick={() => setOpen(!open)}
-            className="text-[12px] text-muted hover:text-navy underline-offset-2 hover:underline"
+            className="text-[12px] text-muted hover:text-text underline-offset-2 hover:underline cursor-pointer"
           >
             {open ? "Hide" : "View"}
           </button>
         </div>
       </div>
       {open && (
-        <div className="border-t border-border p-4 grid grid-cols-2 gap-3 text-[12.5px]">
-          <BrandLine label="Who you are" body={brandContextDefault.who} />
-          <BrandLine label="Audience" body={brandContextDefault.audience} />
-          <BrandLine label="Tone" body={brandContextDefault.tone} />
-          <BrandLine label="CTA style" body={brandContextDefault.cta} />
+        <div className="border-t border-border p-4 space-y-3">
+          <PersonaPicker value={persona} onChange={setPersona} />
+          <div className="grid grid-cols-2 gap-3 text-[12.5px]">
+            <BrandLine label="Who you are" body={ctx.who} />
+            <BrandLine label="Audience" body={ctx.audience} />
+            <BrandLine label="Tone" body={ctx.tone} />
+            <BrandLine label="CTA style" body={ctx.cta} />
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PersonaPicker({
+  value,
+  onChange,
+}: {
+  value: PersonaKey;
+  onChange: (p: PersonaKey) => void;
+}) {
+  const keys = Object.keys(personas) as PersonaKey[];
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <Users className="w-3 h-3 text-muted" />
+        <span className="text-[10.5px] uppercase tracking-wider text-muted font-semibold">
+          Persona
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {keys.map((k) => {
+          const active = k === value;
+          return (
+            <button
+              key={k}
+              onClick={() => onChange(k)}
+              className={cn(
+                "h-7 px-2.5 rounded-[8px] text-[12px] font-medium border cursor-pointer transition-colors",
+                active
+                  ? "bg-accent-soft text-accent border-accent/35"
+                  : "bg-surface text-text/70 border-border hover:border-accent/25 hover:text-text"
+              )}
+            >
+              {personas[k].label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -560,7 +910,7 @@ function BrandLine({ label, body }: { label: string; body: string }) {
       <div className="text-[10.5px] uppercase tracking-wider text-muted font-semibold mb-1">
         {label}
       </div>
-      <div className="text-navy/85 leading-relaxed">{body}</div>
+      <div className="text-text/85 leading-relaxed">{body}</div>
     </div>
   );
 }
@@ -576,7 +926,7 @@ function Toggle({
     <button
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative w-9 h-5 rounded-full transition-colors",
+        "relative w-9 h-5 rounded-full transition-colors cursor-pointer",
         checked ? "bg-accent" : "bg-surface-3"
       )}
     >
@@ -590,70 +940,38 @@ function Toggle({
   );
 }
 
-function AutoModeCard() {
-  return (
-    <div
-      className="relative rounded-[12px] p-4 overflow-hidden"
-      style={{
-        background:
-          "linear-gradient(135deg, rgba(7,17,31,0.04), rgba(37,99,235,0.05))",
-        border: "1px dashed rgba(37,99,235,0.30)",
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-navy/[0.06] text-navy grid place-items-center mt-0.5">
-            <Lock className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="text-[13px] font-semibold text-navy">
-                Auto Mode
-              </div>
-              <Badge tone="neutral">Coming soon</Badge>
-            </div>
-            <p className="text-[12px] text-muted mt-1 leading-relaxed max-w-md">
-              Let CreatorHub pick assets above an aesthetic threshold, generate
-              sequences on a schedule, and push them straight to your calendar.
-            </p>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" disabled>
-          Get notified
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Step 3: Preview ─────────────────────────────────────────────── */
 
 function StepPreview({
+  assets,
   generating,
   stage,
   sequence,
   onReorder,
   onRemove,
   onRegenerateSlide,
+  onToggleLock,
   onEditOverlay,
 }: {
+  assets: Asset[];
   generating: boolean;
   stage: number;
   sequence: GeneratedSequence | null;
   onReorder: (i: number, dir: -1 | 1) => void;
   onRemove: (i: number) => void;
   onRegenerateSlide: (i: number) => void;
+  onToggleLock: (i: number) => void;
   onEditOverlay: (i: number, t: string) => void;
 }) {
   if (generating || !sequence) {
     return (
       <div className="pt-8">
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-teal/10 text-teal grid place-items-center mb-4 border border-teal/20">
+          <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent grid place-items-center mb-4 border border-accent-border">
             <Sparkles className="w-5 h-5" />
           </div>
-          <h4 className="text-[15px] font-semibold tracking-tight text-navy">
-            Generating your sequence…
+          <h4 className="text-[15px] font-semibold tracking-tight text-text">
+            Building your sequence…
           </h4>
           <p className="text-[12.5px] text-muted mt-1 max-w-sm">
             CreatorHub is matching your assets to the goal, brand, and style you
@@ -670,9 +988,9 @@ function StepPreview({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-[10px] border transition-colors",
                   done
-                    ? "bg-teal/[0.04] border-teal/20"
+                    ? "bg-accent-soft/50 border-accent-border"
                     : active
-                    ? "bg-surface border-accent/30 shadow-[0_0_0_3px_rgba(37,99,235,0.08)]"
+                    ? "bg-surface border-accent/30 shadow-[0_0_0_3px_var(--accent-soft)]"
                     : "bg-surface border-border"
                 )}
               >
@@ -680,25 +998,25 @@ function StepPreview({
                   className={cn(
                     "w-5 h-5 rounded-full grid place-items-center border",
                     done
-                      ? "bg-teal text-white border-teal"
+                      ? "bg-accent text-white border-accent"
                       : active
-                      ? "bg-surface text-teal border-teal/50"
+                      ? "bg-surface text-accent border-accent/50"
                       : "bg-surface text-muted border-border"
                   )}
                 >
                   {done ? (
                     <Check className="w-3 h-3" />
                   ) : active ? (
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                   ) : null}
                 </div>
                 <span
                   className={cn(
                     "text-[12.5px]",
                     done
-                      ? "text-teal font-medium"
+                      ? "text-accent font-medium"
                       : active
-                      ? "text-navy font-medium"
+                      ? "text-text font-medium"
                       : "text-muted"
                   )}
                 >
@@ -716,12 +1034,12 @@ function StepPreview({
     <div className="pt-5">
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h4 className="text-[16px] font-semibold tracking-tight text-navy">
+          <h4 className="text-[16px] font-semibold tracking-tight text-text">
             {sequence.title}
           </h4>
           <p className="text-[12.5px] text-muted">
             {sequence.slides.length} slides · goal:{" "}
-            <span className="text-teal font-medium">
+            <span className="text-accent font-medium">
               {sequenceGoals.find((g) => g.key === sequence.goal)?.label}
             </span>
           </p>
@@ -729,73 +1047,116 @@ function StepPreview({
       </div>
 
       <div className="space-y-3">
-        {sequence.slides.map((slide, idx) => {
-          const asset = sampleAssets.find((a) => a.id === slide.assetId);
-          return (
-            <div
-              key={slide.id}
-              className="lift bg-surface border border-border rounded-[12px] card-base overflow-hidden"
-            >
-              <div className="grid grid-cols-[160px_1fr]">
-                <div
-                  className="relative"
-                  style={{ background: asset?.gradient }}
-                >
-                  <div className="aspect-[4/5] relative">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
-                    <div className="absolute top-2 left-2 text-[10.5px] text-white/85 bg-black/30 backdrop-blur-sm px-1.5 py-0.5 rounded font-medium">
-                      Slide {idx + 1}
-                    </div>
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <div className="text-white text-[11.5px] font-semibold leading-snug drop-shadow">
-                        {slide.overlay}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 flex flex-col">
-                  <div className="flex items-center gap-2 mb-2">
-                    <PurposePill purpose={slide.purpose} />
-                    <span className="text-[11px] text-muted">
-                      {asset?.title}
-                    </span>
-                    <div className="ml-auto flex items-center gap-0.5">
-                      <IconBtn
-                        title="Move up"
-                        onClick={() => onReorder(idx, -1)}
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </IconBtn>
-                      <IconBtn
-                        title="Move down"
-                        onClick={() => onReorder(idx, 1)}
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </IconBtn>
-                      <IconBtn
-                        title="Regenerate"
-                        onClick={() => onRegenerateSlide(idx)}
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      </IconBtn>
-                      <IconBtn title="Remove" onClick={() => onRemove(idx)}>
-                        <X className="w-3.5 h-3.5" />
-                      </IconBtn>
-                    </div>
-                  </div>
-                  <EditableOverlay
-                    value={slide.overlay}
-                    onChange={(t) => onEditOverlay(idx, t)}
-                  />
-                  <div className="mt-2 text-[11.5px] text-teal/80 italic leading-snug">
-                    <span className="not-italic font-medium">Why:</span>{" "}
-                    {slide.reason}
-                  </div>
-                </div>
+        {sequence.slides.map((slide, idx) => (
+          <SlideCard
+            key={slide.id}
+            slide={slide}
+            index={idx}
+            assets={assets}
+            onReorder={onReorder}
+            onRemove={onRemove}
+            onRegenerate={onRegenerateSlide}
+            onToggleLock={onToggleLock}
+            onEditOverlay={onEditOverlay}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SlideCard({
+  slide,
+  index,
+  assets,
+  onReorder,
+  onRemove,
+  onRegenerate,
+  onToggleLock,
+  onEditOverlay,
+}: {
+  slide: GeneratedSequence["slides"][number];
+  index: number;
+  assets: Asset[];
+  onReorder: (i: number, dir: -1 | 1) => void;
+  onRemove: (i: number) => void;
+  onRegenerate: (i: number) => void;
+  onToggleLock: (i: number) => void;
+  onEditOverlay: (i: number, t: string) => void;
+}) {
+  const asset = useMemo(
+    () => assets.find((a) => a.id === slide.assetId),
+    [assets, slide.assetId]
+  );
+  return (
+    <div
+      className={cn(
+        "lift bg-surface border border-border rounded-[12px] card-base overflow-hidden",
+        slide.locked && "border-accent/40 ring-1 ring-accent/15"
+      )}
+      style={{
+        animation: "slide-reveal 320ms cubic-bezier(0.23,1,0.32,1) both",
+        animationDelay: `${index * 60}ms`,
+      }}
+    >
+      <div className="grid grid-cols-[160px_1fr]">
+        <div className="relative" style={{ background: asset?.gradient }}>
+          <div className="aspect-[4/5] relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
+            <div className="absolute top-2 left-2 text-[10.5px] text-white/85 bg-black/30 backdrop-blur-sm px-1.5 py-0.5 rounded font-medium">
+              Slide {index + 1}
+            </div>
+            <div className="absolute bottom-2 left-2 right-2">
+              <div className="text-white text-[11.5px] font-semibold leading-snug drop-shadow">
+                {slide.overlay}
               </div>
             </div>
-          );
-        })}
+          </div>
+        </div>
+        <div className="p-4 flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <PurposePill purpose={slide.purpose} />
+            <span className="text-[11px] text-muted truncate">
+              {asset?.title}
+            </span>
+            <div className="ml-auto flex items-center gap-0.5">
+              <IconBtn title="Move up" onClick={() => onReorder(index, -1)}>
+                <ArrowUp className="w-3.5 h-3.5" />
+              </IconBtn>
+              <IconBtn title="Move down" onClick={() => onReorder(index, 1)}>
+                <ArrowDown className="w-3.5 h-3.5" />
+              </IconBtn>
+              <IconBtn
+                title={slide.locked ? "Unlock" : "Lock from regenerate"}
+                onClick={() => onToggleLock(index)}
+                active={slide.locked}
+              >
+                {slide.locked ? (
+                  <LockIcon className="w-3.5 h-3.5" />
+                ) : (
+                  <UnlockIcon className="w-3.5 h-3.5" />
+                )}
+              </IconBtn>
+              <IconBtn
+                title={slide.locked ? "Locked — unlock to regenerate" : "Regenerate"}
+                onClick={() => onRegenerate(index)}
+                disabled={slide.locked}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </IconBtn>
+              <IconBtn title="Remove" onClick={() => onRemove(index)}>
+                <X className="w-3.5 h-3.5" />
+              </IconBtn>
+            </div>
+          </div>
+          <EditableOverlay
+            value={slide.overlay}
+            onChange={(t) => onEditOverlay(index, t)}
+          />
+          <div className="mt-2 text-[11.5px] text-muted leading-snug">
+            <span className="font-medium text-text/70">Why:</span> {slide.reason}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -807,10 +1168,10 @@ function PurposePill({
   purpose: GeneratedSequence["slides"][number]["purpose"];
 }) {
   const tones: Record<typeof purpose, string> = {
-    Hook: "bg-cyan-soft/15 text-teal-blue border-teal-blue/25",
-    Context: "bg-navy/[0.05] text-navy border-navy/15",
+    Hook: "bg-cyan-soft/15 text-cyan-soft border-cyan-soft/30",
+    Context: "bg-text/[0.05] text-text/80 border-text/15",
     Proof: "bg-emerald-500/10 text-emerald-700 border-emerald-500/25",
-    Insight: "bg-teal/10 text-teal border-teal/25",
+    Insight: "bg-accent-soft text-accent border-accent/25",
     CTA: "bg-amber-500/10 text-amber-700 border-amber-500/25",
   };
   return (
@@ -829,16 +1190,26 @@ function IconBtn({
   children,
   onClick,
   title,
+  active,
+  disabled,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   title: string;
+  active?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className="w-7 h-7 grid place-items-center rounded-md text-muted hover:text-text hover:bg-surface-2 transition-colors"
+      disabled={disabled}
+      className={cn(
+        "w-7 h-7 grid place-items-center rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
+        active
+          ? "text-accent bg-accent-soft"
+          : "text-muted hover:text-text hover:bg-surface-2"
+      )}
     >
       {children}
     </button>
@@ -855,8 +1226,10 @@ function EditableOverlay({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   // Sync local draft when parent regenerates the slide.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setDraft(value), [value]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDraft(value);
+  }, [value]);
   if (editing) {
     return (
       <div className="flex items-start gap-2">
@@ -865,14 +1238,14 @@ function EditableOverlay({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={2}
-          className="flex-1 p-2 rounded-[8px] bg-surface border border-teal/35 text-[13px] text-navy focus:outline-none focus:ring-2 focus:ring-teal/20 resize-none"
+          className="flex-1 p-2 rounded-[8px] bg-surface border border-accent/35 text-[13px] text-text focus:outline-none focus:ring-2 focus:ring-accent/20 resize-none"
         />
         <button
           onClick={() => {
             onChange(draft.trim() || value);
             setEditing(false);
           }}
-          className="text-[12px] text-teal font-medium px-2 py-1 hover:bg-teal/10 rounded"
+          className="text-[12px] text-accent font-medium px-2 py-1 hover:bg-accent-soft rounded cursor-pointer"
         >
           Save
         </button>
@@ -882,7 +1255,7 @@ function EditableOverlay({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="text-left text-[13px] text-navy leading-relaxed group"
+      className="text-left text-[13px] text-text leading-relaxed group cursor-pointer"
     >
       {value}
       <Pencil className="inline-block w-3 h-3 ml-1.5 text-muted/0 group-hover:text-muted transition-colors -translate-y-0.5" />
@@ -901,6 +1274,9 @@ function Footer({
   onRegenerate,
   canCommit,
   entry,
+  summaryGoal,
+  summaryStyle,
+  useBrand,
 }: {
   step: Step;
   setStep: (s: Step) => void;
@@ -910,44 +1286,56 @@ function Footer({
   onRegenerate: () => void;
   canCommit: boolean;
   entry: PlanContentDrawerEntry;
+  summaryGoal: SequenceGoal;
+  summaryStyle: SequenceStyle;
+  useBrand: boolean;
 }) {
   const fromCalendar = entry === "calendar";
+  const goalLabel = sequenceGoals.find((g) => g.key === summaryGoal)?.label;
+  const styleLabel = sequenceStyles.find((s) => s.key === summaryStyle)?.label;
+
   return (
-    <div className="absolute bottom-0 left-0 right-0 border-t border-border bg-surface/95 backdrop-blur-xl px-6 py-3 flex items-center justify-between gap-3">
+    <div className="absolute bottom-0 left-0 right-0 border-t border-border bg-surface/95 backdrop-blur-xl px-6 py-3 shrink-0">
       {step === "assets" && (
-        <>
+        <div className="flex items-center justify-between gap-3">
           <span className="text-[12px] text-muted">
             <ImageIcon className="inline-block w-3.5 h-3.5 mr-1 -translate-y-0.5" />
             Pick at least 3 assets to continue
           </span>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setStep("direction")}
-              disabled={selectedCount < 3}
-            >
-              Continue <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </>
+          <Button
+            onClick={() => setStep("direction")}
+            disabled={selectedCount < 3}
+          >
+            Continue <ChevronRight className="w-3.5 h-3.5" />
+          </Button>
+        </div>
       )}
       {step === "direction" && (
-        <>
+        <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" onClick={() => setStep("assets")}>
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </Button>
-          <Button onClick={onGenerate}>
-            <Sparkles className="w-3.5 h-3.5" /> Generate sequence
-          </Button>
-        </>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-[11.5px] text-muted truncate hidden sm:inline">
+              5 slides · {goalLabel} · {styleLabel} · brand{" "}
+              <span className={useBrand ? "text-accent font-medium" : "text-muted"}>
+                {useBrand ? "on" : "off"}
+              </span>
+            </span>
+            <Button onClick={onGenerate}>
+              <Wand2 className="w-3.5 h-3.5" /> Build sequence
+            </Button>
+          </div>
+        </div>
       )}
       {step === "preview" && (
-        <>
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => setStep("direction")}>
-              <ChevronLeft className="w-3.5 h-3.5" /> Adjust direction
+              <ChevronLeft className="w-3.5 h-3.5" /> Adjust
             </Button>
             <Button variant="outline" onClick={onRegenerate} disabled={!canCommit}>
-              <RefreshCw className="w-3.5 h-3.5" /> Regenerate all
+              <RefreshCw className="w-3.5 h-3.5" /> Regenerate
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -985,7 +1373,7 @@ function Footer({
               </>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

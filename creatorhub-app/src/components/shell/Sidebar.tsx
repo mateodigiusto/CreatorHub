@@ -12,6 +12,7 @@ import {
   Settings,
   Plug,
   Wand2,
+  Images,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAppState } from "@/lib/store";
@@ -26,6 +27,7 @@ const workspace: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/ideas", label: "Ideas", icon: Lightbulb },
+  { href: "/library", label: "Asset Library", icon: Images },
   { href: "/content", label: "Content", icon: FileText },
   { href: "/calendar", label: "Calendar", icon: Calendar },
 ];
