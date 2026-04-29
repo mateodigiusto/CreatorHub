@@ -11,13 +11,10 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-accent text-white hover:bg-accent-2 shadow-[0_1px_0_0_rgba(37,99,235,0.4)]",
-  secondary:
-    "bg-text text-bg hover:opacity-90",
+  primary: "btn-primary text-white",
+  secondary: "bg-surface text-text border border-border hover:border-accent/40",
   ghost: "text-text hover:bg-surface-2",
-  outline:
-    "bg-surface text-text border border-border hover:border-accent/40 hover:text-text",
+  outline: "bg-surface text-text border border-border hover:border-accent/40",
 };
 
 const sizes: Record<Size, string> = {
@@ -35,7 +32,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-[10px] font-medium transition-[transform,background-color,border-color,box-shadow,color] duration-150 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        "inline-flex items-center justify-center rounded-[10px] font-medium cursor-pointer transition-[transform,background-color,border-color,box-shadow,color] duration-150 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
         variants[variant],
         sizes[size],
         className

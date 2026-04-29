@@ -142,6 +142,7 @@ export function StorySequenceFlow({
       title: sequence.title,
       caption: prompt || sequence.title,
       type: "Story" as const,
+      platform: "Instagram" as const,
       status: action === "schedule" ? "Scheduled" : "Review",
       thumbnail:
         sampleAssets.find((a) => a.id === sequence.slides[0]?.assetId)

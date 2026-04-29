@@ -6,44 +6,68 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAppState } from "@/lib/store";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { Camera, Mail, Calendar, BarChart3, Globe } from "lucide-react";
+import {
+  PlaySquare,
+  Camera,
+  Video,
+  Hash,
+  Mail,
+  Calendar,
+  Globe,
+} from "lucide-react";
 
-const integrations = [
+type Platform = {
+  key: string;
+  name: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const corePlatforms: Platform[] = [
+  {
+    key: "youtube",
+    name: "YouTube",
+    description: "Channel views, watch time, subscribers, top videos.",
+    icon: PlaySquare,
+  },
   {
     key: "instagram",
     name: "Instagram",
-    description:
-      "Pull profile, posts, insights, and DMs. Powers Dashboard, Analytics, Ideas, Calendar, and Reports.",
+    description: "Profile, posts, Reels, insights, DMs.",
     icon: Camera,
-    primary: true,
   },
   {
     key: "tiktok",
     name: "TikTok",
     description: "Post performance and audience growth.",
-    icon: BarChart3,
-    primary: false,
+    icon: Video,
   },
   {
-    key: "calendar",
+    key: "x",
+    name: "X",
+    description: "Tweets, replies, impressions, follower growth.",
+    icon: Hash,
+  },
+];
+
+const otherIntegrations: Platform[] = [
+  {
+    key: "gcal",
     name: "Google Calendar",
     description: "Two-way sync for scheduled content slots.",
     icon: Calendar,
-    primary: false,
   },
   {
     key: "email",
     name: "Email reports",
     description: "Send weekly summaries to clients automatically.",
     icon: Mail,
-    primary: false,
   },
   {
     key: "site",
     name: "Website / Blog",
     description: "Repurpose top performing content into long-form.",
     icon: Globe,
-    primary: false,
   },
 ];
 
@@ -54,81 +78,88 @@ export default function IntegrationsPage() {
     <>
       <PageHeader
         title="Integrations"
-        description="Connect your data sources. Instagram is the foundation — everything else is optional."
+        description="Connect your platforms to power Dashboard, Analytics, Ideas, Calendar, and Reports."
+        actions={
+          connected ? (
+            <Button variant="outline" onClick={() => setConnected(false)}>
+              Disconnect all
+            </Button>
+          ) : (
+            <Button onClick={() => setConnected(true)}>Connect platforms</Button>
+          )
+        }
       />
 
-      <Card className="mb-6 border-teal/30 bg-gradient-to-br from-teal/[0.05] to-teal-blue/[0.04]">
-        <div className="flex items-start gap-5">
-          <div className="w-12 h-12 rounded-xl bg-teal text-white grid place-items-center shrink-0">
-            <Camera className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-[16px] font-semibold tracking-tight text-navy">
-                Instagram
-              </h3>
-              {connected ? (
-                <Badge tone="green" className="!bg-emerald-500/10 !text-emerald-700 inline-flex items-center gap-1.5">
-                  <StatusDot tone="teal" size={6} />
-                  Connected
-                </Badge>
-              ) : (
-                <Badge tone="amber">Not connected</Badge>
-              )}
-            </div>
-            <p className="text-[13.5px] text-muted mt-1.5 max-w-2xl leading-relaxed">
-              CreatorHub uses Meta&apos;s official Graph API. Connecting pulls in
-              your profile, posts, insights, and message data — and powers every
-              screen in the app.
-            </p>
-            <div className="flex items-center gap-2 mt-4">
-              {connected ? (
-                <>
-                  <Button variant="outline" onClick={() => setConnected(false)}>
-                    Disconnect
-                  </Button>
-                  <Button variant="ghost">Refresh data</Button>
-                </>
-              ) : (
-                <Button onClick={() => setConnected(true)}>
-                  Connect Instagram
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+      <Card className="mb-5">
+        <CardHeader
+          title="Platforms"
+          description={
+            connected ? "4 platforms connected" : "No platforms connected"
+          }
+        />
+        <ul className="grid grid-cols-2 gap-2.5 list-none p-0 m-0">
+          {corePlatforms.map((p) => {
+            const Icon = p.icon;
+            return (
+              <li
+                key={p.key}
+                className="flex items-center gap-3 p-3 rounded-[10px] border border-border bg-surface card-base"
+              >
+                <div className="w-10 h-10 rounded-[10px] bg-surface-2 text-text grid place-items-center shrink-0">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="text-[14px] font-semibold text-text">
+                      {p.name}
+                    </div>
+                    {connected ? (
+                      <Badge tone="green" className="inline-flex items-center gap-1.5">
+                        <StatusDot tone="accent" size={6} />
+                        Connected
+                      </Badge>
+                    ) : (
+                      <Badge tone="amber">Off</Badge>
+                    )}
+                  </div>
+                  <div className="text-[12.5px] text-muted mt-0.5">
+                    {p.description}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </Card>
 
       <Card>
         <CardHeader
           title="More integrations"
-          description="Coming soon — connect once Instagram is live"
+          description="Optional connections that extend the workflow"
         />
-        <ul className="space-y-1">
-          {integrations
-            .filter((i) => !i.primary)
-            .map((i) => {
-              const Icon = i.icon;
-              return (
-                <li
-                  key={i.key}
-                  className="flex items-center gap-4 p-3 -mx-1 rounded-[10px] border border-transparent hover:border-teal/15 hover:bg-teal/[0.025] transition-colors cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-[10px] bg-surface-2 text-text grid place-items-center shrink-0">
-                    <Icon className="w-4 h-4" />
+        <ul className="space-y-1 list-none p-0 m-0">
+          {otherIntegrations.map((i) => {
+            const Icon = i.icon;
+            return (
+              <li
+                key={i.key}
+                className="flex items-center gap-4 p-3 -mx-1 rounded-[10px] border border-transparent hover:border-accent/15 hover:bg-accent/[0.025] transition-colors cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-[10px] bg-surface-2 text-text grid place-items-center shrink-0">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-medium text-text">
+                    {i.name}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-medium text-navy">
-                      {i.name}
-                    </div>
-                    <div className="text-[12.5px] text-muted">
-                      {i.description}
-                    </div>
+                  <div className="text-[12.5px] text-muted">
+                    {i.description}
                   </div>
-                  <Badge tone="neutral">Soon</Badge>
-                </li>
-              );
-            })}
+                </div>
+                <Badge tone="neutral">Soon</Badge>
+              </li>
+            );
+          })}
         </ul>
       </Card>
     </>

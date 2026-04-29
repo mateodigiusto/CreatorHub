@@ -14,6 +14,7 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-surface-glass: var(--surface-glass);
   --color-border: var(--border);
   --color-text: var(--text);
   --color-muted: var(--text-2);
@@ -57,10 +58,18 @@
   --surface: #FFFFFF;
   --surface-2: #F1F5F9;
   --surface-3: #E2E8F0;
+  --surface-glass: rgba(255, 255, 255, 0.78);
   --border: #D8E0EA;
   --text: #07111F;
   --text-2: #475569;
   --text-muted: #94A3B8;
+
+  --primary-grad: linear-gradient(180deg, #14315E 0%, #0B1F3A 100%);
+  --primary-grad-hover: linear-gradient(180deg, #1A3D75 0%, #11264A 100%);
+  --primary-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.10) inset,
+    0 1px 2px rgba(7, 17, 31, 0.20),
+    0 0 0 1px rgba(11, 31, 58, 0.40);
 
   --accent: #2563EB;
   --accent-2: #1D4ED8;
@@ -101,10 +110,18 @@
   --surface: #0B1220;
   --surface-2: #111827;
   --surface-3: #172033;
+  --surface-glass: rgba(11, 18, 32, 0.78);
   --border: #1F2A3D;
   --text: #F8FAFC;
   --text-2: #94A3B8;
   --text-muted: #64748B;
+
+  --primary-grad: linear-gradient(180deg, #1E4D8A 0%, #14315E 100%);
+  --primary-grad-hover: linear-gradient(180deg, #2A5FA0 0%, #1A3D75 100%);
+  --primary-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
+    0 1px 2px rgba(0, 0, 0, 0.40),
+    0 0 0 1px rgba(59, 130, 246, 0.30);
 
   --accent: #2563EB;
   --accent-2: #3B82F6;
@@ -186,6 +203,7 @@ body::before {
 .lift {
   position: relative;
   z-index: 1;
+  cursor: pointer;
   transition:
     transform 0.28s cubic-bezier(0.23, 1, 0.32, 1),
     box-shadow 0.28s ease,
@@ -214,6 +232,13 @@ body::before {
 .card-base {
   box-shadow: var(--shadow-card);
 }
+
+/* ─── Primary button (deep navy gradient) ───────────────────────────── */
+.btn-primary {
+  background: var(--primary-grad);
+  box-shadow: var(--primary-shadow);
+}
+.btn-primary:hover { background: var(--primary-grad-hover); }
 
 /* ─── Aurora keyframes ──────────────────────────────────────────────── */
 @keyframes drift1 {

@@ -90,7 +90,7 @@ export function PlanContentDrawer({
               icon={<Sparkles className="w-3.5 h-3.5" />}
               accent
             >
-              Story Sequence AI
+              Sequence Studio
             </TabButton>
             <TabButton
               active={tab === "from-idea"}

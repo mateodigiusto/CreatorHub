@@ -8,13 +8,16 @@ export type ContentStatus =
   | "Published"
   | "Analyzed";
 
-export type PostType = "Reel" | "Carousel" | "Static" | "Story";
+export type PostType = "Reel" | "Carousel" | "Static" | "Story" | "YouTube";
+
+export type Platform = "YouTube" | "Instagram" | "TikTok" | "X";
 
 export type Post = {
   id: string;
   title: string;
   caption: string;
   type: PostType;
+  platform: Platform;
   status: ContentStatus;
   thumbnail: string;
   publishedAt?: string;

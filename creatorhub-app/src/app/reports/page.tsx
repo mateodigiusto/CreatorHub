@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,11 +9,16 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { AiCallout } from "@/components/ui/AiCallout";
 import { Thumb } from "@/components/ui/Thumb";
 import { Tabs } from "@/components/ui/Tabs";
-import { GrowthChart } from "@/components/charts/GrowthChart";
+import { AreaChart } from "@/components/charts/AreaChart";
+import { Download, Share2, Plus } from "lucide-react";
 import { useAppState } from "@/lib/store";
-import { reports, topPosts, aiInsights } from "@/lib/mock/data";
-import { Download, FileDown, Share2 } from "lucide-react";
-import { useState } from "react";
+import {
+  reports,
+  topPosts,
+  followerSeriesWeekly,
+  followerSeriesMonthly,
+  aiInsights,
+} from "@/lib/mock/data";
 
 export default function ReportsPage() {
   const { connected } = useAppState();
@@ -28,13 +34,17 @@ export default function ReportsPage() {
         <EmptyState
           title="No reports yet."
           description="Generate your first weekly performance summary once content data is available."
-          primaryAction={{ label: "Connect Instagram" }}
+          primaryAction={{ label: "Connect a platform" }}
         />
       </>
     );
   }
 
   const r = range === "weekly" ? reports.weekly : reports.monthly;
+  const series =
+    range === "weekly" ? followerSeriesWeekly : followerSeriesMonthly;
+  const aiBody =
+    range === "weekly" ? aiInsights.reportsWeekly : aiInsights.reportsMonthly;
 
   return (
     <>
@@ -44,19 +54,19 @@ export default function ReportsPage() {
         actions={
           <>
             <Button variant="outline" size="md">
-              <Share2 className="w-4 h-4" /> Share
+              <Share2 className="w-3.5 h-3.5" /> Share
             </Button>
             <Button variant="outline" size="md">
-              <FileDown className="w-4 h-4" /> Export PDF
+              <Download className="w-3.5 h-3.5" /> Export PDF
             </Button>
             <Button size="md">
-              <Download className="w-4 h-4" /> New report
+              <Plus className="w-3.5 h-3.5" /> New report
             </Button>
           </>
         }
       />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <Tabs
           value={range}
           onChange={(v) => setRange(v as typeof range)}
@@ -68,13 +78,20 @@ export default function ReportsPage() {
         <div className="text-[12.5px] text-muted">{r.range}</div>
       </div>
 
-      <Card className="mb-6 text-white relative overflow-hidden" padded={false}>
+      {/* Dark always-on hero */}
+      <div
+        className="relative overflow-hidden rounded-[14px] mb-5"
+        style={{
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow:
+            "0 1px 0 rgba(255,255,255,0.06) inset, 0 8px 24px rgba(7,11,20,0.18)",
+        }}
+      >
         <div
           className="absolute inset-0"
           style={{
             background:
               "linear-gradient(135deg, #070B14 0%, #0B1220 60%, #111827 100%)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         />
         <div
@@ -95,71 +112,78 @@ export default function ReportsPage() {
             filter: "blur(50px)",
           }}
         />
-        <div className="relative p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <div
-              className="text-[11.5px] uppercase tracking-wider font-semibold"
-              style={{ color: "#93C5FD" }}
-            >
-              {range === "weekly" ? "Weekly summary" : "Monthly summary"}
+
+        <div className="relative p-7 text-white">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <div
+                className="text-[11.5px] uppercase font-semibold"
+                style={{ letterSpacing: "0.08em", color: "#93C5FD" }}
+              >
+                {range === "weekly" ? "Weekly summary" : "Monthly summary"}
+              </div>
+              <h2 className="text-[28px] font-semibold tracking-[-0.02em] mt-1.5 whitespace-nowrap">
+                {r.range}
+              </h2>
+              <p className="text-[13.5px] text-white/65 mt-1.5">
+                For @ella.moreno · prepared by CreatorHub
+              </p>
             </div>
-            <h2 className="text-[28px] font-semibold tracking-[-0.02em] mt-1">
-              {r.range}
-            </h2>
-            <p className="text-[13.5px] text-white/65 mt-1.5">
-              For @mateo.creates · prepared by CreatorHub
-            </p>
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium text-white"
+              style={{
+                background: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "#93C5FD" }}
+              />
+              Auto-generated
+            </span>
           </div>
-          <Badge
-            tone="teal"
-            className="!bg-white/10 !text-white border border-white/15"
-          >
-            Auto-generated
-          </Badge>
-        </div>
 
-        <div className="grid grid-cols-5 gap-4 mt-7">
-          <ReportStat label="Posts" value={r.posts.toString()} />
-          <ReportStat
-            label="Reach"
-            value={r.reach}
-            delta={`+${r.reachDelta}%`}
-          />
-          <ReportStat
-            label="Engagement"
-            value={r.engagement}
-            delta={`+${r.engagementDelta}pp`}
-          />
-          <ReportStat
-            label="Leads"
-            value={r.leads.toString()}
-            delta={`+${r.leadsDelta}%`}
-          />
-          <ReportStat label="Followers" value={r.followers} />
+          <div className="grid grid-cols-5 gap-6 mt-7">
+            <ReportStat label="Posts" value={String(r.posts)} />
+            <ReportStat
+              label="Reach"
+              value={r.reach}
+              delta={`+${r.reachDelta}%`}
+            />
+            <ReportStat
+              label="Engagement"
+              value={r.engagement}
+              delta={`+${r.engagementDelta}pp`}
+            />
+            <ReportStat
+              label="Leads"
+              value={String(r.leads)}
+              delta={`+${r.leadsDelta}%`}
+            />
+            <ReportStat label="Followers" value={r.followers} />
+          </div>
         </div>
-        </div>
-      </Card>
+      </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <Card className="col-span-2">
+      <div className="grid grid-cols-[2fr_1fr] gap-4 mb-5">
+        <Card>
           <CardHeader
             title="Growth"
-            description={`Follower trajectory · ${r.range.toLowerCase()}`}
+            description={`Follower trajectory · ${
+              range === "weekly" ? "this week" : "this month"
+            }`}
           />
-          <GrowthChart height={260} />
+          <AreaChart
+            height={240}
+            data={series.map((y, i, arr) => ({
+              x: i === 0 ? "Start" : i === arr.length - 1 ? "End" : "",
+              y,
+            }))}
+          />
         </Card>
 
-        <div>
-          <AiCallout
-            title="Summary"
-            body={
-              range === "weekly"
-                ? aiInsights.reportsWeekly
-                : aiInsights.analytics
-            }
-          />
-        </div>
+        <AiCallout title="Summary" body={aiBody} />
       </div>
 
       <Card>
@@ -172,20 +196,20 @@ export default function ReportsPage() {
             </Button>
           }
         />
-        <ul className="grid grid-cols-3 gap-3">
+        <ul className="grid grid-cols-3 gap-3 list-none p-0 m-0">
           {topPosts.slice(0, 3).map((p) => (
             <li
               key={p.id}
-              className="lift lift-strong border border-border rounded-[12px] p-3 bg-surface card-base cursor-pointer"
+              className="lift bg-surface border border-border rounded-[12px] p-3 cursor-pointer card-base"
             >
               <Thumb gradient={p.thumbnail} size="lg" />
               <div className="mt-3">
-                <div className="text-[13px] font-medium text-navy leading-snug line-clamp-2">
+                <div className="text-[13px] font-medium text-text leading-[1.4] line-clamp-2">
                   {p.title}
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <Badge tone="neutral">{p.type}</Badge>
-                  <span className="text-[12px] text-muted">
+                  <Badge tone="neutral">{p.platform}</Badge>
+                  <span className="text-[12px] text-muted tabular-nums">
                     {(p.reach / 1000).toFixed(1)}K reach
                   </span>
                 </div>
@@ -209,13 +233,21 @@ function ReportStat({
 }) {
   return (
     <div>
-      <div className="text-[11.5px] text-white/55 uppercase tracking-wider">
+      <div
+        className="text-[11.5px] uppercase"
+        style={{
+          color: "rgba(255,255,255,0.55)",
+          letterSpacing: "0.08em",
+        }}
+      >
         {label}
       </div>
-      <div className="text-[26px] font-semibold tracking-[-0.02em] mt-1 tabular-nums">{value}</div>
+      <div className="text-[26px] font-semibold tracking-[-0.02em] mt-1.5 tabular-nums">
+        {value}
+      </div>
       {delta && (
         <div
-          className="text-[12px] mt-0.5 font-medium"
+          className="text-[12px] font-medium mt-0.5"
           style={{ color: "#93C5FD" }}
         >
           {delta}
