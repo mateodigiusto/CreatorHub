@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
@@ -854,6 +854,8 @@ function EditableOverlay({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  // Sync local draft when parent regenerates the slide.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setDraft(value), [value]);
   if (editing) {
     return (

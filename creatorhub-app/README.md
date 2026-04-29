@@ -4,16 +4,18 @@ CreatorHub is a premium creator operating system for creators, info-product busi
 
 **Core loop:** Plan → Create → Analyze → Grow
 
-This repo contains the first demo — a frontend-only experience that communicates the product vision, structure, workflow, and premium UI direction. There is no backend, no real authentication, no real Meta/Instagram integration, and no real AI. All data is realistic mock data shaped like the eventual real payloads.
+This repo contains the first demo — a frontend-only experience that communicates the product vision, structure, workflow, and premium UI direction. There is no backend, authentication, real platform integration, or real AI. All data is realistic mock data shaped like the eventual real payloads.
 
 ## What's inside
 
-- **Six main screens** — Dashboard, Analytics, Ideas, Content, Calendar, Reports
-- **Secondary screens** — Settings (with theme picker), Integrations, Help
-- **Light + Dark themes** — toggle in the topbar, persisted to localStorage
-- **AI Story Sequences** — a 3-step demo flow that turns sample assets + a goal into a 5-slide story sequence; entry points on Calendar (Plan slot), Ideas (featured tile), and Content (header chip)
-- **Aurora background + cursor glow** — subtle motion behind the UI
-- **`Instagram connected` toggle** — flip every screen between empty and connected states from the topbar pill
+- **Workspace screens** — Dashboard, Analytics, Ideas, Content (Library + Pipeline), Calendar (month view)
+- **Tools** — Sequence Studio (AI sequence generator), Reports
+- **System** — Settings (with theme picker), Integrations
+- **Light + Dark themes** — toggle in the topbar, persisted to localStorage, no flicker on reload
+- **Sequence Studio** — 3-step flow (pick assets → set direction → generate & ship) opened from Calendar / Ideas / Content / its own page
+- **Date range pickers** — `Last 7d` / `Last 30d` / `Last 90d` / Custom (from-to) on Dashboard "Reach over time" and Analytics "Performance" + "Follower growth"
+- **Aurora background + cursor glow** — subtle ambient motion behind the UI
+- **Multi-platform demo** — YouTube, Instagram, TikTok, X all reflected in mock data
 
 ## Run locally
 
@@ -24,28 +26,46 @@ npm run dev
 
 Opens on `http://localhost:3000` (or 3003+ if 3000 is busy).
 
-## Build
+## Build / lint
 
 ```bash
 npm run build
+npm run lint
 ```
+
+Both must pass before commit.
 
 ## Deploy on Vercel
 
-Vercel auto-detects Next.js. **Important — set the project's Root Directory to `creatorhub-app`** since the Next.js app lives in a subfolder of the repo.
-
-No environment variables required. No build command override. The app is fully static at the route level.
+Vercel auto-detects Next.js. **Set the project's Root Directory to `creatorhub-app`** since the Next.js app lives in a subfolder of the repo. No environment variables required.
 
 ## Tech
 
 - Next.js 16 (App Router, Turbopack)
 - React 19
-- Tailwind CSS v4 (CSS-based theme tokens)
+- Tailwind CSS v4 (CSS-based theme tokens via `@theme` blocks)
 - TypeScript 5
-- Recharts for charts
+- Hand-rolled SVG charts (no chart library dependency)
 - lucide-react for icons
 - Inter via `next/font/google`
 
-## Project structure
+## Project layout
 
-See the parent `CLAUDE.md` for the full implementation reference, theme system documentation, and design rules.
+```
+src/
+├── app/                      # Routes (App Router)
+├── components/
+│   ├── shell/                # AppShell, Sidebar, Topbar, Aurora, MouseGlow
+│   ├── ui/                   # Card, Button, Badge, Tabs, AiCallout, Thumb,
+│   │                         # PageHeader, EmptyState, StatusDot, IconButton,
+│   │                         # Toaster, DateRangeControl
+│   ├── charts/               # AreaChart, MiniSpark, BarRow
+│   ├── dashboard/            # KpiCard
+│   └── plan/                 # PlanContentDrawer + StorySequenceFlow
+└── lib/
+    ├── cn.ts
+    ├── store.tsx             # Single React context (theme, connected, extraPosts, toast)
+    └── mock/                 # Demo data
+```
+
+The full implementation reference, design rules, and gotchas live in [`../CLAUDE.md`](../CLAUDE.md) §10.

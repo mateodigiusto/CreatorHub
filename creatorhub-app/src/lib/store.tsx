@@ -47,7 +47,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   // Hydrate theme from <html data-theme> set by the pre-paint script.
+  // Cannot use useState lazy init: server can't read localStorage, would mismatch.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(readInitialTheme());
   }, []);
 

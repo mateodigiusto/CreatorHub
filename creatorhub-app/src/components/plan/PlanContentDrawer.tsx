@@ -27,7 +27,9 @@ export function PlanContentDrawer({
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
 
+  // Reset tab when the drawer reopens (e.g. from a different entry point).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) setTab(initialTab);
   }, [open, initialTab]);
 

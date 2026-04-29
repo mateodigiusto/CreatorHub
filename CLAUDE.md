@@ -112,28 +112,38 @@ The codebase still references `bg-teal`, `text-teal`, `border-teal`, `bg-teal-bl
 
 ## 3. Navigation
 
-**Main:**
+The sidebar groups items into three sections:
+
+**Workspace** (the daily flow):
 1. Dashboard
 2. Analytics
 3. Ideas
 4. Content
 5. Calendar
-6. Reports
 
-**Secondary:** Settings · Integrations · Help
+**Tools** (output / utilities):
+6. Sequence Studio (`/sequence-studio`)
+7. Reports
 
-**Not in first demo:** AI Studio, Clients, Inspiration Engine, Education Hub, Automations, Community, Advanced Tasks, Billing, Team Management, Client Portal.
+**System** (account / admin):
+- Integrations
+- Settings
+
+The topbar holds: workspace breadcrumb, search (with ⌘K hint), platform-connection pill ("4 platforms connected" when on), theme toggle, notifications, "New content" CTA.
+
+**Not in first demo:** AI Studio (separate from Sequence Studio), Clients, Inspiration Engine, Education Hub, Automations, Community, Advanced Tasks, Billing, Team Management, Client Portal, Help (route exists but unlinked).
 
 ---
 
 ## 4. Screen Purposes
 
-- **Dashboard** — daily command center. Answers: how is my content doing, what needs attention, what's next, what's scheduled, what performed best. Sections: hero summary, KPI cards (Reach, Engagement, Messages/Leads, Posts Published), performance chart, AI insight, top content, upcoming content, pipeline snapshot, quick actions.
-- **Analytics** — the data layer. Explains what works and why. Sections: filters, performance summary, growth chart, content-type breakdown, top posts, messages/leads analytics, AI explanation.
-- **Ideas** — turns analytics into future content. Sections: idea board, AI-generated ideas, saved winning formats, inspiration library, idea detail panel.
-- **Content** — production system. Statuses: Idea → Script → Recording → Editing → Review → Scheduled → Published → Analyzed. Sections: library, pipeline, search/filters, detail drawer, performance badges.
-- **Calendar** — publishing system. Sections: weekly calendar, upcoming list, empty slots, scheduled, overdue.
-- **Reports** — business/client summary. Sections: weekly report, monthly report, top content summary, growth summary, AI-written explanation, export options.
+- **Dashboard** — daily command center. Welcomes the user (Ella Moreno in mock), shows 4 KPI cards (Reach / Engagement rate / New followers / Top post CTR) with `MiniSpark` trends, "Reach over time" `AreaChart` with `DateRangeControl`, "By platform" `BarRow` panel, AI insight callout, "Up next" schedule list, "Top performing posts" table.
+- **Analytics** — the data layer. 4 different KPIs (Total reach / Impressions / Engagement / Profile visits), Performance + Follower growth charts (each with its own `DateRangeControl`), content type breakdown bars, Messages/Leads panel, best-posting-time heatmap, top posts table, AI explanation.
+- **Ideas** — AI-generated hooks aligned with the last 30 days of performance. All / Saved tabs (with bookmark count), AI callout up top, 6 idea cards each with `ScoreRing` + estimated reach + "Open" button.
+- **Content** — production system. Statuses: Idea → Script → Recording → Editing → Review → Scheduled → Published → Analyzed. Two views via `Tabs`: **Library** (3-col card grid with image-on-top + status badge) and **Pipeline** (5 columns: Idea / Script / Editing / Scheduled / Published).
+- **Calendar** — month view (5 weeks × 7 days). Today is marked with a dark navy gradient circle. Each day shows up to 2 event chips with vertical color bars. Click any day to open the `PlanContentDrawer` pre-filled with that date.
+- **Sequence Studio** — landing for the AI sequence generator. 3 step-cards explaining the flow (Pick assets → Set direction → Generate & ship), a "Recent sequences" list. Clicking "Start a sequence" opens the same `PlanContentDrawer` with the Sequence Studio tab active.
+- **Reports** — client-ready summary. Weekly / Monthly tabs. Always-dark hero panel with corner radial glows + 5 stats. Growth `AreaChart` + AI summary callout. Top content 3-tile grid.
 
 ---
 
@@ -209,20 +219,20 @@ For now: dummy data shaped like the eventual real data, so screens won't need re
 
 ## 10. Implementation reference (read this before editing code)
 
-This section captures concrete technical decisions made during the first demo build so future sessions don't re-derive them.
+Concrete technical decisions made during the build so future sessions don't re-derive them.
 
 ### Repo layout
 
 ```
-CreatorHub/                          # repo root (this CLAUDE.md lives here)
+CreatorHub/                          # git repo root (this CLAUDE.md lives here)
 ├── CLAUDE.md                        # source of truth — product + brand + impl
+├── .gitignore                       # ignores node_modules, .next, .env*, .vercel
 └── creatorhub-app/                  # the Next.js app (run npm commands from here)
-    ├── AGENTS.md                    # → @AGENTS.md note about Next.js 16 breaking changes
-    ├── README.md                    # demo + deploy instructions
+    ├── AGENTS.md                    # Next.js 16 breaking-changes note
+    ├── README.md                    # demo overview + deploy instructions
     ├── next.config.ts               # default; Turbopack for dev/build
     ├── tsconfig.json                # @/* path alias points to src/
     ├── package.json                 # scripts: dev, build, start, lint
-    ├── public/                      # static assets (mostly unused — text wordmark only)
     └── src/
         ├── app/
         │   ├── layout.tsx           # root layout + pre-paint theme script
@@ -234,15 +244,16 @@ CreatorHub/                          # repo root (this CLAUDE.md lives here)
         │   ├── content/page.tsx
         │   ├── calendar/page.tsx
         │   ├── reports/page.tsx
+        │   ├── sequence-studio/page.tsx
         │   ├── integrations/page.tsx
         │   ├── settings/page.tsx
         │   └── help/page.tsx
         ├── components/
         │   ├── shell/               # AppShell, Sidebar, Topbar, Aurora, MouseGlow
-        │   ├── ui/                  # Card, Button, Badge, EmptyState, Drawer, Tabs,
-        │   │                        # AiCallout, Thumb, PageHeader, StatusDot,
-        │   │                        # ThemeToggle, Toaster
-        │   ├── charts/              # PerformanceChart, GrowthChart (Recharts)
+        │   ├── ui/                  # Card, Button, Badge, Tabs, AiCallout, Thumb,
+        │   │                        # PageHeader, EmptyState, StatusDot, IconButton,
+        │   │                        # Toaster, DateRangeControl
+        │   ├── charts/              # AreaChart, MiniSpark, BarRow (hand-rolled SVG)
         │   ├── dashboard/           # KpiCard
         │   └── plan/                # PlanContentDrawer + StorySequenceFlow
         └── lib/
@@ -250,18 +261,20 @@ CreatorHub/                          # repo root (this CLAUDE.md lives here)
             ├── store.tsx            # AppStateProvider context (theme, connected,
             │                        # extraPosts, toast)
             └── mock/
-                ├── types.ts         # Post, ContentStatus, PostType, Kpi, Idea
-                ├── data.ts          # posts, kpis, time series, ideas, reports
+                ├── types.ts         # Post, ContentStatus, PostType, Platform, Kpi, Idea
+                ├── data.ts          # posts, kpis, kpiTrends, platformReach, ideas,
+                │                    # reports, aiInsights, getReachSeries, getFollowerSeries
                 └── story.ts         # sample assets, sequence types/styles/goals,
                                      # generateSequence() deterministic helper
 ```
 
 ### Stack
 
-- **Next.js 16** (App Router, Turbopack) — see `creatorhub-app/AGENTS.md`. Has breaking changes vs. older training data; consult `node_modules/next/dist/docs/` if a feature behaves unexpectedly. We do NOT use `unstable_instant`, `cacheComponents`, or Server Actions in this demo.
-- **React 19** (canary, bundled with App Router).
-- **Tailwind CSS v4** — `@theme` and `@theme inline` blocks in `globals.css`. NOT a `tailwind.config.ts` — v4 reads tokens from CSS.
-- **TypeScript 5**, **Inter** via `next/font/google`, **lucide-react**, **clsx**, **Recharts**.
+- **Next.js 16** (App Router, Turbopack) — see `creatorhub-app/AGENTS.md`. Has breaking changes vs. older training data; consult `node_modules/next/dist/docs/` when in doubt. We do NOT use `unstable_instant`, `cacheComponents`, or Server Actions.
+- **React 19** (bundled with App Router).
+- **Tailwind CSS v4** — `@theme` and `@theme inline` blocks in `globals.css`. NO `tailwind.config.ts` — v4 reads tokens from CSS.
+- **TypeScript 5**, **Inter** via `next/font/google`, **lucide-react**, **clsx**.
+- **No chart library** — `AreaChart`, `MiniSpark`, `BarRow` are hand-rolled SVG. Recharts was removed.
 
 ### Theme system (the most important impl detail)
 
@@ -269,19 +282,24 @@ CreatorHub/                          # repo root (this CLAUDE.md lives here)
 
 **Switching mechanism:**
 1. Inline `<script>` in `<head>` of `app/layout.tsx` reads `localStorage.getItem('creatorhub-theme')` and sets `data-theme` on `<html>` BEFORE React paints. Prevents flicker on reload.
-2. `AppStateProvider` (`src/lib/store.tsx`) hydrates `theme` from the attribute, exposes `setTheme()` / `toggleTheme()`. Setter writes both `<html data-theme>` and localStorage.
-3. `ThemeToggle` lives in the topbar; richer picker in Settings (Appearance card with mini previews).
+2. `AppStateProvider` (`src/lib/store.tsx`) hydrates `theme` from the DOM attribute via `useEffect`, exposes `setTheme()` / `toggleTheme()`. Setter writes both `<html data-theme>` and localStorage.
+3. Toggle: a `Sun` / `Moon` `IconButton` in the topbar. The richer picker (with mini previews) is in Settings → Appearance.
 4. **Default = Light Mode.** Brand spec says navy text on warm-off-white surfaces.
 
-**Legacy class aliases** — the codebase has ~117 references to `bg-teal`, `text-teal`, `border-teal`, `text-navy`, `bg-navy`, `cyan-soft`, `teal-blue` from before the navy/blue palette switch. They render correctly because `globals.css` aliases them to the new tokens (`--color-teal: var(--accent)`, etc.). Treat them as semantic debt only — don't introduce new `text-teal` references; use `text-accent` / `text-text` / `bg-surface-2` instead.
+**Legacy class aliases** — earlier sessions used a teal palette; the migration to navy/blue redirected the old tokens via `--color-teal: var(--accent)`. Some files still use `bg-teal`, `text-navy`, `cyan-soft`, etc. — they render correctly via the alias. Don't introduce new uses; prefer `bg-accent`, `text-text`, `bg-surface-2`, etc.
 
 ### Hover system — the `.lift` utility
 
-A single CSS utility class in `globals.css`:
+One CSS utility class in `globals.css`:
 ```
+.lift { cursor: pointer; transition: transform .28s, box-shadow .28s, border-color .2s; ... }
 .lift:hover { transform: translateY(-2px) scale(1.005); border-color: var(--accent-border); box-shadow: var(--shadow-lift); }
 ```
-Apply to KPI cards, top-content rows, idea cards, calendar slots, report tiles, integration rows, pipeline cards. Tables stay flat (`hover:bg-accent/[0.04]`). All gated behind `prefers-reduced-motion: reduce`. Don't invent bespoke per-screen hovers.
+Apply to KPI cards, top-content rows, idea cards, calendar slot cards, report tiles, integration rows, pipeline cards, sequence-studio recent tiles. Tables get a flat `hover:bg-accent/[0.04]` row tint instead. Buttons set `cursor-pointer` directly. All gated behind `prefers-reduced-motion: reduce`. Don't invent bespoke per-screen hovers.
+
+### Primary button (deep navy gradient)
+
+`Button variant="primary"` (default) renders the navy gradient `linear-gradient(180deg, #14315E 0%, #0B1F3A 100%)` via the `.btn-primary` CSS rule. NOT flat accent-blue — the gradient is a brand moment. `:hover` lightens the gradient via `--primary-grad-hover`. `:active` scales 97%.
 
 ### Aurora + cursor glow
 
@@ -290,68 +308,89 @@ Apply to KPI cards, top-content rows, idea cards, calendar slots, report tiles, 
 - Both gated behind `prefers-reduced-motion`.
 - Do NOT add `bg-bg` to `AppShell`'s outer wrapper — it would cover `body::before`. Body owns the base bg.
 
+### Charts — hand-rolled SVG (not Recharts)
+
+`components/charts/AreaChart.tsx` is the only chart component used by Dashboard, Analytics, and Reports. It uses `ResizeObserver` to measure container width and renders an SVG with:
+- Gradient fill (teal → transparent), gradient line (`#0B1F3A → #1B4FD4`)
+- Y-axis labels (5 ticks, tabular nums) and X-axis labels (sparse — supplied via `data[i].x`)
+- End-of-line marker (filled circle with halo)
+- Strokes / fills use `var(--border)` / `var(--text-muted)` so axis colors theme automatically.
+
+`MiniSpark` is a tiny inline sparkline used inside KPI cards. `BarRow` is a labeled horizontal bar (Dashboard "By platform"). Both are pure SVG, no animation.
+
+**SVG attribute gotcha:** `fontVariantNumeric` is NOT a valid SVG attribute — pass it via inline `style={{ fontVariantNumeric: "tabular-nums" }}`.
+
+### DateRangeControl
+
+`components/ui/DateRangeControl.tsx` — preset chips + custom from/to picker. Used independently on Dashboard "Reach over time", Analytics "Performance", Analytics "Follower growth". State shape: `{ preset: '7d' | '30d' | '90d' | 'custom', from: Date, to: Date }`. Helper `rangeForPreset(preset)` returns the resolved range. Mock data helpers `getReachSeries(from, to)` and `getFollowerSeries(from, to)` produce deterministic series scaled to the range length.
+
 ### Store / state
 
 `AppStateProvider` (`lib/store.tsx`) is the only context. Exposes:
-- `connected` / `setConnected` — drives empty vs connected states across all screens via the topbar pill.
-- `theme` / `setTheme` / `toggleTheme` — light/dark.
-- `extraPosts` / `appendContentItem(post)` — generated story sequences from `PlanContentDrawer` get appended here. Pages merge `extraPosts` with the static `posts` from `lib/mock/data.ts` (e.g. `const allPosts = [...extraPosts, ...posts]`). Lost on hard reload — intentional for a demo.
+- `connected` / `setConnected` — drives empty vs connected states across all screens via the topbar pill ("4 platforms connected").
+- `theme` / `setTheme` / `toggleTheme` — light/dark, persisted to `localStorage('creatorhub-theme')`.
+- `extraPosts` / `appendContentItem(post)` — generated story sequences from the drawer get appended here. Pages merge with the static `posts` from `lib/mock/data.ts` (`const allPosts = [...extraPosts, ...posts]`). Lost on hard reload — intentional for a demo.
 - `toast` / `showToast(message)` — single-slot toast, auto-dismiss 2.8s. Mounted by `<Toaster />` inside `AppShell`.
 
 ### Mock data
 
-`lib/mock/data.ts` is the canonical post/idea/kpi/timeseries data. Shape mirrors a future Meta Graph payload so the swap won't restructure components. Don't refactor this file casually — many screens import directly from it.
+`lib/mock/data.ts` — multi-platform (`Platform: 'YouTube' | 'Instagram' | 'TikTok' | 'X'`). Each `Post` carries a `platform` field. Mock user is **Ella Moreno**, 13,080 followers, "Pro plan · 2 seats". Exports: `posts`, `topPosts`, `upcoming`, `kpis`, `kpiTrends`, `platformReach`, `contentTypeBreakdown`, `ideas`, `reports`, `aiInsights`, plus the range-aware series helpers `getReachSeries` and `getFollowerSeries` and the static `followerSeriesWeekly` / `followerSeriesMonthly` (Reports growth chart). Don't refactor this file casually — every screen imports it.
 
-`lib/mock/story.ts` contains story-sequence-specific data (sample assets, sequence types/styles/goals, brand context, deterministic `generateSequence()`). Self-contained; safe to extend.
+`lib/mock/story.ts` — Sequence Studio data: sample assets, sequence types/styles/goals, brand context, deterministic `generateSequence(selected, goal, type, style)`. Self-contained.
 
-### PlanContentDrawer entry points
+### PlanContentDrawer / Sequence Studio entry points
 
-- **Calendar** "Plan slot" cells → drawer with `entry="calendar"` + `slotDate` pre-filled. Primary action: Schedule in this slot.
-- **Ideas** featured tile → `entry="ideas"`. Primary: Move to Content.
-- **Content** header chip + "New content" → `entry="content"`. Primary: Move to Content.
+The drawer has 3 tabs: **Quick post** · **Sequence Studio** (the AI flow) · **From idea**. Entry points:
 
-Sequences committed via `appendContentItem` get `status: "Review"` (Move to Content) or `status: "Scheduled"` (Schedule in slot, with `scheduledAt` set).
+- **Calendar** — click any day → drawer with `entry="calendar"` + `slotDate` pre-filled. Primary action: Schedule in this slot.
+- **Ideas** — "Generate ideas" button → drawer with `entry="ideas"`. Primary: Move to Content.
+- **Content** — "Sequence Studio" outline chip + "New content" button → drawer with `entry="content"`. Primary: Move to Content.
+- **Sequence Studio** (`/sequence-studio`) — landing page. "Start a sequence" button → drawer with `entry="content"` (same primary). Sidebar item under Tools navigates here.
 
-### Gotchas seen during build
+Sequences committed via `appendContentItem` get `status: "Review"` (Move to Content) or `status: "Scheduled"` (Schedule in slot, with `scheduledAt`).
 
-- **lucide-react** has no brand icons (no `Instagram`, no `TikTok`, no `Facebook`). Use `Camera`, `BarChart3`, etc. as substitutes. `lucide-react@latest` was installed; the scaffold pinned a stale `1.14.0`.
-- **Recharts tooltip `formatter`** — TypeScript complains if you type the value as `number`. Use `(v) => Number(v).toLocaleString()`.
-- **Recharts in dark mode** — `contentStyle` accepts CSS vars; we pass `background: "var(--surface)"`, `border: "1px solid var(--border)"`, `color: "var(--text)"` so tooltips theme automatically. Series colors and grid stroke also use `var()`.
-- **Keyframe interpolation** — `@keyframes` can read CSS vars in modern browsers but interpolation is unreliable. Our `dot-pulse` keyframe uses literal blue rgba values (same accent base in both themes, so the pulse looks identical regardless of mode).
-- **Sidebar bg is fixed** — Midnight Blue `#0B1220` in both themes. It's the constant brand anchor. Do not theme it.
-- **Toaster gradient is fixed dark** — intentional inverted contrast. Do not theme.
-- **Reports hero gradient is fixed dark** — intentional dark-mode moment. Don't make it light-mode-aware.
+### Gotchas
+
+- **lucide-react** has no brand icons (no `Instagram`, `Youtube`, `TikTok`, `Music2` doesn't exist either). Use `Camera`, `PlaySquare`, `Video`, `Hash`, `BarChart3`, etc. as substitutes.
+- **SVG `fontVariantNumeric`** — must be in `style`, not as an attribute (see Charts section).
+- **React 19 `setState` in `useEffect`** — lint rule `react-hooks/set-state-in-effect` warns. We have 3 legitimate uses (theme bootstrap from DOM, controlled-component sync, drawer tab reset on reopen) marked with `eslint-disable-next-line` + a one-line justification. Don't add new ones casually.
+- **Keyframe interpolation** — `@keyframes` rules can read CSS vars but interpolation is unreliable. `dot-pulse` uses literal blue rgba so the pulse looks identical in both themes.
+- **Sidebar bg is fixed** but the gradient differs by theme. Both versions read tokens local to `Sidebar.tsx` (`lightTokens` / `darkTokens`). The bg is intentional brand anchor; do not bind to `--bg`.
+- **Toaster gradient is fixed dark.** Inverted-contrast toast convention — works on both themes.
+- **Reports hero is fixed dark.** Intentional dark moment in light mode; deeper navy in dark mode.
+- **AppShell wrapper has no bg.** `body::before` mouse glow paints through. Don't add `bg-bg` to the outer wrapper.
+- **`Custom` date input is native `<input type="date">`.** Browser-styled. We set `colorScheme: "light dark"` so it themes automatically.
 
 ### Useful commands (run from `creatorhub-app/`)
 
 ```bash
 npm run dev      # Dev server. Tries port 3000, falls back to 3003+
 npm run build    # Production build (TS + Turbopack). MUST pass before commit.
-npm run lint     # ESLint
+npm run lint     # ESLint — must be clean before commit.
 ```
 
 ### Testing routes
 
-After any change, hit all routes via curl on the dev server to confirm they 200:
+After any change, hit all routes via curl to confirm 200:
 ```
-for p in /dashboard /analytics /content /calendar /ideas /reports /integrations /settings /help; do
+for p in /dashboard /analytics /content /calendar /ideas /reports /sequence-studio /integrations /settings /help; do
   /usr/bin/curl -s -o /dev/null -w "$p -> %{http_code}\n" "http://localhost:3003$p"
 done
 ```
 
 ### Visual reference
 
-The user provided `/Users/luka/Operations /Claude Code/Petar/app/css/main.css` as the *technique* reference — aurora blobs, cursor-tracking glow, glass surfaces, pulsing status dots, stage-colored pipeline borders. We adopted the techniques but dialed the motion back to fit our calmer brand (no perspective tilt — flat lift instead).
+The original visual technique inspiration was `/Users/luka/Operations /Claude Code/Petar/app/css/main.css` (aurora blobs, cursor-tracking glow, glass surfaces, pulsing status dots). We dialed the motion back to fit the calmer brand (no perspective tilt — flat lift instead). The bigger visual conversion came later from a kit shared in-conversation that defined the navy primary gradient, glass topbar, Workspace/Tools/System sidebar split, and the SVG charts.
 
 ### Deployment
 
-This is a frontend-only Next.js 16 app. Vercel auto-detects Next.js — **Root Directory** must be set to `creatorhub-app` (the Next app is in a subfolder of the repo). No env vars required. No build command override needed.
+Frontend-only Next.js 16 app. Repo lives at the parent `CreatorHub/` directory. **Vercel Root Directory** must be set to `creatorhub-app` (the Next app is in a subfolder). No env vars required. No build command override.
 
-Local secrets / env audit: zero `process.env.*` references in source, no `.env*` files exist, no API keys hardcoded. Safe to push as-is.
+Auto-deploy on push to `main` is on. Local secrets audit (last run): zero `process.env.*` references, no `.env*` files, no API keys. `npm audit` shows 2 moderate transitive postcss advisories inside Next.js itself — upstream issue, no actionable fix without downgrading Next.
 
-### Out-of-scope reminders (don't drift)
+### Out of scope (don't drift)
 
-- No backend, no auth, no payments, no real Meta OAuth, no real AI calls, no real persistence (extraPosts lost on reload).
-- No new main nav items. No new product modules (AI Studio, Clients, etc. are deferred).
-- No Cmd-K palette, no global date range picker, no popover system, no Playwright screenshot script (all considered, all deferred).
+- No backend, auth, payments, real Meta OAuth, real AI calls, real persistence.
+- No new main nav items beyond the current Workspace + Tools + System sections.
+- No Cmd-K palette, no global popover system, no Playwright screenshot script.
 - No mobile-specific layout work beyond "doesn't break."

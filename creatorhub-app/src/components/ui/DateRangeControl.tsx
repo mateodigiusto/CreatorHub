@@ -70,7 +70,9 @@ export function DateRangeControl({
   const [draftTo, setDraftTo] = useState(fmtIso(value.to));
   const wrapRef = useRef<HTMLDivElement>(null);
 
+  // Sync local draft when parent value changes (e.g. preset chip clicked while popover open).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraftFrom(fmtIso(value.from));
     setDraftTo(fmtIso(value.to));
   }, [value.from, value.to]);

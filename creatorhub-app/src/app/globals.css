@@ -41,9 +41,6 @@
 @theme {
   /* Static — identical in both themes */
   --color-midnight: #0B1220;
-  --color-success-light: #16A34A;
-  --color-warning-light: #D97706;
-  --color-error-light: #DC2626;
 
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, "Inter", "Segoe UI", Roboto,
@@ -221,13 +218,6 @@ body::before {
   box-shadow: var(--shadow-lift);
 }
 
-/* ─── Glass surface utility ─────────────────────────────────────────── */
-.glass {
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-}
-
 /* ─── Card resting depth ────────────────────────────────────────────── */
 .card-base {
   box-shadow: var(--shadow-card);
@@ -271,29 +261,8 @@ body::before {
 }
 .dot-pulse { animation: dot-pulse 2.2s ease-in-out infinite; }
 
-/* ─── Spotlight (idea cards) ────────────────────────────────────────── */
-.spotlight {
-  position: relative;
-  overflow: hidden;
-}
-.spotlight::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    280px circle at var(--mx, 50%) var(--my, 50%),
-    var(--accent-soft),
-    transparent 55%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.spotlight:hover::before { opacity: 1; }
-
 @media (prefers-reduced-motion: reduce) {
   .lift, .lift:hover, .lift-strong:hover { transform: none; transition: none; }
   body::before { display: none; }
   .dot-pulse { animation: none; }
-  .spotlight::before { display: none; }
 }

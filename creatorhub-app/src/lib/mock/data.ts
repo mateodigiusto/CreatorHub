@@ -1,15 +1,4 @@
-import { Post, Kpi, Idea, Platform } from "./types";
-
-export const profile = {
-  handle: "@ella.moreno",
-  name: "Ella Moreno",
-  followers: 13080,
-  followersDelta: 1240,
-  avatar: "EM",
-  plan: "Pro plan · 2 seats",
-};
-
-export const platforms: Platform[] = ["YouTube", "Instagram", "TikTok", "X"];
+import { Post, Kpi, Idea } from "./types";
 
 export const platformReach = [
   { platform: "YouTube", reach: 128400 },
@@ -32,20 +21,12 @@ export const kpiTrends: Record<string, number[]> = {
   "Top post CTR": [3.6, 3.5, 3.4, 3.5, 3.4, 3.3, 3.2, 3.1, 3.0, 3.1],
 };
 
-export const reachSeries14d = [
-  42, 55, 50, 71, 64, 80, 88, 84, 99, 110, 102, 118, 124, 140,
-];
-
 export const followerSeriesWeekly = [
   12940, 12970, 12998, 13020, 13042, 13061, 13080,
 ];
 
 export const followerSeriesMonthly = [
   12200, 12340, 12450, 12610, 12790, 12970, 13080,
-];
-
-export const followerSeries12w = [
-  12200, 12260, 12340, 12380, 12450, 12520, 12610, 12680, 12790, 12880, 12970, 13080,
 ];
 
 export const analyticsReachSeries = [
@@ -327,12 +308,6 @@ export const ideas: Idea[] = [
   },
 ];
 
-export const winningFormats = [
-  { name: "Hook → Receipt → CTA Reel", uses: 6, avgReach: "182K", lift: "+74%" },
-  { name: "7-frame 'mistake' carousel", uses: 4, avgReach: "92K", lift: "+38%" },
-  { name: "BTS process Reel", uses: 3, avgReach: "121K", lift: "+52%" },
-];
-
 export const aiInsights = {
   dashboard:
     "Your Reels are pulling 64% of total reach but only 21% of your published volume. Doubling Reel output the next 14 days is the highest-leverage move — your top 3 Reels averaged 2.4× the reach of your average post.",
@@ -415,24 +390,6 @@ export function getFollowerSeries(from: Date, to: Date): SeriesPoint[] {
       y: Math.round(linear + wobble),
     });
   }
-  return out;
-}
-
-export function getWeek() {
-  const out: { date: Date; key: string; items: Post[] }[] = [];
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - start.getDay() + 1);
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    out.push({ date: d, key: d.toISOString().slice(0, 10), items: [] });
-  }
-  posts.forEach((p, idx) => {
-    if (p.status !== "Scheduled" && p.status !== "Published") return;
-    const slot = out[idx % 7];
-    if (slot.items.length < 2) slot.items.push(p);
-  });
   return out;
 }
 
