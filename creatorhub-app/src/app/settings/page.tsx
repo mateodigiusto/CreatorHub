@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAppState } from "@/lib/store";
-import { Sun, Moon, RefreshCw } from "lucide-react";
+import { Sun, Moon, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import {
@@ -24,6 +25,33 @@ export default function SettingsPage() {
   function restartSetup() {
     clearProfile();
     router.push("/onboarding");
+  }
+
+  const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function deleteAccount() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setDeleteError(err.error ?? `Failed (${res.status})`);
+        setDeleting(false);
+        return;
+      }
+      const json = (await res.json()) as { confirmationCode: string };
+      clearProfile();
+      router.replace(`/data-deletion-status?code=${json.confirmationCode}`);
+    } catch {
+      setDeleteError("Network error. Try again.");
+      setDeleting(false);
+    }
   }
 
   return (
@@ -112,6 +140,70 @@ export default function SettingsPage() {
             <Toggle label="Content overdue" checked />
             <Toggle label="New AI ideas available" />
           </div>
+        </Card>
+
+        <Card className="col-span-3 border-red-500/30">
+          <CardHeader
+            title="Danger zone"
+            description="Permanent account actions"
+          />
+          {!confirmingDelete ? (
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-[13px] text-muted leading-relaxed max-w-prose">
+                Delete your CreatorHub account. We&apos;ll soft-delete
+                immediately (you can&apos;t sign back in) and hard-delete
+                all data within 30 days, including connected platform
+                tokens, uploaded assets, and saved sequences. This cannot
+                be undone.
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmingDelete(true)}
+                className="border-red-500/40 text-red-600 hover:bg-red-500/5 dark:text-red-400 shrink-0"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete account
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-[10px] border border-red-500/30 bg-red-500/5 text-[12.5px] text-red-700 dark:text-red-300">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  Confirm deletion. You&apos;ll be signed out immediately
+                  and all data scheduled for hard-delete in 30 days.
+                </span>
+              </div>
+              {deleteError && (
+                <div className="text-[12px] text-red-600 dark:text-red-400">
+                  {deleteError}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={deleteAccount}
+                  disabled={deleting}
+                  className="!bg-red-600 hover:!bg-red-700"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {deleting ? "Deleting…" : "Yes, delete my account"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setConfirmingDelete(false);
+                    setDeleteError(null);
+                  }}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </>

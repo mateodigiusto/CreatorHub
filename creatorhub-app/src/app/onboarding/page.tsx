@@ -83,13 +83,31 @@ export default function OnboardingPage() {
     if (step < TOTAL_STEPS - 1) setStep((s) => s + 1);
   }
 
+  /* Persist to DB when the user has an authenticated session. Demo /
+     unauthenticated visitors keep working off localStorage only — the
+     POST is best-effort and silently no-ops on 401. */
+  async function persistProfile(profile: Profile) {
+    try {
+      await fetch("/api/profile/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+    } catch {
+      /* Network error — user already has localStorage copy, will retry next visit. */
+    }
+  }
+
   function skip() {
     setProfile(SKIP_DEFAULTS);
+    void persistProfile(SKIP_DEFAULTS);
     router.replace("/dashboard");
   }
 
-  function commit(): Profile {
-    const p: Profile = {
+  /* Pure — safe to call during render. Saving lives at the call site so
+     it never accidentally fires from a useMemo. */
+  function buildProfile(): Profile {
+    return {
       version: 1,
       completedAt: new Date().toISOString(),
       displayName: draft.displayName,
@@ -120,8 +138,6 @@ export default function OnboardingPage() {
       team: draft.team ?? "solo",
       startMode: draft.startMode ?? "demo",
     };
-    setProfile(p);
-    return p;
   }
 
   /* Per-step gate: can the user click Next? */
@@ -153,7 +169,7 @@ export default function OnboardingPage() {
 
   const isReady = step === 14;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const profileForReady = useMemo(() => (isReady ? commit() : null), [isReady]);
+  const profileForReady = useMemo(() => (isReady ? buildProfile() : null), [isReady]);
 
   return (
     <OnboardingShell
@@ -167,7 +183,9 @@ export default function OnboardingPage() {
       onBack={back}
       onNext={() => {
         if (step === 13) {
-          commit();
+          const p = buildProfile();
+          setProfile(p);
+          void persistProfile(p);
         }
         next();
       }}

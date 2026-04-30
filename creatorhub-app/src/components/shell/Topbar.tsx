@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAppState } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
+import { AuthMenu } from "./AuthMenu";
 import { cn } from "@/lib/cn";
 
 const titles: Record<string, string> = {
@@ -117,6 +118,8 @@ export function Topbar({
         <IconButton aria-label="Notifications" title="Notifications" className="hidden sm:grid">
           <Bell className="w-[15px] h-[15px]" />
         </IconButton>
+
+        <AuthMenu />
 
         <Button size="sm" className="hidden sm:inline-flex">
           <Plus className="w-3 h-3" /> New content

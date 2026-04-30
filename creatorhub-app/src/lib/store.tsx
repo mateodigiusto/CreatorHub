@@ -69,6 +69,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
+  /* Authoritative profile lives in Postgres for signed-in users. Fetch
+     once on mount; if the server has a profile we overwrite the local
+     copy (cross-device consistency). 401 / no profile → keep localStorage
+     so demo / unauthenticated visitors still get personalization. */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/profile", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { profile: Profile | null } | null) => {
+        if (cancelled || !data?.profile) return;
+        setProfileState(data.profile);
+        writeProfile(data.profile);
+        if (typeof document !== "undefined") {
+          document.documentElement.setAttribute("data-onboarded", "true");
+        }
+      })
+      .catch(() => {
+        /* offline / network blip — localStorage copy stands. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
     if (typeof document !== "undefined") {

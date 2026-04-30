@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Upload, Play, AlertTriangle, Wand2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -9,12 +9,9 @@ import { Tabs } from "@/components/ui/Tabs";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/cn";
 import { useAppState } from "@/lib/store";
-import {
-  sampleAssets,
-  Asset,
-  MAX_VIDEO_SECONDS,
-  isVideoUsableInSequence,
-} from "@/lib/mock/story";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
+import { MAX_VIDEO_SECONDS } from "@/lib/mock/story";
+import type { ApiAsset } from "@/app/api/assets/route";
 
 type Tab = "all" | "photos" | "videos";
 
@@ -33,30 +30,48 @@ const PLACEHOLDER_GRADIENTS = [
   "linear-gradient(135deg,#0F172A,#94A3B8)",
 ];
 
+function pickGradient(seed: string): string {
+  /* Stable per-asset gradient from the id, so re-renders don't reshuffle. */
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i)) % 9999;
+  return PLACEHOLDER_GRADIENTS[hash % PLACEHOLDER_GRADIENTS.length];
+}
+
 export default function LibraryPage() {
-  const { extraAssets, appendAsset, showToast } = useAppState();
+  const { showToast } = useAppState();
   const [tab, setTab] = useState<Tab>("all");
+  const [assets, setAssets] = useState<ApiAsset[] | null>(null);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const allAssets = useMemo(
-    () => [...extraAssets, ...sampleAssets],
-    [extraAssets]
-  );
+  const loadAssets = useCallback(async () => {
+    try {
+      const r = await fetch("/api/assets", { credentials: "include" });
+      if (!r.ok) {
+        setAssets([]);
+        return;
+      }
+      const json = (await r.json()) as { assets: ApiAsset[] };
+      setAssets(json.assets);
+    } catch {
+      setAssets([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap fetch on mount; loadAssets is async, setAssets fires after the await */
+    void loadAssets();
+  }, [loadAssets]);
 
   const visible = useMemo(() => {
-    if (tab === "photos")
-      return allAssets.filter((a) => a.kind !== "video");
-    if (tab === "videos")
-      return allAssets.filter((a) => a.kind === "video");
-    return allAssets;
-  }, [allAssets, tab]);
+    if (!assets) return null;
+    if (tab === "photos") return assets.filter((a) => a.kind !== "video");
+    if (tab === "videos") return assets.filter((a) => a.kind === "video");
+    return assets;
+  }, [assets, tab]);
 
-  const photoCount = allAssets.filter((a) => a.kind !== "video").length;
-  const videoCount = allAssets.filter((a) => a.kind === "video").length;
-
-  function pickGradient(seed: number): string {
-    return PLACEHOLDER_GRADIENTS[seed % PLACEHOLDER_GRADIENTS.length];
-  }
+  const photoCount = assets?.filter((a) => a.kind !== "video").length ?? 0;
+  const videoCount = assets?.filter((a) => a.kind === "video").length ?? 0;
 
   async function readVideoDuration(file: File): Promise<number> {
     return new Promise((resolve) => {
@@ -77,68 +92,87 @@ export default function LibraryPage() {
     });
   }
 
-  async function onFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    let added = 0;
-    let tooLong = 0;
-    const list = Array.from(files);
-    for (let i = 0; i < list.length; i++) {
-      const file = list[i];
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-      if (!isVideo && !isImage) continue;
+  async function uploadOne(file: File): Promise<{ ok: boolean; tooLong?: boolean }> {
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) return { ok: false };
 
-      const src = URL.createObjectURL(file);
-      const baseTitle = file.name.replace(/\.[^.]+$/, "").slice(0, 60);
-      const id = `up-${Date.now()}-${i}`;
+    const baseTitle = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "Untitled";
+    const durationSeconds = isVideo ? await readVideoDuration(file) : undefined;
 
-      if (isVideo) {
-        const duration = await readVideoDuration(file);
-        const asset: Asset = {
-          id,
-          title: baseTitle || "Uploaded video",
-          kind: "video",
-          gradient: pickGradient(i),
-          mood: "Custom upload",
-          scene: "User asset",
-          aestheticScore: 7.5,
-          tags: ["upload"],
-          recommendedUse:
-            duration > MAX_VIDEO_SECONDS
-              ? "Trim before using in a sequence"
-              : "Hook or supporting slide",
-          duration,
-          src,
-        };
-        appendAsset(asset);
-        added++;
-        if (duration > MAX_VIDEO_SECONDS) tooLong++;
-      } else {
-        const asset: Asset = {
-          id,
-          title: baseTitle || "Uploaded photo",
-          kind: "photo",
-          gradient: pickGradient(i),
-          mood: "Custom upload",
-          scene: "User asset",
-          aestheticScore: 7.5,
-          tags: ["upload"],
-          recommendedUse: "Hook or supporting slide",
-          src,
-        };
-        appendAsset(asset);
-        added++;
-      }
+    /* 1. Get a signed upload URL + pre-inserted asset row. */
+    const initRes = await fetch("/api/assets/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        kind: isVideo ? "video" : "photo",
+        title: baseTitle,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        durationSeconds,
+      }),
+    });
+    if (!initRes.ok) {
+      const err = (await initRes.json().catch(() => ({}))) as { error?: string };
+      showToast(`Upload failed: ${err.error ?? initRes.status}`);
+      return { ok: false };
+    }
+    const init = (await initRes.json()) as {
+      assetId: string;
+      path: string;
+      token: string;
+    };
+
+    /* 2. PUT the bytes directly to Storage. */
+    const supabase = getSupabaseBrowser();
+    const { error: uploadErr } = await supabase.storage
+      .from("originals")
+      .uploadToSignedUrl(init.path, init.token, file, {
+        contentType: file.type,
+      });
+    if (uploadErr) {
+      showToast(`Upload failed: ${uploadErr.message}`);
+      return { ok: false };
     }
 
+    /* 3. Tell the server the bytes landed → marks playable. */
+    const finalizeRes = await fetch(`/api/assets/${init.assetId}/finalize`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!finalizeRes.ok) {
+      const err = (await finalizeRes.json().catch(() => ({}))) as { error?: string };
+      showToast(`Finalize failed: ${err.error ?? finalizeRes.status}`);
+      return { ok: false };
+    }
+
+    return {
+      ok: true,
+      tooLong: isVideo && (durationSeconds ?? 0) > MAX_VIDEO_SECONDS,
+    };
+  }
+
+  async function onFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    let added = 0;
+    let tooLong = 0;
+    for (const file of Array.from(files)) {
+      const r = await uploadOne(file);
+      if (r.ok) added++;
+      if (r.tooLong) tooLong++;
+    }
+    await loadAssets();
+    setUploading(false);
+
+    if (added === 0) return;
     if (tooLong > 0) {
       showToast(
-        `${added} added · ${tooLong} too long for sequences (max ${MAX_VIDEO_SECONDS}s)`
+        `${added} added · ${tooLong} too long for sequences (max ${MAX_VIDEO_SECONDS}s)`,
       );
-    } else if (added > 0) {
-      showToast(
-        `${added} asset${added === 1 ? "" : "s"} added to library`
-      );
+    } else {
+      showToast(`${added} asset${added === 1 ? "" : "s"} added to library`);
     }
   }
 
@@ -153,7 +187,7 @@ export default function LibraryPage() {
               value={tab}
               onChange={setTab}
               options={[
-                { value: "all", label: `All (${allAssets.length})` },
+                { value: "all", label: `All (${assets?.length ?? 0})` },
                 { value: "photos", label: `Photos (${photoCount})` },
                 { value: "videos", label: `Videos (${videoCount})` },
               ]}
@@ -165,18 +199,31 @@ export default function LibraryPage() {
               multiple
               hidden
               onChange={(e) => {
-                onFiles(e.target.files);
+                void onFiles(e.target.files);
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
             />
-            <Button onClick={() => fileInputRef.current?.click()}>
-              <Upload className="w-3.5 h-3.5" /> Upload
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              {uploading ? "Uploading…" : "Upload"}
             </Button>
           </>
         }
       />
 
-      {visible.length === 0 ? (
+      {visible === null ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-[4/5] rounded-[14px] bg-surface-2 border border-border animate-pulse"
+            />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
         <EmptyState
           title={tab === "videos" ? "No videos yet." : "No assets yet."}
           description={
@@ -201,35 +248,47 @@ export default function LibraryPage() {
   );
 }
 
-function AssetTile({ asset }: { asset: Asset }) {
+function AssetTile({ asset }: { asset: ApiAsset }) {
   const isVideo = asset.kind === "video";
-  const tooLong = isVideo && !isVideoUsableInSequence(asset);
+  const tooLong =
+    isVideo && (asset.durationSeconds ?? 0) > MAX_VIDEO_SECONDS;
+  const gradient = pickGradient(asset.id);
 
   return (
     <div
       className={cn(
         "lift bg-surface border border-border rounded-[14px] card-base overflow-hidden",
-        tooLong && "opacity-75"
+        tooLong && "opacity-75",
       )}
     >
-      <div className="aspect-[4/5] relative" style={{ background: asset.gradient }}>
-        {asset.src && asset.kind !== "video" && (
+      <div className="aspect-[4/5] relative" style={{ background: gradient }}>
+        {asset.state === "playable" && asset.signedUrl && !isVideo && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={asset.src}
+            src={asset.signedUrl}
             alt={asset.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        {asset.src && isVideo && (
-          // eslint-disable-next-line creatorhub/no-bare-video -- demo blob-URL preview, no Cloudflare Stream variants yet; replaced by VideoPlayer in Phase 1 part 2 when DB-backed assets land
+        {asset.state === "playable" && asset.signedUrl && isVideo && (
+          // eslint-disable-next-line creatorhub/no-bare-video --- click-to-play poster swap is in Phase 1 part 2 follow-up; preload="none" + muted keeps Storage egress low
           <video
-            src={asset.src}
+            src={asset.signedUrl}
             muted
             playsInline
-            preload="metadata"
+            preload="none"
             className="absolute inset-0 w-full h-full object-cover"
           />
+        )}
+        {asset.state === "processing" && (
+          <div className="absolute inset-0 grid place-items-center text-white text-[11px] font-medium">
+            Processing…
+          </div>
+        )}
+        {asset.state === "failed" && (
+          <div className="absolute inset-0 grid place-items-center text-white text-[11px] font-medium">
+            Upload failed
+          </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
@@ -239,24 +298,18 @@ function AssetTile({ asset }: { asset: Asset }) {
           </span>
         </div>
 
-        <div className="absolute top-2 right-2">
-          <span className="bg-black/35 backdrop-blur-sm text-white text-[10.5px] px-1.5 py-0.5 rounded tabular-nums">
-            {asset.aestheticScore.toFixed(1)}
-          </span>
-        </div>
-
-        {isVideo && (
+        {isVideo && asset.durationSeconds != null && (
           <div className="absolute bottom-2 left-2">
             <span
               className={cn(
                 "inline-flex items-center gap-1 text-[10.5px] px-1.5 py-0.5 rounded font-medium tabular-nums backdrop-blur-sm",
                 tooLong
                   ? "bg-amber-500/90 text-white"
-                  : "bg-black/45 text-white"
+                  : "bg-black/45 text-white",
               )}
             >
               <Play className="w-3 h-3" fill="currentColor" />
-              {formatDuration(asset.duration ?? 0)}
+              {formatDuration(asset.durationSeconds)}
             </span>
           </div>
         )}
@@ -269,21 +322,14 @@ function AssetTile({ asset }: { asset: Asset }) {
       </div>
 
       <div className="p-3 space-y-1.5">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10.5px] text-accent bg-accent-soft px-1.5 py-0.5 rounded font-medium">
-            {asset.mood}
-          </span>
-          <span className="text-[10.5px] text-muted">{asset.scene}</span>
-        </div>
         {tooLong ? (
           <div className="flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 leading-snug">
             <AlertTriangle className="w-3 h-3 shrink-0" />
             Too long for sequences (max {MAX_VIDEO_SECONDS}s)
           </div>
         ) : (
-          <div className="text-[11px] text-muted leading-snug">
-            <span className="text-text/80 font-medium">Use as:</span>{" "}
-            {asset.recommendedUse}
+          <div className="text-[11px] text-muted leading-snug truncate">
+            Uploaded {new Date(asset.createdAt).toLocaleDateString()}
           </div>
         )}
         <div className="pt-1">
@@ -293,7 +339,7 @@ function AssetTile({ asset }: { asset: Asset }) {
               "inline-flex items-center gap-1 text-[11.5px] font-medium transition-colors",
               tooLong
                 ? "text-muted/60 pointer-events-none"
-                : "text-accent hover:text-accent-2 cursor-pointer"
+                : "text-accent hover:text-accent-2 cursor-pointer",
             )}
             tabIndex={tooLong ? -1 : 0}
             aria-disabled={tooLong}

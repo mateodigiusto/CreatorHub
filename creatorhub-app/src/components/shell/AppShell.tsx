@@ -12,6 +12,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isOnboarding = pathname?.startsWith("/onboarding");
+  const isLogin = pathname === "/login";
+  const isPublicStandalone =
+    pathname === "/data-deletion-status" ||
+    pathname === "/terms" ||
+    pathname === "/privacy";
+  const isFullViewport = isOnboarding || isLogin || isPublicStandalone;
 
   /* Close mobile drawer on route change. */
   useEffect(() => {
@@ -29,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [mobileNavOpen]);
 
-  if (isOnboarding) {
+  if (isFullViewport) {
     return (
       <div className="min-h-screen relative">
         <Aurora />

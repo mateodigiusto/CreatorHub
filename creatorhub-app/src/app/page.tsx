@@ -1,14 +1,29 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSupabaseServer } from "@/lib/supabase/server";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { isOnboardedSync } from "@/lib/onboarding/persistence";
+/**
+ * Root gate. Server-side decides where to go based on real session +
+ * profile state, so a fresh browser landing on `/` after signing in on
+ * another device is routed correctly without depending on localStorage.
+ *
+ *   anonymous            → /login
+ *   authed, no profile   → /onboarding
+ *   authed, completed    → /dashboard
+ */
+export default async function Home() {
+  const supabase = await getSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function Home() {
-  const router = useRouter();
-  useEffect(() => {
-    /* Pre-paint script set <html data-onboarded="..."> synchronously. */
-    router.replace(isOnboardedSync() ? "/dashboard" : "/onboarding");
-  }, [router]);
-  return null;
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("completed_at")
+    .eq("user_id", user.id)
+    .returns<Array<{ completed_at: string | null }>>()
+    .maybeSingle();
+
+  redirect(profile?.completed_at ? "/dashboard" : "/onboarding");
 }

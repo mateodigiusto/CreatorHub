@@ -506,6 +506,36 @@ Boot guard: `instrumentation.ts` asserts `EXPECTED_SCHEMA_VERSION` matches `max(
 - Cmd-K palette, global popover system, Playwright screenshot script.
 - Local Supabase Docker stack (cloud-only).
 
+### Video pipeline — current "lean" mode + future Stream plan
+
+**Today (free tier)**: no Cloudflare Stream. The finalize endpoint
+(`/api/assets/[id]/finalize`) marks every uploaded video as playable
+immediately; `<VideoPlayer>` fetches a 1-hour Supabase Storage signed URL
+via `/api/assets/[id]/playback-url` and plays the original `<video>`. No
+adaptive bitrate, no edge CDN beyond Supabase Smart CDN, originals are
+big — fine at MVP scale.
+
+**Future (paid plan unlock)**: Cloudflare Stream for transcoding +
+adaptive bitrate. The dormant code is already in tree:
+- `src/lib/stream.ts` — Cloudflare API wrapper (`copyFromUrl`, `getVideo`)
+- `src/app/api/cron/run-jobs/route.ts` — claim-safe transcode worker
+
+To flip on:
+1. Subscribe to Cloudflare Stream ($5/mo).
+2. Set `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_STREAM_API_TOKEN` + `CRON_SECRET` in env.
+3. Change the finalize endpoint's video branch back to enqueueing a
+   `jobs(kind='transcode')` row instead of marking ready immediately.
+4. Add a Vercel cron entry hitting `/api/cron/run-jobs?kind=transcode`
+   every minute.
+5. The `<VideoPlayer>` change: read `transcoded_variants.hls_url` (set by
+   the worker) instead of calling `/playback-url`.
+
+The product rationale for keeping Stream behind a paywall: video delivery
+is expensive at scale ($1 per 1k minutes delivered + autoplay-prone
+viewers can rack this up fast), and a paid tier funds the upgrade.
+Free-tier creators get the same UX — videos play — they just buffer more
+on slow connections.
+
 ---
 
 ## 11. Phase 1 implementation reference (the safety story)

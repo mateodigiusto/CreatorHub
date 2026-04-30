@@ -15,6 +15,7 @@
  */
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database } from "./database.types";
 
@@ -53,4 +54,30 @@ export async function currentUserId(): Promise<string | null> {
   const supabase = await getSupabaseServer();
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
+}
+
+/**
+ * Service-role client. Bypasses RLS — use ONLY for writes that the user can't
+ * make via their own session (service-role-only tables like `jobs`,
+ * `webhook_events`, `oauth_states`). Always re-validate ownership against the
+ * user's session-bound client BEFORE calling this.
+ *
+ * Lazy init so build-time page-data collection doesn't crash when env vars
+ * are unset; same pattern as src/db/index.ts.
+ */
+let serviceRoleClient: ReturnType<typeof createClient<Database>> | null = null;
+export function getSupabaseServiceRole() {
+  if (!serviceRoleClient) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      throw new Error(
+        "Service-role client requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY",
+      );
+    }
+    serviceRoleClient = createClient<Database>(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return serviceRoleClient;
 }
