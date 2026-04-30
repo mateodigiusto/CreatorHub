@@ -1,0 +1,119 @@
+/**
+ * Next.js instrumentation hook — runs once per server process at boot.
+ *
+ * Two jobs:
+ *   1. **Schema-version assertion.** Compare the embedded
+ *      `EXPECTED_SCHEMA_VERSION` (set by CI from the highest migration
+ *      number) against the live `schema_migrations.version` max. If
+ *      mismatch, refuse to serve traffic. This stops a Vercel deploy
+ *      that's ahead of prod's schema from booting.
+ *   2. **Sentry binding.** Wire `log.error/warn` into Sentry so the
+ *      logger captures everything from the very first request.
+ *
+ * Server + edge runtimes both call `register()` separately. We branch
+ * on `process.env.NEXT_RUNTIME` because the edge runtime can't open a
+ * Postgres connection.
+ */
+
+export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await registerServer();
+  } else if (process.env.NEXT_RUNTIME === "edge") {
+    await registerEdge();
+  }
+}
+
+async function registerServer() {
+  /* Bind Sentry first so any errors in the schema check land in Sentry. */
+  try {
+    const Sentry = await import("@sentry/nextjs");
+    const { bindSentry } = await import("@/lib/log");
+    bindSentry({
+      captureException: (err, ctx) =>
+        Sentry.captureException(err, {
+          extra: ctx?.extra as Record<string, unknown> | undefined,
+        }),
+      captureMessage: (msg, ctx) =>
+        Sentry.captureMessage(msg, {
+          level: ctx?.level ?? "info",
+          extra: ctx?.extra as Record<string, unknown> | undefined,
+        }),
+    });
+  } catch {
+    /* Sentry not yet configured (Phase 1 boot before SENTRY_DSN exists).
+       Logger still works — Sentry calls are no-ops by default. */
+  }
+
+  /* Schema-version assertion. */
+  const expected = parseInt(process.env.EXPECTED_SCHEMA_VERSION ?? "", 10);
+  if (!Number.isFinite(expected)) {
+    /* CI normally sets this; in local dev with `supabase start` we don't
+       require it — skip the check rather than refuse to boot. */
+    if (process.env.NODE_ENV === "production") {
+      const { log } = await import("@/lib/log");
+      log.error("schema_version_unset", new Error("EXPECTED_SCHEMA_VERSION missing in prod build"));
+    }
+    return;
+  }
+
+  /* Skip the DB check in tests — vitest spins up many short-lived
+     processes and we don't want to require a live Supabase per run. */
+  if (process.env.NODE_ENV === "test") return;
+
+  try {
+    const { dbInternal, schema } = await import("@/db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await dbInternal.execute(
+      sql`select max(version) as v from ${schema.schemaMigrations}`,
+    );
+    const actual =
+      (rows as unknown as Array<{ v: number | null }>)[0]?.v ?? null;
+    if (actual === null) {
+      throw new Error("schema_migrations is empty — run `npm run db:migrate`");
+    }
+    if (actual !== expected) {
+      const { log } = await import("@/lib/log");
+      log.error(
+        "schema_version_mismatch",
+        new Error(
+          `Code expects schema v${expected}, DB is v${actual}. ` +
+            `Refusing to start. Run prod migrations or roll back the deploy.`,
+        ),
+        { expected, actual },
+      );
+      throw new Error(
+        `Schema version mismatch: code expects v${expected}, DB is v${actual}.`,
+      );
+    }
+  } catch (err) {
+    /* In production, refuse to boot. In dev, log and continue (the dev
+       might be mid-migration and we don't want to block them). */
+    if (process.env.NODE_ENV === "production") {
+      throw err;
+    }
+    const { log } = await import("@/lib/log");
+    log.warn("schema_version_check_skipped_dev", { error: String(err) });
+  }
+}
+
+async function registerEdge() {
+  /* Edge runtime: bind Sentry only. No DB check — edge can't open Postgres
+     connections, and the server already enforces the assertion. */
+  try {
+    const Sentry = await import("@sentry/nextjs");
+    const { bindSentry } = await import("@/lib/log");
+    bindSentry({
+      captureException: (err, ctx) =>
+        Sentry.captureException(err, {
+          extra: ctx?.extra as Record<string, unknown> | undefined,
+        }),
+      captureMessage: (msg, ctx) =>
+        Sentry.captureMessage(msg, {
+          level: ctx?.level ?? "info",
+          extra: ctx?.extra as Record<string, unknown> | undefined,
+        }),
+    });
+  } catch {
+    /* Same as server: pre-Sentry-config boots are fine. */
+  }
+}

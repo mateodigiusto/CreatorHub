@@ -30,8 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — never committed
 .env*
+# but DO commit the template — new contributors copy it to .env.local
+!.env.example
+
+# Supabase CLI — link state, generated artifacts. Project ref is okay
+# to commit but the rest isn't, so ignore the whole dir.
+.supabase
 
 # vercel
 .vercel

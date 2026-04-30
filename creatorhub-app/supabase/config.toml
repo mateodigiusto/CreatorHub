@@ -1,0 +1,13 @@
+# Supabase CLI config.
+#
+# Cloud-only project — we don't use `supabase start` (local Docker stack).
+# All migrations are pushed to the linked cloud project via `npm run db:migrate`.
+#
+# After cloning, link the repo to your cloud project once:
+#   npm run db:link
+#
+# project_id below is overridden by `supabase link` and stored in
+# .supabase/config.json (gitignored). The placeholder here just keeps the
+# CLI happy when run before linking.
+
+project_id = "creatorhub"

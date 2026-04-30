@@ -118,32 +118,39 @@ The sidebar groups items into three sections:
 1. Dashboard
 2. Analytics
 3. Ideas
-4. Content
-5. Calendar
+4. Asset Library
+5. Content
+6. Calendar
 
 **Tools** (output / utilities):
-6. Sequence Studio (`/sequence-studio`)
-7. Reports
+7. Sequence Studio (`/sequence-studio` landing + `/sequence-studio/new` full-page builder)
+8. Reports
 
 **System** (account / admin):
 - Integrations
 - Settings
 
-The topbar holds: workspace breadcrumb, search (with ⌘K hint), platform-connection pill ("4 platforms connected" when on), theme toggle, notifications, "New content" CTA.
+The topbar holds: workspace breadcrumb, search (with ⌘K hint), platform-connection pill ("4 platforms connected" when on), theme toggle, notifications, "New content" CTA. **Mobile**: hamburger replaces the breadcrumb, search hides below `md`, off-canvas sidebar drawer slides in over a frosted backdrop.
 
-**Not in first demo:** AI Studio (separate from Sequence Studio), Clients, Inspiration Engine, Education Hub, Automations, Community, Advanced Tasks, Billing, Team Management, Client Portal, Help (route exists but unlinked).
+**Onboarding** lives at `/onboarding` outside the AppShell — a 14-step setup wizard that bypasses the sidebar/topbar.
+
+**Not yet built:** AI Studio (separate from Sequence Studio), Clients, Inspiration Engine, Education Hub, Automations, Community, Advanced Tasks, Billing, Team Management, Client Portal, Help (route exists but unlinked).
 
 ---
 
 ## 4. Screen Purposes
 
-- **Dashboard** — daily command center. Welcomes the user (Ella Moreno in mock), shows 4 KPI cards (Reach / Engagement rate / New followers / Top post CTR) with `MiniSpark` trends, "Reach over time" `AreaChart` with `DateRangeControl`, "By platform" `BarRow` panel, AI insight callout, "Up next" schedule list, "Top performing posts" table.
-- **Analytics** — the data layer. 4 different KPIs (Total reach / Impressions / Engagement / Profile visits), Performance + Follower growth charts (each with its own `DateRangeControl`), content type breakdown bars, Messages/Leads panel, best-posting-time heatmap, top posts table, AI explanation.
+- **Dashboard** — daily command center. 4 KPI cards (Reach / Engagement rate / New followers / Top post CTR) with `MiniSpark` trends, "Reach over time" `AreaChart` with `DateRangeControl` (Stripe-style two-month range picker), "By platform" `BarRow` panel, AI insight callout, "Next move" callout (driven by onboarding profile), "Up next" schedule list, "Top performing posts" table.
+- **Analytics** — the data layer. 4 different KPIs (Total reach / Impressions / Engagement / Profile visits), Performance + Follower growth charts (each with its own `DateRangeControl`), content type breakdown, Messages/Leads panel, best-posting-time heatmap, top posts table, AI explanation.
 - **Ideas** — AI-generated hooks aligned with the last 30 days of performance. All / Saved tabs (with bookmark count), AI callout up top, 6 idea cards each with `ScoreRing` + estimated reach + "Open" button.
-- **Content** — production system. Statuses: Idea → Script → Recording → Editing → Review → Scheduled → Published → Analyzed. Two views via `Tabs`: **Library** (3-col card grid with image-on-top + status badge) and **Pipeline** (5 columns: Idea / Script / Editing / Scheduled / Published).
-- **Calendar** — month view (5 weeks × 7 days). Today is marked with a dark navy gradient circle. Each day shows up to 2 event chips with vertical color bars. Click any day to open the `PlanContentDrawer` pre-filled with that date.
-- **Sequence Studio** — landing for the AI sequence generator. 3 step-cards explaining the flow (Pick assets → Set direction → Generate & ship), a "Recent sequences" list. Clicking "Start a sequence" opens the same `PlanContentDrawer` with the Sequence Studio tab active.
-- **Reports** — client-ready summary. Weekly / Monthly tabs. Always-dark hero panel with corner radial glows + 5 stats. Growth `AreaChart` + AI summary callout. Top content 3-tile grid.
+- **Asset Library** (`/library`) — the user's media library. Grid of photos + short videos (max 15s for sequences). Real upload via `<input type="file">` + `URL.createObjectURL` + `loadedmetadata` duration check. Photos / Videos tabs with counts. Long videos (>15s) live here but are filtered out of Sequence Studio.
+- **Content** — production system. Statuses: Idea → Script → Recording → Editing → Review → Scheduled → Published → Analyzed. Two views via `Tabs`: **Library** (responsive grid) and **Pipeline** (5-column kanban).
+- **Calendar** — month view (5 weeks × 7 days). Today highlighted with dark navy gradient circle. Each day shows up to 2 event chips. Click any day → `PlanContentDrawer` with `slotDate` pre-filled.
+- **Sequence Studio** (landing) — the asset picker that leads to the full-page builder. Replaces "Recent sequences" with the actual library; selecting 1-5 assets enables "Start sequence" → navigates to `/sequence-studio/new?assets=…`.
+- **Sequence Studio Builder** (`/sequence-studio/new`) — full-page guided builder, 9 sections in one scroll: Sequence details (name + selected assets) → Content style (4 cards: CTA Story / Educational / Carousel Classic / Reel Cover) → Brand tone (4 cards) + Brand context with persona switcher → Style preset (4 visual previews) → Screenshot overlays (drop zone + library) → Text length (segmented short/medium/long with dynamic word counts) → Decorations (toggle cards) → Accent color (swatches + Custom hex) → Story brief. Build → animated multi-stage progress → preview with Notes-for-next-version + Edit/Publish/Download bar + slide cards with accent-word highlighting + "Looks good?" save flow.
+- **Sequence Studio Drawer** — the legacy half-screen flow, still used from Calendar / Ideas / Content for slot-aware scheduling. 3 tabs: Quick post · Sequence Studio · From idea.
+- **Reports** — client-ready summary. Weekly / Monthly tabs. Always-dark hero panel with corner radial glows + 5 stats. Growth `AreaChart` + AI summary callout. Top content tile grid.
+- **Onboarding** (`/onboarding`) — 14-step premium setup wizard. Bypasses AppShell. Outputs a typed `Profile` saved to localStorage (Phase 1 part 2: persists to DB `profiles` row on first login). Personalization wires into Sidebar (name + creator-type subtitle), Dashboard (greeting + Next-move callout), Sequence Studio (default persona), Reports (handle), Settings (Restart setup row).
 
 ---
 
@@ -161,33 +168,69 @@ The topbar holds: workspace breadcrumb, search (with ⌘K hint), platform-connec
 
 ---
 
-## 6. Build Priorities (First Demo)
+## 6. Status — mid-Phase 1 (production pivot)
 
-The first demo is a **frontend-only experience** that communicates vision, structure, workflow, and premium UI direction.
+The original demo is complete. We're pivoting to a real product in four phases (full plan in `~/.claude/plans/the-first-creatorhub-demo-partitioned-rivest.md`):
 
-**Build:**
-- Premium app shell (sidebar + topbar) with text wordmark
-- All six main screens with realistic dummy data
-- Empty + connected states
-- Settings/Integrations placeholder
-- Polished, premium feel end-to-end
+- **Phase 1 — Foundation** (mid-flight). Cloud DB schema, auth scaffolding, ESLint guards, video transcoding pipeline, audit/log layers, RLS regression suite, migration round-trip test. **Schema v12 is live in Supabase project `wfyhsohnkbzemwxuiqhr`.** Phase 1 part 2 wires auth/login UI, the localStorage-→-DB profile migration, and the first DB-backed read path.
+- **Phase 2 — Instagram** (next). OAuth + sync workers + carousel publish pipeline + webhook idempotency + proactive token refresh. Stories deferred. **Blocks on Meta App Review (4–6 weeks externally).**
+- **Phase 3 — Other platforms.** TikTok → YouTube → LinkedIn → X → FB, one at a time.
+- **Phase 4 — Production hardening.** Rate-limit retries, dead-letter handling, key rotation drills, alert tuning.
 
-**Do NOT build yet:**
-- Final brand assets / logo (deferred until brand direction confirmed)
-- Backend / database
-- Authentication
-- Payments / billing
-- Real Meta / Instagram OAuth and data fetch
-- AI generation (mock the outputs)
-- Multi-tenant / team logic
+**Realistic time-to-Instagram-in-prod-for-non-test-users: 8–10 weeks from go.**
+
+### Build now (during Phase 1)
+- Cloud DB schema + RLS + indexes + triggers (✅ shipped at v12)
+- ESLint safety nets (✅ shipped — `forUser` wrapper, `withAudit` rules, `<VideoPlayer>` enforcement, redacted logger)
+- Schema-version assertion at boot (✅ shipped via `instrumentation.ts`)
+- RLS regression + migration round-trip tests (✅ shipped, run on every PR)
+- Sentry + Cloudflare Stream wiring (✅ scaffolding shipped — full transcoding pipeline lands in Phase 1 part 2)
+- Auth UI + middleware + login + DB-backed profile read (Phase 1 part 2)
+- Demo route group split (`(app)/` vs `(demo)/`) (Phase 1 part 2)
+
+### Don't build yet
+- Real Meta / Instagram OAuth (Phase 2; Meta App Review prereqs in flight)
+- TikTok / YouTube / LinkedIn / X / Facebook integrations (Phase 3)
+- Real AI generation (separate project)
+- Stripe billing
+- Multi-workspace / team mode
+- Stories publishing (revisit Phase 3+ if Meta API stabilizes)
+- Apple Sign-In (revisit when shipping mobile)
 
 ---
 
-## 7. Future Data Model (Reference Only)
+## 7. Data model (live, Phase 1)
 
-Eventually: User connects Instagram → Meta OAuth → permissions → access token → fetch profile/posts/insights → store → power Dashboard, Analytics, Ideas, Content, Calendar, Reports.
+Cloud-only on Supabase Postgres. Source of truth: SQL files in `creatorhub-app/supabase/migrations/` (v12 = 13 files numbered 0000–0012). Drizzle TS mirror in `src/db/schema.ts`. Drift caught by `tests/migration-roundtrip.spec.ts`.
 
-For now: dummy data shaped like the eventual real data, so screens won't need restructuring later.
+**Tables** (all RLS-enabled; service-role-only tables also have REST grants revoked):
+
+| Table | Owner | Purpose |
+|---|---|---|
+| `users` | RLS self-read/update | App-side mirror of `auth.users`, populated by `on_auth_user_created` trigger |
+| `profiles` | RLS self-CRUD | 1:1 with users; onboarding answers; `schema_version` field for forward compatibility |
+| `oauth_states` | service-role only | CSRF + PKCE for OAuth flows; atomic consume + expiry SQL |
+| `integrations` | RLS self-read; writes via service role | Per-platform connections; envelope-encrypted token columns + sibling `_dek` + `_key_id` (Vault rotation-ready) |
+| `assets` | RLS self-CRUD | Photos + videos; original in Supabase Storage; transcoded variants in Cloudflare Stream via `transcoded_variants` jsonb |
+| `sequences` | RLS self-CRUD | Generated story sequences; slides as jsonb |
+| `posts` | RLS self-CRUD | Unified imported (`source='imported'`) + native (`source='native'`) with `lifecycle_state` enum |
+| `jobs` | service-role only | Unified background queue: sync, transcode, publish, refresh_token, finalize_deletion, cleanup |
+| `audit_log` | RLS self-read; writes via `withAudit` | Logical `user_id` (no FK; survives 1-year retention past hard-delete with hashed value) |
+| `webhook_events` | service-role only | Idempotency: unique `(provider, external_id)` |
+| `sync_runs` | RLS self-read via integrations join | One row per sync attempt |
+| `deletion_requests` | anon read by code | Meta-DSR-compliant deletion tracking; 30-day hard-delete window |
+| `schema_migrations` | service-role only | Version tracking; boot assertion reads `max(version)` |
+
+**Enums** (Postgres ENUM, never raw text):
+`platform_t`, `integration_status_t`, `post_source_t`, `post_lifecycle_t`, `asset_kind_t`, `job_status_t`, `job_kind_t`.
+
+**Conventions:**
+- Every mutable table has a `BEFORE UPDATE` trigger (`trg_touch_updated_at`).
+- Every RLS policy uses `(select auth.uid())` not `auth.uid()` (Postgres InitPlan caching).
+- Every FK column has a covering index where joins or cascade-deletes are expected.
+- Partial unique index `integrations_platform_external_active WHERE status = 'active'` prevents Meta-DSR collisions.
+
+After every migration: run `mcp__supabase__get_advisors security|performance` and ship a remediation migration if it flags new issues.
 
 ---
 
@@ -226,46 +269,74 @@ Concrete technical decisions made during the build so future sessions don't re-d
 ```
 CreatorHub/                          # git repo root (this CLAUDE.md lives here)
 ├── CLAUDE.md                        # source of truth — product + brand + impl
-├── .gitignore                       # ignores node_modules, .next, .env*, .vercel
+├── .mcp.json                        # Supabase MCP server registered for project ref
+├── .gitignore                       # node_modules, .next, .env*, .vercel
 └── creatorhub-app/                  # the Next.js app (run npm commands from here)
-    ├── AGENTS.md                    # Next.js 16 breaking-changes note
-    ├── README.md                    # demo overview + deploy instructions
-    ├── next.config.ts               # default; Turbopack for dev/build
-    ├── tsconfig.json                # @/* path alias points to src/
-    ├── package.json                 # scripts: dev, build, start, lint
+    ├── AGENTS.md                    # editing conventions + safety net rules
+    ├── README.md                    # quick start + Vercel deploy
+    ├── next.config.ts, tsconfig.json, package.json
+    ├── .env.example                 # cloud-only env template (committed)
+    ├── .env.local                   # real values (gitignored, local-only)
+    ├── .npmrc                       # legacy-peer-deps=true (Sentry/Next 16 peer mismatch)
+    ├── drizzle.config.ts            # Drizzle Kit config (uses DIRECT_URL only)
+    ├── instrumentation.ts           # boot-time schema-version assertion + Sentry binding
+    ├── vitest.config.ts             # test runner config (single-fork, 30s timeout)
+    ├── eslint.config.mjs            # wires the 4 custom safety-net rules
+    ├── eslint-plugin-creatorhub/    # custom plugin (CommonJS):
+    │   └── rules/                   #   no-raw-db-import-in-app, escape-hatch-justified,
+    │                                #   no-third-party-in-with-audit, no-bare-video
+    ├── supabase/
+    │   ├── config.toml              # Supabase CLI config (cloud-only)
+    │   └── migrations/              # 0000_setup → 0012_perf_remediation (source of truth)
+    ├── tests/
+    │   ├── setup.ts                 # asserts cloud env present
+    │   ├── rls.spec.ts              # anon-can't-read, A-can't-read-B regression suite
+    │   └── migration-roundtrip.spec.ts  # RLS+triggers+enums+indexes verified
     └── src/
         ├── app/
-        │   ├── layout.tsx           # root layout + pre-paint theme script
-        │   ├── globals.css          # ALL design tokens (theme system)
-        │   ├── page.tsx             # redirect → /dashboard
-        │   ├── dashboard/page.tsx
-        │   ├── analytics/page.tsx
-        │   ├── ideas/page.tsx
-        │   ├── content/page.tsx
-        │   ├── calendar/page.tsx
-        │   ├── reports/page.tsx
-        │   ├── sequence-studio/page.tsx
-        │   ├── integrations/page.tsx
-        │   ├── settings/page.tsx
-        │   └── help/page.tsx
+        │   ├── layout.tsx           # root layout + pre-paint theme + onboarded scripts
+        │   ├── globals.css          # ALL design tokens
+        │   ├── page.tsx             # client gate: redirects to /onboarding or /dashboard
+        │   ├── onboarding/page.tsx  # 14-step wizard (bypasses AppShell)
+        │   ├── dashboard/, analytics/, ideas/, library/, content/, calendar/,
+        │   │   reports/, sequence-studio/{,new/}, integrations/, settings/, help/
+        │   └── api/                 # (Phase 2+) /cron, /webhooks, /integrations, /auth/callback
         ├── components/
-        │   ├── shell/               # AppShell, Sidebar, Topbar, Aurora, MouseGlow
+        │   ├── shell/               # AppShell, Sidebar (off-canvas on mobile), Topbar,
+        │   │                        # Aurora, MouseGlow
         │   ├── ui/                  # Card, Button, Badge, Tabs, AiCallout, Thumb,
         │   │                        # PageHeader, EmptyState, StatusDot, IconButton,
-        │   │                        # Toaster, DateRangeControl
+        │   │                        # Toaster, DateRangeControl, VideoPlayer ← only video host
         │   ├── charts/              # AreaChart, MiniSpark, BarRow (hand-rolled SVG)
         │   ├── dashboard/           # KpiCard
-        │   └── plan/                # PlanContentDrawer + StorySequenceFlow
+        │   ├── plan/                # PlanContentDrawer, StorySequenceFlow (legacy drawer)
+        │   └── onboarding/          # OnboardingShell, ProgressBar, primitives/, steps.tsx
+        ├── db/
+        │   ├── index.ts             # dbInternal — service-role Drizzle handle
+        │   ├── forUser.ts           # typed user-scoped wrapper + escapeHatch
+        │   └── schema.ts            # Drizzle TS mirror of supabase/migrations/*.sql
         └── lib/
             ├── cn.ts                # re-exports clsx as cn
-            ├── store.tsx            # AppStateProvider context (theme, connected,
-            │                        # extraPosts, toast)
-            └── mock/
+            ├── audit.ts             # withAudit (DB-only enforced) + audit (between stages)
+            ├── assets.ts            # assetState() helper for transcoded_variants reads
+            ├── log/
+            │   ├── index.ts         # log.{info,warn,error,debug} with redaction + Sentry hook
+            │   └── redact.ts        # shared REDACT_KEYS used by logger AND Sentry beforeSend
+            ├── supabase/
+            │   ├── server.ts        # SSR Supabase client (RLS via session cookie)
+            │   ├── browser.ts       # client-side singleton
+            │   └── database.types.ts # generated by `npm run db:types`
+            ├── onboarding/
+            │   ├── types.ts         # Profile + 17 enums
+            │   ├── options.ts       # display labels + descriptions
+            │   ├── personalize.ts   # personaForProfile, welcomeCopy, nextActionFor, etc.
+            │   └── persistence.ts   # localStorage read/write (Phase 1 part 2: → DB)
+            ├── store.tsx            # AppStateProvider — legacy demo state (theme, connected,
+            │                        # extraPosts, extraAssets, profile, toast)
+            └── mock/                # demo data (still drives the live UI in Phase 1 part 1)
                 ├── types.ts         # Post, ContentStatus, PostType, Platform, Kpi, Idea
-                ├── data.ts          # posts, kpis, kpiTrends, platformReach, ideas,
-                │                    # reports, aiInsights, getReachSeries, getFollowerSeries
-                └── story.ts         # sample assets, sequence types/styles/goals,
-                                     # generateSequence() deterministic helper
+                ├── data.ts          # posts, kpis, ideas, reports, …
+                └── story.ts         # sample assets + 5 personas + 2 copy variants per cell
 ```
 
 ### Stack
@@ -275,6 +346,12 @@ CreatorHub/                          # git repo root (this CLAUDE.md lives here)
 - **Tailwind CSS v4** — `@theme` and `@theme inline` blocks in `globals.css`. NO `tailwind.config.ts` — v4 reads tokens from CSS.
 - **TypeScript 5**, **Inter** via `next/font/google`, **lucide-react**, **clsx**.
 - **No chart library** — `AreaChart`, `MiniSpark`, `BarRow` are hand-rolled SVG. Recharts was removed.
+- **Drizzle ORM** + `postgres-js` (with `prepare: false` for pgbouncer transaction-mode pooling).
+- **Supabase** Postgres + Auth + Storage + Vault + RLS. Cloud-only.
+- **Sentry** for error monitoring (bound at boot via `instrumentation.ts`).
+- **Cloudflare Stream** for video transcoding + delivery (Phase 1 part 2).
+- **Vitest** for RLS regression + migration round-trip tests.
+- **Custom ESLint plugin** (`eslint-plugin-creatorhub/`) enforces 4 invariants — see §11.
 
 ### Theme system (the most important impl detail)
 
@@ -326,11 +403,16 @@ Apply to KPI cards, top-content rows, idea cards, calendar slot cards, report ti
 
 ### Store / state
 
-`AppStateProvider` (`lib/store.tsx`) is the only context. Exposes:
-- `connected` / `setConnected` — drives empty vs connected states across all screens via the topbar pill ("4 platforms connected").
-- `theme` / `setTheme` / `toggleTheme` — light/dark, persisted to `localStorage('creatorhub-theme')`.
-- `extraPosts` / `appendContentItem(post)` — generated story sequences from the drawer get appended here. Pages merge with the static `posts` from `lib/mock/data.ts` (`const allPosts = [...extraPosts, ...posts]`). Lost on hard reload — intentional for a demo.
-- `toast` / `showToast(message)` — single-slot toast, auto-dismiss 2.8s. Mounted by `<Toaster />` inside `AppShell`.
+**Two stores during Phase 1 transition** — different scopes, different lifetimes:
+
+**`AppStateProvider` (`lib/store.tsx`)** — legacy localStorage-backed state. Owns: `theme` / `setTheme` / `toggleTheme`, `connected` / `setConnected`, `extraPosts` / `appendContentItem`, `extraAssets` / `appendAsset`, `profile` / `setProfile` / `clearProfile`, `toast` / `showToast`. Hydrated via `useEffect` (theme + profile from localStorage; pre-paint `<script>` writes `data-theme` and `data-onboarded` on `<html>` to avoid flicker / route-gate flash). The `profile` field migrates to the DB `profiles` row in Phase 1 part 2.
+
+**Phase 1 cloud — Postgres**. App reads via:
+- **Supabase server client** (`src/lib/supabase/server.ts`) — RLS-protected, used in server components + request-bound API routes. `currentUserId()` resolves the session.
+- **`forUser(userId)`** (`src/db/forUser.ts`) — typed user-scoped wrapper for cron handlers, webhook handlers, admin scripts (no session). Includes typed joins: `forUser(uid).sequences.withAssets(id)`, `forUser(uid).posts.withIntegrations()`. Returns redacted `PublicIntegration` shape that strips ciphertext columns.
+- **`escapeHatch(reason)`** — last resort with 20+ char justification. ESLint enforces an inline disable comment with the reason.
+
+When wiring a new feature: **persists across devices? → cloud. UI ephemera or theme? → store.tsx is fine.**
 
 ### Mock data
 
@@ -364,19 +446,45 @@ Sequences committed via `appendContentItem` get `status: "Review"` (Move to Cont
 ### Useful commands (run from `creatorhub-app/`)
 
 ```bash
-npm run dev      # Dev server. Tries port 3000, falls back to 3003+
-npm run build    # Production build (TS + Turbopack). MUST pass before commit.
-npm run lint     # ESLint — must be clean before commit.
+# App
+npm run dev                # Tries port 3000, falls back to 3003+
+npm run build              # TS + Turbopack — MUST pass before commit
+npm run lint               # ESLint — MUST be clean (custom rules active)
+
+# Database (Supabase CLI, cloud-only)
+npm run db:link            # one-time: link repo to your Supabase project
+npm run db:migrate         # apply unapplied SQL files in supabase/migrations/
+npm run db:status          # list applied migrations
+npm run db:reset           # nuke + replay (destructive — staging only)
+npm run db:types           # regen src/lib/supabase/database.types.ts from cloud schema
+npm run schema:version     # print migration count (use to bump EXPECTED_SCHEMA_VERSION)
+
+# Tests
+npm run test               # vitest in watch mode
+npm run test:rls           # RLS regression suite (anon-can't-read, A-can't-read-B)
+npm run test:migration     # migration round-trip (RLS+triggers+enums+indexes verified)
 ```
 
 ### Testing routes
 
 After any change, hit all routes via curl to confirm 200:
 ```
-for p in /dashboard /analytics /content /calendar /ideas /reports /sequence-studio /integrations /settings /help; do
+for p in /dashboard /analytics /ideas /library /content /calendar /reports \
+         /sequence-studio /sequence-studio/new /onboarding \
+         /integrations /settings /help; do
   /usr/bin/curl -s -o /dev/null -w "$p -> %{http_code}\n" "http://localhost:3003$p"
 done
 ```
+
+### Schema management workflow
+
+When adding a migration:
+1. Write `supabase/migrations/00XX_name.sql` with `insert into schema_migrations (version) values (N)` at the bottom.
+2. Mirror in `src/db/schema.ts`.
+3. Apply via `mcp__supabase__apply_migration` (preferred — fast + transactional) OR `npm run db:migrate`.
+4. Run `mcp__supabase__get_advisors security` and `performance`. Ship a remediation migration if it flags new issues.
+5. Bump `EXPECTED_SCHEMA_VERSION` in `.env.example` + `tests/migration-roundtrip.spec.ts`.
+6. Run `npm run db:types` to refresh `src/lib/supabase/database.types.ts`.
 
 ### Visual reference
 
@@ -384,13 +492,163 @@ The original visual technique inspiration was `/Users/luka/Operations /Claude Co
 
 ### Deployment
 
-Frontend-only Next.js 16 app. Repo lives at the parent `CreatorHub/` directory. **Vercel Root Directory** must be set to `creatorhub-app` (the Next app is in a subfolder). No env vars required. No build command override.
+Next.js 16 app on Vercel. Repo lives at parent `CreatorHub/` directory. **Vercel Root Directory** must be set to `creatorhub-app`. Auto-deploy on push to `main`. Required env vars (set in Vercel dashboard, prod + preview separately) — see `creatorhub-app/.env.example` for the full list with placement notes.
 
-Auto-deploy on push to `main` is on. Local secrets audit (last run): zero `process.env.*` references, no `.env*` files, no API keys. `npm audit` shows 2 moderate transitive postcss advisories inside Next.js itself — upstream issue, no actionable fix without downgrading Next.
+Boot guard: `instrumentation.ts` asserts `EXPECTED_SCHEMA_VERSION` matches `max(schema_migrations.version)` — refuses to serve traffic in production on mismatch. Set in CI from migration count.
 
 ### Out of scope (don't drift)
 
-- No backend, auth, payments, real Meta OAuth, real AI calls, real persistence.
-- No new main nav items beyond the current Workspace + Tools + System sections.
-- No Cmd-K palette, no global popover system, no Playwright screenshot script.
-- No mobile-specific layout work beyond "doesn't break."
+- Stories publishing (revisit Phase 3+ if Meta API stabilizes).
+- Apple Sign-In (revisit when shipping mobile).
+- Real AI generation (separate project — not Phase 1 or 2).
+- Stripe billing (separate project — needed before user 2).
+- Multi-workspace / team mode (single user per account in v1).
+- Cmd-K palette, global popover system, Playwright screenshot script.
+- Local Supabase Docker stack (cloud-only).
+
+---
+
+## 11. Phase 1 implementation reference (the safety story)
+
+Where the security/perf/audit/log/video architecture lives, in code. Treat the **rules** below as binding — every one is enforced by either ESLint, runtime checks, or the migration round-trip suite.
+
+### Database access — `forUser(userId)` is the only sanctioned wrapper
+
+Defined in `src/db/forUser.ts`. Returns typed scopes: `profiles`, `assets`, `sequences`, `posts`, `integrations`. Each scope's methods inject `where eq(table.userId, userId)` automatically, including on joins (`sequences.withAssets(id)`, `posts.withIntegrations()`).
+
+**Token bytes never leak.** `IntegrationsScope` returns the `PublicIntegration` shape (no `*_ciphertext`, `*_dek`, `*_key_id`). Raw integration rows only exist inside the worker that just decrypted via Vault.
+
+**Escape hatch** for cross-user analytics / admin scripts:
+```ts
+// eslint-disable-next-line creatorhub/escape-hatch-justified — running quarterly platform-mix report across all tenants
+const db = escapeHatch("running quarterly platform-mix report across all tenants");
+```
+Throws at runtime if the reason is < 20 chars. ESLint requires the inline disable comment with a 20+ char `— reason` segment. If it's used > 3 times in a phase, **add a new typed scope method** instead.
+
+**ESLint rule**: `creatorhub/no-raw-db-import-in-app` blocks raw `dbInternal` / `escapeHatch` imports outside `src/db/`, `src/lib/audit.ts`, `src/app/api/{cron,webhooks}/`, `tests/`, and the plugin's own folder.
+
+### Audit log — `withAudit` for DB-only, multi-stage for third-party APIs
+
+Defined in `src/lib/audit.ts`. The rule (enforced by ESLint `creatorhub/no-third-party-in-with-audit`):
+
+✅ **Correct: DB-only inside `withAudit`**
+```ts
+await withAudit(userId, { action: "profile.updated", target_type: "profile", target_id: userId },
+  async (tx) => tx.update(profiles).set(patch).where(eq(profiles.userId, userId))
+);
+```
+
+❌ **Forbidden: third-party calls inside the callback**
+```ts
+await withAudit(userId, { action: "post.published" },
+  async (tx) => publishToInstagram(tx, sequence)   // holds tx for minutes — pool exhausted
+);
+```
+
+✅ **Multi-stage: one audit row per stage**
+```ts
+const postId = await withAudit(userId, { action: "post.publish_initiated" },
+  async (tx) => insertDraft(tx, sequence)
+);
+const result = await publishCarouselToInstagram(...);   // outside any tx
+await withAudit(userId, { action: "post.published" },
+  async (tx) => tx.update(posts).set({ lifecycleState: "published", externalId: result.mediaId })
+                  .where(eq(posts.id, postId))
+);
+```
+
+ESLint walks the AST inside `withAudit(..., async (tx) => {...})` callbacks and flags `fetch(`, allow-listed platform SDK imports (`googleapis`, `linkedin-api-client`, `twitter-api-v2`, `cloudflare`, `mux-node`, etc.), imports from `src/integrations/**`, and `setTimeout` / `setInterval`.
+
+### Logging — single shared `REDACT_KEYS`
+
+Defined in `src/lib/log/redact.ts`. Used by **both** the `log` API (`src/lib/log/index.ts`) and Sentry's `beforeSend` (wired in `instrumentation.ts`). Adding a sensitive key updates both consumers.
+
+Default redaction list includes: `access_token`, `refresh_token`, `client_secret`, `password`, `authorization`, `cookie`, `set-cookie`, `code_verifier`, `state`, `email`, `phone`, `ip`, all the `*_ciphertext` / `*_dek` columns, and more.
+
+### Video — `<VideoPlayer>` is the only sanctioned host
+
+Defined in `src/components/ui/VideoPlayer.tsx`. Encodes the cost-control rules from the plan:
+- Poster-only by default. Click swaps in `<video preload="none">`.
+- No `autoPlay` prop exposed (intentional — poster-then-play UX only).
+- Hover effects are CSS-only (no `onMouseEnter` triggering load).
+- State machine via `assetState(asset)` from `src/lib/assets.ts`: `'playable' | 'failed' | 'processing'`.
+
+ESLint (`creatorhub/no-bare-video`) blocks `<video>`, `<iframe src=cloudflarestream.com…>`, and `<stream-player>` outside `VideoPlayer.tsx` itself. **Never** introduce hover-autoplay or `preload="metadata"` on a tile — Cloudflare Stream delivery dominates the cost curve and we have a hard product rule against it.
+
+Existing legacy demo code uses bare `<video>` for blob-URL previews; those are gated by inline `// eslint-disable-next-line creatorhub/no-bare-video --- demo blob-URL preview` comments and migrate to `<VideoPlayer>` when DB-backed assets land in Phase 1 part 2.
+
+### OAuth state — atomic consume + expiry in one statement
+
+When wiring an integration callback (Phase 2):
+```sql
+-- Wrong (race): two separate checks
+UPDATE oauth_states SET consumed_at = now()
+WHERE state = $1 AND consumed_at IS NULL RETURNING ...;
+-- then app code checks expires_at > now()  ← race window
+
+-- Right: single atomic statement, zero rows = reject
+UPDATE oauth_states SET consumed_at = now()
+WHERE state = $1 AND consumed_at IS NULL AND expires_at > now()
+RETURNING user_id, platform, code_verifier_hash, redirect_uri;
+```
+
+App Review reviewers test this exact pattern. Atomic is non-negotiable.
+
+### Background jobs — one `jobs` table with `kind` enum
+
+Workers claim with `FOR UPDATE SKIP LOCKED`. Sweeper uses `heartbeat_at`, **not** `claimed_at`:
+```sql
+-- Worker bumps heartbeat every 30s. Sweeper checks 90s threshold (3 missed beats).
+UPDATE jobs SET status = 'queued', heartbeat_at = NULL,
+       next_attempt_at = now() + (attempts * interval '30 seconds')
+WHERE status = 'running' AND heartbeat_at < now() - interval '90 seconds';
+```
+
+`claimed_at` is observability-only. Live workers never get sweep-killed regardless of total job duration.
+
+### Schema-version assertion — refuses to boot on drift
+
+`instrumentation.ts` reads `EXPECTED_SCHEMA_VERSION` from env (set by CI from migration count) and compares to `max(schema_migrations.version)`. In production a mismatch throws and the process refuses to serve traffic. In dev it logs a warning and continues (devs are often mid-migration).
+
+The Sentry binding lives in the same file: `bindSentry({ captureException, captureMessage })` from `src/lib/log/index.ts` is wired up so any `log.error()` from the very first request lands in Sentry with redacted context.
+
+### CI safety net (run on every PR, before any feature merges)
+
+| Check | What it proves |
+|---|---|
+| `npm run lint` | `forUser` discipline, escape-hatch justifications, no third-party-in-`withAudit`, no bare `<video>` |
+| `npm run test:rls` | anon-can't-read, user A can't read B's rows, A can't insert as B (per user-owned table) |
+| `npm run test:migration` | RLS enabled on every table, every mutable table has the `BEFORE UPDATE` trigger, every enum exists, schema version matches expectation |
+| `npm run build` | TS strict + Turbopack production build |
+
+The reviewer who signed off Phase 1 explicitly called these "Day 1, not Day 14" — they need to land before any feature work. They're already in `tests/` and `eslint-plugin-creatorhub/`.
+
+### Cost projection
+
+| Service | Tier | Monthly |
+|---|---|---|
+| Supabase | Pro | $25 |
+| Supabase PITR | +$100 add-on, **not in Pro base** — upgrade before first paying customer or 50+ MAU | $0 → $100 |
+| Supabase Storage overage | $0.021/GB above 100GB | $10–50 |
+| Cloudflare Stream | Delivery dominates ($1/1k mins delivered). Product rules enforced via `<VideoPlayer>`. | $50–150 |
+| Vercel | Pro | $20 |
+| Sentry | Free → Team | $0 → $26 |
+| X API | Basic, write access | $200 (when X ships) |
+
+Phase 1 launch baseline: ~$50/mo. With active video creators: $100–200/mo. At scale (1k+): $500–800/mo.
+
+### Phase 1 done-when
+
+Phase 1 is fully done when:
+- ✅ Cloud DB schema v12+ live + advisor-clean (security WARNs zero, performance WARNs zero, INFOs only `unused_index` on empty tables)
+- ✅ All 4 ESLint custom rules active and passing on a clean repo
+- ✅ RLS regression suite + migration round-trip green
+- ✅ `instrumentation.ts` schema-version assertion working
+- ✅ Sentry binding + redactedLogger working
+- ✅ `<VideoPlayer>` component shipped + ESLint enforced
+- 🔜 Auth: login UI + middleware gate + `(app)/` vs `(demo)/` route group split
+- 🔜 First DB-backed read path (Sidebar reads `displayName` / persona from `profiles` table, not localStorage)
+- 🔜 Video upload → Cloudflare Stream → playable HLS end-to-end
+- 🔜 localStorage profile → DB migration on first login + "re-upload your assets" banner
+
+The 🔜 items are Phase 1 part 2.

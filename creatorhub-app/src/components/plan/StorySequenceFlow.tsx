@@ -459,6 +459,7 @@ function AssetCard({
           />
         )}
         {asset.src && asset.kind === "video" && (
+          // eslint-disable-next-line creatorhub/no-bare-video -- demo blob-URL preview, no Cloudflare Stream variants yet; replaced by VideoPlayer in Phase 1 part 2 when DB-backed assets land
           <video
             src={asset.src}
             muted
