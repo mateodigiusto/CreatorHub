@@ -101,7 +101,7 @@ export default function ContentPage() {
               <Filter className="w-3 h-3" /> Filters
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((p) => {
               const date = p.publishedAt
                 ? new Date(p.publishedAt).toLocaleDateString("en-US", {
@@ -158,7 +158,7 @@ export default function ContentPage() {
 
 function Pipeline({ posts }: { posts: Post[] }) {
   return (
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
       {PIPELINE_COLS.map((col) => {
         const rows = posts.filter((p) => p.status === col);
         return (

@@ -13,9 +13,15 @@ import {
   Plug,
   Wand2,
   Images,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAppState } from "@/lib/store";
+import {
+  displayNameFor,
+  avatarInitialsFor,
+  creatorTypeLabel,
+} from "@/lib/onboarding/personalize";
 
 type NavItem = {
   href: string;
@@ -132,25 +138,58 @@ const darkTokens: Tokens = {
   userMeta: "rgba(255,255,255,0.45)",
 };
 
-export function Sidebar() {
+export function Sidebar({
+  mobileOpen = false,
+  onMobileClose,
+}: {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+} = {}) {
   const pathname = usePathname();
-  const { connected, theme } = useAppState();
+  const { connected, theme, profile } = useAppState();
   const t = theme === "dark" ? darkTokens : lightTokens;
+  const userName = displayNameFor(profile);
+  const userInitials = avatarInitialsFor(profile);
+  const userSubtitle = profile
+    ? creatorTypeLabel(profile)
+    : "Pro plan · 2 seats";
 
   return (
-    <aside
-      className="w-[244px] shrink-0 h-screen sticky top-0 flex flex-col text-white/90 relative overflow-hidden"
-      style={{
-        background: `
-          radial-gradient(140% 60% at 0% 0%, ${t.glowColor} 0%, transparent 50%),
-          radial-gradient(100% 50% at 100% 100%, ${t.glowColor2} 0%, transparent 60%),
-          linear-gradient(180deg, ${t.gradTop} 0%, ${t.gradMid} 50%, ${t.gradBot} 100%)
-        `,
-        borderRight: `1px solid ${t.borderRight}`,
-        boxShadow: `inset -1px 0 0 ${t.innerHighlight}`,
-        padding: "16px 12px",
-      }}
-    >
+    <>
+      {/* Mobile backdrop — frosted glass over the page */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-navy/40 backdrop-blur-md lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      <aside
+        className={cn(
+          "w-[244px] shrink-0 h-screen flex flex-col text-white/90 overflow-hidden",
+          "fixed top-0 left-0 z-50 lg:sticky lg:z-auto",
+          "transition-transform duration-300 lg:transition-none",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+        style={{
+          background: `
+            radial-gradient(140% 60% at 0% 0%, ${t.glowColor} 0%, transparent 50%),
+            radial-gradient(100% 50% at 100% 100%, ${t.glowColor2} 0%, transparent 60%),
+            linear-gradient(180deg, ${t.gradTop} 0%, ${t.gradMid} 50%, ${t.gradBot} 100%)
+          `,
+          borderRight: `1px solid ${t.borderRight}`,
+          boxShadow: `inset -1px 0 0 ${t.innerHighlight}`,
+          padding: "16px 12px",
+        }}
+      >
+        {/* Mobile close button */}
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-md text-white/70 hover:text-white hover:bg-white/10 cursor-pointer z-10"
+          aria-label="Close menu"
+        >
+          <X className="w-4 h-4" />
+        </button>
       <div
         aria-hidden
         className="absolute pointer-events-none"
@@ -238,22 +277,23 @@ export function Sidebar() {
             className="w-[30px] h-[30px] rounded-lg grid place-items-center text-white text-[12px] font-semibold"
             style={{ background: t.userAvatar }}
           >
-            EM
+            {userInitials}
           </div>
           <div className="min-w-0 flex-1">
             <div
               className="text-[12.5px] font-medium truncate"
               style={{ color: t.userName }}
             >
-              Ella Moreno
+              {userName}
             </div>
-            <div className="text-[11px]" style={{ color: t.userMeta }}>
-              Pro plan · 2 seats
+            <div className="text-[11px] truncate" style={{ color: t.userMeta }}>
+              {userSubtitle}
             </div>
           </div>
         </div>
       </div>
     </aside>
+    </>
   );
 }
 

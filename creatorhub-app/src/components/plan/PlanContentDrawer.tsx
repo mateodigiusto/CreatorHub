@@ -46,10 +46,10 @@ export function PlanContentDrawer({
   return (
     <div className="fixed inset-0 z-50 flex">
       <div
-        className="absolute inset-0 bg-navy/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-navy/40 backdrop-blur-md"
         onClick={onClose}
       />
-      <div className="ml-auto relative w-full max-w-[760px] h-full bg-surface/96 backdrop-blur-xl border-l border-border shadow-[-12px_0_48px_-12px_rgba(10,15,28,0.18)] flex flex-col">
+      <div className="ml-auto relative w-full sm:max-w-[760px] h-full bg-surface/95 backdrop-blur-xl sm:border-l border-border shadow-[-12px_0_48px_-12px_rgba(10,15,28,0.18)] flex flex-col">
         <div className="flex items-center justify-between px-6 h-14 border-b border-border shrink-0">
           <div>
             <h3 className="text-[15px] font-semibold tracking-tight text-navy">

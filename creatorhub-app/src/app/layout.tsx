@@ -23,6 +23,12 @@ const themeBootstrap = `
   } catch(e) {
     document.documentElement.setAttribute('data-theme', 'light');
   }
+  try {
+    var p = localStorage.getItem('creatorhub-onboarded');
+    document.documentElement.setAttribute('data-onboarded', p === 'true' ? 'true' : 'false');
+  } catch(e) {
+    document.documentElement.setAttribute('data-onboarded', 'false');
+  }
 })();
 `;
 

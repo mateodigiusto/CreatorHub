@@ -19,10 +19,12 @@ import {
   followerSeriesMonthly,
   aiInsights,
 } from "@/lib/mock/data";
+import { handleFor } from "@/lib/onboarding/personalize";
 
 export default function ReportsPage() {
-  const { connected } = useAppState();
+  const { connected, profile } = useAppState();
   const [range, setRange] = useState<"weekly" | "monthly">("weekly");
+  const reportHandle = handleFor(profile);
 
   if (!connected) {
     return (
@@ -126,7 +128,7 @@ export default function ReportsPage() {
                 {r.range}
               </h2>
               <p className="text-[13.5px] text-white/65 mt-1.5">
-                For @ella.moreno · prepared by CreatorHub
+                For @{reportHandle} · prepared by CreatorHub
               </p>
             </div>
             <span
@@ -144,7 +146,7 @@ export default function ReportsPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-5 gap-6 mt-7">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mt-7">
             <ReportStat label="Posts" value={String(r.posts)} />
             <ReportStat
               label="Reach"
@@ -196,7 +198,7 @@ export default function ReportsPage() {
             </Button>
           }
         />
-        <ul className="grid grid-cols-3 gap-3 list-none p-0 m-0">
+        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 list-none p-0 m-0">
           {topPosts.slice(0, 3).map((p) => (
             <li
               key={p.id}

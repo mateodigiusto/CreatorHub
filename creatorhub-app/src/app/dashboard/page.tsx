@@ -33,17 +33,20 @@ import {
   aiInsights,
   getReachSeries,
 } from "@/lib/mock/data";
+import { welcomeCopy, nextActionFor } from "@/lib/onboarding/personalize";
 import { cn } from "@/lib/cn";
 
 export default function DashboardPage() {
-  const { connected } = useAppState();
+  const { connected, profile } = useAppState();
   const [range, setRange] = useState<DateRange>(() => rangeForPreset("30d"));
+  const welcome = welcomeCopy(profile);
+  const nextAction = nextActionFor(profile);
 
   if (!connected) {
     return (
       <>
         <PageHeader
-          title="Welcome back, Ella"
+          title={welcome.greeting}
           description="Connect a platform to start seeing what's working."
         />
         <EmptyState
@@ -60,8 +63,8 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Welcome back, Ella"
-        description="Here's what moved this week across your connected channels."
+        title={welcome.greeting}
+        description={welcome.sub}
         actions={
           <>
             <Button variant="outline" size="md">
@@ -74,7 +77,30 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      {profile && (
+        <Link
+          href={nextAction.href}
+          className="lift mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-[12px] border border-accent/30 bg-accent-soft cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className="text-[10.5px] uppercase font-semibold text-accent shrink-0"
+              style={{ letterSpacing: "0.08em" }}
+            >
+              Next move
+            </span>
+            <span className="text-[13.5px] font-semibold text-text truncate">
+              {nextAction.label}
+            </span>
+            <span className="text-[12px] text-muted truncate hidden sm:inline">
+              {nextAction.hint}
+            </span>
+          </div>
+          <ArrowRight className="w-4 h-4 text-accent shrink-0" />
+        </Link>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
         {kpis.map((k) => (
           <KpiCard key={k.label} kpi={k} trend={kpiTrends[k.label]} />
         ))}

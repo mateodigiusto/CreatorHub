@@ -10,6 +10,12 @@ import {
 } from "react";
 import { Post } from "@/lib/mock/types";
 import { Asset } from "@/lib/mock/story";
+import type { Profile } from "@/lib/onboarding/types";
+import {
+  readProfile,
+  writeProfile,
+  clearProfile as clearProfileStorage,
+} from "@/lib/onboarding/persistence";
 
 type Theme = "light" | "dark";
 
@@ -23,6 +29,9 @@ type AppState = {
   appendContentItem: (post: Post) => void;
   extraAssets: Asset[];
   appendAsset: (asset: Asset) => void;
+  profile: Profile | null;
+  setProfile: (p: Profile) => void;
+  clearProfile: () => void;
   toast: { id: number; message: string } | null;
   showToast: (message: string) => void;
 };
@@ -46,15 +55,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [extraPosts, setExtraPosts] = useState<Post[]>([]);
   const [extraAssets, setExtraAssets] = useState<Asset[]>([]);
+  const [profile, setProfileState] = useState<Profile | null>(null);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
     null
   );
 
-  // Hydrate theme from <html data-theme> set by the pre-paint script.
-  // Cannot use useState lazy init: server can't read localStorage, would mismatch.
+  // Hydrate theme + profile from localStorage on mount. Cannot use useState
+  // lazy init: server can't read localStorage, would mismatch.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    /* eslint-disable react-hooks/set-state-in-effect */
     setThemeState(readInitialTheme());
+    setProfileState(readProfile());
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const setTheme = useCallback((t: Theme) => {
@@ -79,6 +91,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setExtraAssets((prev) => [asset, ...prev]);
   }, []);
 
+  const setProfile = useCallback((p: Profile) => {
+    setProfileState(p);
+    writeProfile(p);
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-onboarded", "true");
+    }
+  }, []);
+
+  const clearProfile = useCallback(() => {
+    setProfileState(null);
+    clearProfileStorage();
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-onboarded", "false");
+    }
+  }, []);
+
   const showToast = useCallback((message: string) => {
     const id = Date.now();
     setToast({ id, message });
@@ -99,6 +127,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         appendContentItem,
         extraAssets,
         appendAsset,
+        profile,
+        setProfile,
+        clearProfile,
         toast,
         showToast,
       }}

@@ -5,11 +5,26 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAppState } from "@/lib/store";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
+import {
+  displayNameFor,
+  handleFor,
+  creatorTypeLabel,
+} from "@/lib/onboarding/personalize";
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useAppState();
+  const router = useRouter();
+  const { theme, setTheme, profile, clearProfile } = useAppState();
+  const name = displayNameFor(profile);
+  const handle = handleFor(profile);
+  const ct = creatorTypeLabel(profile);
+
+  function restartSetup() {
+    clearProfile();
+    router.push("/onboarding");
+  }
 
   return (
     <>
@@ -22,13 +37,18 @@ export default function SettingsPage() {
         <Card className="col-span-2">
           <CardHeader title="Profile" description="How you appear in CreatorHub" />
           <div className="space-y-4">
-            <Field label="Name" value="Mateo Garcia" />
-            <Field label="Email" value="mateo@mdg-growth.com" />
-            <Field label="Workspace" value="Mateo · Personal" />
+            <Field label="Name" value={name} />
+            <Field label="Handle" value={`@${handle}`} />
+            <Field label="Workspace" value={ct} />
           </div>
-          <div className="flex items-center gap-2 mt-6 pt-5 border-t border-border">
-            <Button>Save changes</Button>
-            <Button variant="ghost">Cancel</Button>
+          <div className="flex items-center justify-between gap-2 mt-6 pt-5 border-t border-border">
+            <div className="flex items-center gap-2">
+              <Button>Save changes</Button>
+              <Button variant="ghost">Cancel</Button>
+            </div>
+            <Button variant="outline" size="sm" onClick={restartSetup}>
+              <RefreshCw className="w-3.5 h-3.5" /> Restart workspace setup
+            </Button>
           </div>
         </Card>
 

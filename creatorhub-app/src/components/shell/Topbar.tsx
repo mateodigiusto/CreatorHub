@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, Plus, Sun, Moon } from "lucide-react";
+import { Search, Bell, Plus, Sun, Moon, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAppState } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
@@ -22,27 +22,42 @@ const titles: Record<string, string> = {
   "/help": "Help",
 };
 
-export function Topbar() {
+export function Topbar({
+  onOpenMobileNav,
+}: {
+  onOpenMobileNav?: () => void;
+} = {}) {
   const pathname = usePathname();
   const { connected, setConnected, theme, toggleTheme } = useAppState();
   const title = titles[pathname] || "Dashboard";
 
   return (
     <header
-      className="h-14 sticky top-0 z-30 flex items-center justify-between gap-4 px-6 border-b border-border"
+      className="h-14 sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 border-b border-border"
       style={{
         background: "var(--surface-glass)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
       }}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-[13px] text-muted">Workspace</span>
-        <span className="text-[13px] text-muted">/</span>
-        <span className="text-[13px] font-medium text-text">{title}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onOpenMobileNav}
+          className="lg:hidden w-8 h-8 grid place-items-center rounded-md text-text/80 hover:text-text hover:bg-surface-2 cursor-pointer -ml-1"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <span className="hidden sm:inline text-[13px] text-muted">Workspace</span>
+        <span className="hidden sm:inline text-[13px] text-muted">/</span>
+        <span className="text-[14px] sm:text-[13px] font-medium text-text truncate">
+          {title}
+        </span>
       </div>
 
-      <div className="relative flex-1 max-w-[480px]">
+      {/* Search — hidden below sm */}
+      <div className="relative flex-1 max-w-[480px] hidden md:block">
         <Search className="w-3.5 h-3.5 text-muted absolute left-[11px] top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           placeholder="Search posts, ideas, reports…"
@@ -55,7 +70,8 @@ export function Topbar() {
         </kbd>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Connection pill — collapsed on mobile to just the dot */}
         <button
           onClick={() => setConnected(!connected)}
           className={cn(
@@ -79,10 +95,14 @@ export function Topbar() {
                   boxShadow: "0 0 6px rgba(16,185,129,0.6)",
                 }}
               />
-              4 platforms connected
+              <span className="hidden sm:inline">4 platforms connected</span>
+              <span className="sm:hidden">Live</span>
             </>
           ) : (
-            <>No platforms connected</>
+            <>
+              <span className="hidden sm:inline">No platforms connected</span>
+              <span className="sm:hidden">Off</span>
+            </>
           )}
         </button>
 
@@ -94,11 +114,11 @@ export function Topbar() {
           {theme === "dark" ? <Sun className="w-[15px] h-[15px]" /> : <Moon className="w-[15px] h-[15px]" />}
         </IconButton>
 
-        <IconButton aria-label="Notifications" title="Notifications">
+        <IconButton aria-label="Notifications" title="Notifications" className="hidden sm:grid">
           <Bell className="w-[15px] h-[15px]" />
         </IconButton>
 
-        <Button size="sm">
+        <Button size="sm" className="hidden sm:inline-flex">
           <Plus className="w-3 h-3" /> New content
         </Button>
       </div>

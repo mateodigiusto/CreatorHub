@@ -44,6 +44,7 @@ import {
   PersonaKey,
 } from "@/lib/mock/story";
 import { Post } from "@/lib/mock/types";
+import { personaForProfile } from "@/lib/onboarding/personalize";
 
 /* ─── Local types ─────────────────────────────────────────────────── */
 
@@ -155,7 +156,7 @@ export default function NewSequencePage() {
 function NewSequenceContent() {
   const router = useRouter();
   const params = useSearchParams();
-  const { extraAssets, appendContentItem, showToast } = useAppState();
+  const { extraAssets, appendContentItem, showToast, profile } = useAppState();
 
   const allAssets = useMemo(
     () => [...extraAssets, ...sampleAssets].filter(isVideoUsableInSequence),
@@ -176,7 +177,9 @@ function NewSequenceContent() {
   const [contentStyle, setContentStyle] = useState<ContentStyleKey>("cta");
   const [slideCount, setSlideCount] = useState(5);
   const [brandTone, setBrandTone] = useState<BrandToneKey>("luxury");
-  const [persona, setPersona] = useState<PersonaKey>("coach");
+  const [persona, setPersona] = useState<PersonaKey>(
+    () => personaForProfile(profile)
+  );
   const [useBrandPortfolio, setUseBrandPortfolio] = useState(false);
   const [stylePreset, setStylePreset] = useState<string | null>(null);
 

@@ -44,6 +44,7 @@ import {
   PersonaKey,
 } from "@/lib/mock/story";
 import { Post } from "@/lib/mock/types";
+import { personaForProfile } from "@/lib/onboarding/personalize";
 import { PlanContentDrawerEntry } from "./PlanContentDrawer";
 
 type Step = "assets" | "direction" | "preview";
@@ -64,7 +65,7 @@ export function StorySequenceFlow({
   slotDate?: Date;
   onDone: () => void;
 }) {
-  const { appendContentItem, showToast, extraAssets } = useAppState();
+  const { appendContentItem, showToast, extraAssets, profile } = useAppState();
 
   /* Library = uploaded assets + mock samples, with too-long videos hidden. */
   const availableAssets = useMemo(
@@ -82,7 +83,9 @@ export function StorySequenceFlow({
   const [prompt, setPrompt] = useState(
     "Why most creators' content isn't converting to DMs."
   );
-  const [persona, setPersona] = useState<PersonaKey>("coach");
+  const [persona, setPersona] = useState<PersonaKey>(
+    () => personaForProfile(profile)
+  );
   const [useBrand, setUseBrand] = useState(true);
   const [brandOpen, setBrandOpen] = useState(false);
 
