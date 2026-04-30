@@ -15,6 +15,8 @@ const ERROR_COPY: Record<string, string> = {
   account_deleted: "This account has been deleted. Contact support if this is unexpected.",
 };
 
+type Mode = "signin" | "signup";
+
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -28,6 +30,7 @@ function LoginContent() {
   const errorCode = params.get("error");
   const errorMessage = errorCode ? ERROR_COPY[errorCode] ?? "Sign-in failed. Try again." : null;
 
+  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -43,9 +46,23 @@ function LoginContent() {
         email: email.trim(),
         options: {
           emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          /* Sign in: refuse if no account exists. Sign up: create one if not. */
+          shouldCreateUser: mode === "signup",
         },
       });
-      if (error) throw error;
+      if (error) {
+        /* Supabase returns "Signups not allowed for otp" when shouldCreateUser
+           is false and the email isn't registered. Map to friendlier copy. */
+        if (
+          mode === "signin" &&
+          /signup|not allowed|user not found/i.test(error.message)
+        ) {
+          throw new Error(
+            "We don't have an account for that email. Switch to Create account?",
+          );
+        }
+        throw error;
+      }
       setStatus("sent");
     } catch (err) {
       setStatus("error");
@@ -56,9 +73,7 @@ function LoginContent() {
   }
 
   /* Google sign-in is gated by NEXT_PUBLIC_GOOGLE_AUTH_ENABLED so we don't
-     show a button that 500s when Google isn't configured in Supabase yet.
-     Flip the env to "true" once you've added Google OAuth credentials in
-     Supabase Dashboard → Auth → Providers → Google. */
+     show a button that 500s when Google isn't configured in Supabase yet. */
   const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
   async function signInWithGoogle() {
@@ -70,6 +85,8 @@ function LoginContent() {
       },
     });
   }
+
+  const isSignup = mode === "signup";
 
   return (
     <div className="min-h-screen relative z-10 flex items-center justify-center px-4 py-10">
@@ -85,11 +102,49 @@ function LoginContent() {
             <Sparkles className="w-6 h-6" />
           </div>
           <h1 className="text-[28px] font-semibold tracking-[-0.015em] text-text leading-tight">
-            Welcome back
+            {isSignup ? "Create your workspace" : "Welcome back"}
           </h1>
           <p className="text-[14px] text-muted mt-2 leading-relaxed">
-            Sign in to your CreatorHub workspace.
+            {isSignup
+              ? "Start your CreatorHub workspace in under 2 minutes."
+              : "Sign in to your CreatorHub workspace."}
           </p>
+        </div>
+
+        {/* Sign in vs Create account toggle */}
+        <div className="mb-4 inline-flex w-full rounded-[10px] bg-surface-2 border border-border p-0.5">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signin");
+              setStatus("idle");
+              setErrorText(null);
+            }}
+            className={cn(
+              "flex-1 h-8 rounded-[8px] text-[12.5px] font-medium transition-colors cursor-pointer",
+              mode === "signin"
+                ? "bg-surface text-text shadow-[0_1px_2px_rgba(7,17,31,0.06)]"
+                : "text-muted hover:text-text",
+            )}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signup");
+              setStatus("idle");
+              setErrorText(null);
+            }}
+            className={cn(
+              "flex-1 h-8 rounded-[8px] text-[12.5px] font-medium transition-colors cursor-pointer",
+              mode === "signup"
+                ? "bg-surface text-text shadow-[0_1px_2px_rgba(7,17,31,0.06)]"
+                : "text-muted hover:text-text",
+            )}
+          >
+            Create account
+          </button>
         </div>
 
         {(errorMessage || (errorText && status === "error")) && (
@@ -107,8 +162,10 @@ function LoginContent() {
             <h2 className="text-[16px] font-semibold text-text">Check your email</h2>
             <p className="text-[13px] text-muted mt-1.5 leading-relaxed">
               We sent a magic link to{" "}
-              <span className="text-text font-medium">{email}</span>. Click it to
-              finish signing in.
+              <span className="text-text font-medium">{email}</span>.{" "}
+              {isSignup
+                ? "Click it to finish creating your account."
+                : "Click it to finish signing in."}
             </p>
             <button
               onClick={() => {
@@ -149,7 +206,11 @@ function LoginContent() {
               disabled={status === "sending" || !email.trim()}
               className="w-full"
             >
-              {status === "sending" ? "Sending…" : "Email me a magic link"}
+              {status === "sending"
+                ? "Sending…"
+                : isSignup
+                  ? "Email me a sign-up link"
+                  : "Email me a magic link"}
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
 
@@ -172,7 +233,7 @@ function LoginContent() {
                   )}
                 >
                   <GoogleMark className="w-4 h-4" />
-                  Continue with Google
+                  {isSignup ? "Sign up with Google" : "Continue with Google"}
                 </button>
               </>
             )}
@@ -180,7 +241,7 @@ function LoginContent() {
         )}
 
         <p className="text-[11.5px] text-muted text-center mt-5 leading-relaxed">
-          By signing in you agree to our{" "}
+          By {isSignup ? "creating an account" : "signing in"} you agree to our{" "}
           <a className="text-accent hover:text-accent-2 underline-offset-2 hover:underline" href="/terms">
             Terms
           </a>{" "}
