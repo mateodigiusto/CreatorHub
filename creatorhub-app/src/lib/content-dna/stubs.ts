@@ -237,11 +237,57 @@ export function pickStub(url: string): StubAnalysis {
 }
 
 export function detectPlatform(url: string): SourcePlatform {
-  const u = url.toLowerCase();
-  if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+  const u = url.toLowerCase().trim();
+  /* Cover m.youtube.com, music.youtube.com, youtube-nocookie.com, youtu.be — and shorts. */
+  if (
+    u.includes("youtube.com") ||
+    u.includes("youtu.be") ||
+    u.includes("youtube-nocookie.com")
+  ) {
+    return "youtube";
+  }
+  /* Cover instagram.com, www.instagram.com, m.instagram.com — reels, posts, stories. */
   if (u.includes("instagram.com")) return "instagram";
+  /* Cover tiktok.com, vm.tiktok.com, www.tiktok.com, vt.tiktok.com. */
   if (u.includes("tiktok.com")) return "tiktok";
   return "other";
+}
+
+/* Normalize a pasted URL. Adds https:// if missing, strips common tracking
+   params (utm_*, fbclid, gclid, igshid, si=…), trims whitespace + quotes,
+   lowercases the host. Same canonical input always produces the same hash
+   in pickStub() — important for the "dupe detect" feature. */
+export function canonicalizeUrl(raw: string): string | null {
+  let s = raw.trim().replace(/^["'\s]+|["'\s]+$/g, "");
+  if (!s) return null;
+  if (!/^https?:\/\//i.test(s)) {
+    /* If it looks like a hostname, add https://. Otherwise reject. */
+    if (/^[a-z0-9.-]+\.[a-z]{2,}/i.test(s)) {
+      s = `https://${s}`;
+    } else {
+      return null;
+    }
+  }
+  let url: URL;
+  try {
+    url = new URL(s);
+  } catch {
+    return null;
+  }
+  url.host = url.host.toLowerCase();
+  /* Strip junk params. Keep `v` (YouTube), `t`/`time_continue` (timestamps),
+     and platform-essential ones; drop everything else that smells like tracking. */
+  const drop = [
+    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+    "fbclid", "gclid", "igshid", "si", "feature", "ref_src", "ref_url",
+    "_t", "is_from_webapp", "sender_device", "sender_web_id",
+  ];
+  for (const p of drop) url.searchParams.delete(p);
+  /* Trim trailing slash on the path for stable hashing. */
+  if (url.pathname.endsWith("/") && url.pathname !== "/") {
+    url.pathname = url.pathname.slice(0, -1);
+  }
+  return url.toString();
 }
 
 /* Stub script generator — combines the analysis structure with the user's

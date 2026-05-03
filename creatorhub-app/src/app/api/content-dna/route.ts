@@ -9,7 +9,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
-import { pickStub, detectPlatform } from "@/lib/content-dna/stubs";
+import { pickStub, detectPlatform, canonicalizeUrl } from "@/lib/content-dna/stubs";
 
 type AnalysisListRow = {
   id: string;
@@ -58,20 +58,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const url = (body.url ?? "").trim();
-  if (!url || !/^https?:\/\//i.test(url)) {
+  const canonical = canonicalizeUrl(body.url ?? "");
+  if (!canonical) {
     return NextResponse.json({ error: "invalid_url" }, { status: 400 });
   }
 
-  const platform = detectPlatform(url);
-  const stub = pickStub(url);
+  /* Dedupe: if the same canonical URL was analyzed in the last 24h for
+     this user, return the existing analysis instead of creating a new one.
+     Saves the user from accidentally accumulating five identical breakdowns. */
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: existing } = await supabase
+    .from("content_analyses")
+    .select("id")
+    .eq("source_url", canonical)
+    .gt("created_at", dayAgo)
+    .order("created_at", { ascending: false })
+    .returns<Array<{ id: string }>>()
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    return NextResponse.json({ id: existing.id, ok: true, deduped: true });
+  }
+
+  const platform = detectPlatform(canonical);
+  const stub = pickStub(canonical);
 
   /* Real pipeline goes here later: transcribe → analyze → write rows. For
      scaffold, we go straight from `analyzing` → `ready` in one insert with
      all the stub data. */
   const insertRow = {
     user_id: userRes.user.id,
-    source_url: url.slice(0, 2048),
+    source_url: canonical.slice(0, 2048),
     source_platform: platform,
     source_title: stub.sourceTitle,
     source_creator: stub.sourceCreator,
