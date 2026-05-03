@@ -61,6 +61,7 @@ export const jobStatusEnum = pgEnum("job_status_t", [
 ]);
 export const jobKindEnum = pgEnum("job_kind_t", [
   "sync", "transcode", "publish", "refresh_token", "finalize_deletion", "cleanup",
+  "content_dna_analyze",
 ]);
 
 /* ─── users (mirror of auth.users + our app-side fields) ──────────── */

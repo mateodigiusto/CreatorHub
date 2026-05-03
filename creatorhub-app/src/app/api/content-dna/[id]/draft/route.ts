@@ -1,11 +1,12 @@
 /**
  * POST /api/content-dna/[id]/draft
  *
- * Generates a stub script + hooks + shots + captions for the given analysis,
+ * Generates a script + hooks + shots + captions for the given analysis,
  * using the user's angle / audience / platform / tone. Persists as a
  * content_drafts row.
  *
- * Real LLM integration replaces only the buildStubScript() call.
+ * Real Claude path runs when ANTHROPIC_API_KEY is configured. Falls back
+ * to the deterministic stub otherwise so dev / preview keep working.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -13,6 +14,15 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
 import { buildStubScript } from "@/lib/content-dna/stubs";
 import type { StructureBeat } from "@/lib/content-dna/types";
+import {
+  isAnthropicConfigured,
+  completeJson,
+} from "@/lib/content-dna/providers/claude";
+import {
+  DRAFT_SYSTEM,
+  draftPrompt,
+  type DraftOutput,
+} from "@/lib/content-dna/prompts";
 
 type Body = {
   angle?: string;
@@ -24,6 +34,7 @@ type Body = {
 type AnalysisRow = {
   hook: string | null;
   structure: StructureBeat[] | null;
+  why_it_worked: unknown;
 };
 
 export async function POST(
@@ -46,7 +57,7 @@ export async function POST(
 
   const { data: analysis } = await supabase
     .from("content_analyses")
-    .select("hook, structure")
+    .select("hook, structure, why_it_worked")
     .eq("id", id)
     .returns<AnalysisRow[]>()
     .maybeSingle();
@@ -54,13 +65,47 @@ export async function POST(
     return NextResponse.json({ error: "analysis_not_found" }, { status: 404 });
   }
 
-  const { script, hooks, shots, captions } = buildStubScript({
-    hook: analysis.hook ?? "",
-    structure: analysis.structure ?? [],
-    angle: body.angle ?? "",
-    audience: body.audience ?? "",
-    tone: body.tone ?? "direct",
-  });
+  let script: string;
+  let hooks: string[];
+  let shots: { description: string; duration_seconds: number }[];
+  let captions: string[];
+
+  if (isAnthropicConfigured()) {
+    try {
+      const result = await completeJson<DraftOutput>({
+        system: DRAFT_SYSTEM,
+        prompt: draftPrompt({
+          analysisHook: analysis.hook,
+          analysisStructure: analysis.structure,
+          analysisWhy: analysis.why_it_worked,
+          angle: body.angle ?? null,
+          audience: body.audience ?? null,
+          tone: body.tone ?? null,
+          targetPlatform: body.targetPlatform ?? null,
+        }),
+        maxTokens: 2048,
+      });
+      script = result.script;
+      hooks = result.hooks ?? [];
+      shots = result.shots ?? [];
+      captions = result.captions ?? [];
+    } catch (err) {
+      log.error("content_dna.draft_claude_failed", err);
+      return NextResponse.json({ error: "ai_failed" }, { status: 502 });
+    }
+  } else {
+    const stub = buildStubScript({
+      hook: analysis.hook ?? "",
+      structure: analysis.structure ?? [],
+      angle: body.angle ?? "",
+      audience: body.audience ?? "",
+      tone: body.tone ?? "direct",
+    });
+    script = stub.script;
+    hooks = stub.hooks;
+    shots = stub.shots;
+    captions = stub.captions;
+  }
 
   const insertRow = {
     analysis_id: id,

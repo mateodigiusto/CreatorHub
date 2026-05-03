@@ -21,6 +21,13 @@ import { dbInternal, schema } from "@/db";
 import { getSupabaseServiceRole } from "@/lib/supabase/server";
 import { copyFromUrl, getVideo } from "@/lib/stream";
 import { log } from "@/lib/log";
+import { fetchSource } from "@/lib/content-dna/providers/source";
+import { completeJson } from "@/lib/content-dna/providers/claude";
+import {
+  ANALYSIS_SYSTEM,
+  analysisPrompt,
+  type AnalysisOutput,
+} from "@/lib/content-dna/prompts";
 
 const RETRY_BACKOFF_S = 30;
 const SIGNED_URL_TTL_S = 1800; // Stream usually finishes the pull in seconds
@@ -43,6 +50,11 @@ export async function GET(req: NextRequest) {
 
   if (kind === "cleanup") {
     const result = await runCleanupEphemera();
+    return NextResponse.json(result);
+  }
+
+  if (kind === "content_dna_analyze") {
+    const result = await runOneContentDnaJob();
     return NextResponse.json(result);
   }
 
@@ -270,4 +282,119 @@ async function markJob(
       errorText: errorText ?? null,
     })
     .where(eq(schema.jobs.id, jobId));
+}
+
+/* ─── Content DNA: real AI pipeline ─────────────────────────────────
+ * One tick claims a single content_dna_analyze job, runs the full
+ * pipeline (Apify scrape → Whisper transcribe → Claude analyze), and
+ * writes the result to the content_analyses row referenced in payload.
+ *
+ * Long-running (~30–90s for a typical short-form video). Vercel function
+ * duration must be set high enough; max 5 min on Pro+Fluid. The cron
+ * schedule is every minute so backed-up queues drain fast.
+ */
+type ContentDnaPayload = {
+  analysis_id: string;
+  url: string;
+  platform: "youtube" | "instagram" | "tiktok" | "other";
+};
+
+async function runOneContentDnaJob() {
+  const claimed = await dbInternal.execute(sql`
+    with next as (
+      select id
+      from jobs
+      where status = 'queued'
+        and kind = 'content_dna_analyze'
+        and next_attempt_at <= now()
+      order by created_at
+      limit 1
+      for update skip locked
+    )
+    update jobs j
+    set status = 'running',
+        claimed_at = now(),
+        heartbeat_at = now(),
+        attempts = attempts + 1,
+        started_at = coalesce(started_at, now())
+    from next n
+    where j.id = n.id
+    returning j.id, j.user_id, j.payload, j.attempts, j.max_attempts
+  `);
+  const rows = claimed as unknown as Array<{
+    id: string;
+    user_id: string;
+    payload: ContentDnaPayload;
+    attempts: number;
+    max_attempts: number;
+  }>;
+  if (rows.length === 0) return { ok: true, claimed: 0 };
+  const job = rows[0];
+  const { analysis_id, url, platform } = job.payload;
+
+  const admin = getSupabaseServiceRole();
+
+  if (platform === "other") {
+    await failAnalysis(admin, analysis_id, "platform_unsupported");
+    await markJob(job.id, "dead", "platform_unsupported");
+    return { ok: false, jobId: job.id, error: "platform_unsupported" };
+  }
+
+  try {
+    const source = await fetchSource(platform, url);
+    const result = await completeJson<AnalysisOutput>({
+      system: ANALYSIS_SYSTEM,
+      prompt: analysisPrompt({
+        platform,
+        title: source.title,
+        creator: source.creator,
+        transcript: source.transcript,
+      }),
+    });
+
+    const { error: updErr } = await admin
+      .from("content_analyses")
+      .update({
+        source_title: source.title,
+        source_creator: source.creator,
+        source_thumbnail: source.thumbnail,
+        transcription: source.transcript.slice(0, 12000),
+        hook: result.hook,
+        structure: result.structure,
+        why_it_worked: result.why_it_worked,
+        variations: result.variations,
+        status: "ready",
+      } as never)
+      .eq("id", analysis_id);
+    if (updErr) throw new Error(`update_failed: ${updErr.message}`);
+
+    await markJob(job.id, "completed");
+    return { ok: true, jobId: job.id, analysisId: analysis_id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown";
+    log.error("cron.content_dna.error", {
+      jobId: job.id,
+      analysisId: analysis_id,
+      msg,
+    });
+    if (job.attempts >= job.max_attempts) {
+      await failAnalysis(admin, analysis_id, msg);
+      await markJob(job.id, "dead", msg);
+    } else {
+      await requeue(job.id, msg);
+    }
+    return { ok: false, jobId: job.id, error: msg };
+  }
+}
+
+async function failAnalysis(
+  admin: ReturnType<typeof getSupabaseServiceRole>,
+  analysisId: string,
+  reason: string,
+) {
+  await admin
+    .from("content_analyses")
+    .update({ status: "failed" } as never)
+    .eq("id", analysisId);
+  log.warn("content_dna.failed", { analysisId, reason });
 }

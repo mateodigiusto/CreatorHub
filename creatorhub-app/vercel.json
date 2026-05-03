@@ -4,6 +4,15 @@
     {
       "path": "/api/cron/run-jobs?kind=cleanup",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/run-jobs?kind=content_dna_analyze",
+      "schedule": "* * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/cron/run-jobs/route.ts": {
+      "maxDuration": 300
+    }
+  }
 }

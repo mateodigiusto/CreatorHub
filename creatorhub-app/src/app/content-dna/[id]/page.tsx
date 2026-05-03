@@ -106,6 +106,17 @@ export default function ContentDnaAnalysisPage() {
     void load();
   }, [load]);
 
+  /* While the row is in 'analyzing' state, the cron worker is mid-pipeline.
+     Refetch every 4s so the page flips to 'ready' (or 'failed') as soon as
+     the worker writes results. Stops polling the moment status changes. */
+  useEffect(() => {
+    if (analysis?.status !== "analyzing") return;
+    const id = setInterval(() => {
+      void load();
+    }, 4000);
+    return () => clearInterval(id);
+  }, [analysis?.status, load]);
+
   const activeDraft = useMemo(
     () => drafts.find((d) => d.id === activeDraftId) ?? drafts[0] ?? null,
     [drafts, activeDraftId],
