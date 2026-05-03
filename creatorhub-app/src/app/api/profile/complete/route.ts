@@ -35,11 +35,9 @@ export async function POST(req: NextRequest) {
   /* Minimal shape check — we trust the client to have walked the wizard,
      but reject obvious garbage so a bad body can't silently corrupt the row. */
   if (
-    body?.version !== 1 ||
+    body?.version !== 2 ||
     typeof body.creatorType !== "string" ||
-    typeof body.niche !== "string" ||
-    typeof body.primaryGoal !== "string" ||
-    !Array.isArray(body.platforms)
+    typeof body.niche !== "string"
   ) {
     return NextResponse.json({ error: "invalid_profile" }, { status: 400 });
   }
@@ -71,7 +69,12 @@ export async function POST(req: NextRequest) {
     reportsNeeds: body.reportsNeeds ?? [],
     team: body.team ?? null,
     startMode: body.startMode,
+    schemaVersion: 2,
     completedAt: new Date(),
+    trialPlan: body.trial?.plan ?? null,
+    trialCycle: body.trial?.cycle ?? null,
+    trialStartedAt: body.trial?.startedAt ? new Date(body.trial.startedAt) : null,
+    trialExpiresAt: body.trial?.expiresAt ? new Date(body.trial.expiresAt) : null,
   };
 
   try {
@@ -82,7 +85,11 @@ export async function POST(req: NextRequest) {
         action: "profile.completed",
         targetType: "profile",
         targetId: userId,
-        metadata: { creator_type: row.creatorType, primary_goal: row.primaryGoal },
+        metadata: {
+          creator_type: row.creatorType,
+          trial_plan: row.trialPlan,
+          trial_cycle: row.trialCycle,
+        },
       },
       async (tx) => {
         await tx

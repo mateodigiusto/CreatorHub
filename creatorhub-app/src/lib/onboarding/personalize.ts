@@ -2,17 +2,15 @@
    All callers must handle profile === null with sensible fallbacks. */
 
 import type { Profile, CreatorType, Goal } from "./types";
-import { creatorTypes, goals, niches, brandTones, sellingTypes } from "./options";
+import { creatorTypes, niches, brandTones, sellingTypes } from "./options";
 import type { PersonaKey } from "@/lib/mock/story";
 
 const PERSONA_BY_TYPE: Record<CreatorType, PersonaKey> = {
   creator: "coach",
   infoproduct: "coach",
   agency: "agency",
-  tattoo: "tattoo",
   fitness: "fitness",
   realestate: "realestate",
-  brand: "agency",
   other: "coach",
 };
 
@@ -61,7 +59,7 @@ export function nicheLabel(profile: Profile | null): string {
 
 export function goalLabel(goal: Goal | undefined): string {
   if (!goal) return "your goal";
-  return goals.find((g) => g.key === goal)?.label ?? goal;
+  return goal;
 }
 
 export function welcomeCopy(profile: Profile | null): { greeting: string; sub: string } {
@@ -72,35 +70,27 @@ export function welcomeCopy(profile: Profile | null): { greeting: string; sub: s
     };
   }
   const first = displayNameFor(profile).split(/\s+/)[0];
-  const focus = welcomeFocus(profile.primaryGoal);
   return {
     greeting: `Welcome back, ${first}`,
-    sub: focus,
+    sub: welcomeFocusFor(profile),
   };
 }
 
-function welcomeFocus(goal: Goal): string {
-  switch (goal) {
-    case "audience":
-      return "Let's grow this week's reach.";
-    case "dms":
-      return "Let's turn content into conversations.";
-    case "appointments":
-      return "Let's plan this week's bookings.";
-    case "sell":
+/* Driven by creatorType — no longer reads primaryGoal (dropped from v2 flow). */
+function welcomeFocusFor(profile: Profile): string {
+  switch (profile.creatorType) {
+    case "agency":
+      return "Here's how each client is doing this week.";
+    case "infoproduct":
       return "Let's move the offer this week.";
-    case "consistency":
-      return "Let's keep the streak going.";
-    case "analytics":
-      return "Here's what your numbers are saying.";
-    case "sequences":
-      return "Let's build a sequence today.";
-    case "clients":
-      return "Here's where each client stands.";
-    case "authority":
-      return "Let's plant a few authority posts.";
-    case "reports":
-      return "Reports are ready when you are.";
+    case "creator":
+      return "Let's grow your audience this week.";
+    case "realestate":
+      return "Let's plan listings + neighborhood content.";
+    case "fitness":
+      return "Let's plan transformations + programming.";
+    case "other":
+      return "Here's how this week is going so far.";
   }
 }
 
@@ -121,8 +111,7 @@ export function nextActionFor(profile: Profile | null): NextAction {
     };
   }
   if (profile.startMode === "demo") {
-    /* Route by primary goal. */
-    return primaryActionForGoal(profile.primaryGoal);
+    return primaryActionForType(profile.creatorType);
   }
   return {
     label: "Connect Instagram",
@@ -132,7 +121,7 @@ export function nextActionFor(profile: Profile | null): NextAction {
 }
 
 export function quickActionsFor(profile: Profile): NextAction[] {
-  const primary = primaryActionForGoal(profile.primaryGoal);
+  const primary = primaryActionForType(profile.creatorType);
   const others: NextAction[] = [
     { label: "Add assets", href: "/library", hint: "Photos + short videos for sequences." },
     { label: "Open Dashboard", href: "/dashboard", hint: "See your KPIs at a glance." },
@@ -141,42 +130,37 @@ export function quickActionsFor(profile: Profile): NextAction[] {
     { label: "Open Sequence Studio", href: "/sequence-studio", hint: "Pick assets, build a sequence." },
     { label: "Connect Instagram", href: "/integrations", hint: "Unlock real data." },
   ];
-  /* Drop the primary action from "others" if duplicated, then take 2 more. */
   const filtered = others.filter((o) => o.href !== primary.href);
   return [primary, ...filtered.slice(0, 2)];
 }
 
-function primaryActionForGoal(goal: Goal): NextAction {
-  switch (goal) {
-    case "audience":
-    case "dms":
-    case "appointments":
-    case "sell":
-      return {
-        label: "Build a sequence",
-        href: "/sequence-studio",
-        hint: "Pick assets and ship.",
-      };
-    case "consistency":
-    case "analytics":
-    case "reports":
-      return {
-        label: "Open Dashboard",
-        href: "/dashboard",
-        hint: "Today's numbers + next moves.",
-      };
-    case "clients":
+function primaryActionForType(type: CreatorType): NextAction {
+  switch (type) {
+    case "agency":
       return {
         label: "Open Reports",
         href: "/reports",
         hint: "Weekly client-ready summaries.",
       };
-    case "sequences":
-    case "authority":
+    case "infoproduct":
+      return {
+        label: "Build a sequence",
+        href: "/sequence-studio",
+        hint: "Pick assets and ship the offer.",
+      };
+    case "creator":
+    case "realestate":
+    case "fitness":
       return {
         label: "Open Sequence Studio",
         href: "/sequence-studio",
-        hint: "Sequences are why you're here.",
+        hint: "Pick assets, build a sequence.",
+      };
+    case "other":
+      return {
+        label: "Open Dashboard",
+        href: "/dashboard",
+        hint: "Today's numbers + next moves.",
       };
   }
 }

@@ -14,6 +14,42 @@ import {
   handleFor,
   creatorTypeLabel,
 } from "@/lib/onboarding/personalize";
+import type { Trial } from "@/lib/onboarding/types";
+
+const PLAN_PRICING = {
+  standard: { monthly: 67, annual: 27 },
+  pro:      { monthly: 149, annual: 60 },
+} as const;
+
+function planDescription(trial: Trial | undefined): string {
+  if (!trial) return "Standard · monthly";
+  const name = trial.plan === "pro" ? "Pro" : "Standard";
+  const cycle = trial.cycle === "annual" ? "annual" : "monthly";
+  return `${name} · ${cycle}`;
+}
+
+function planPrice(trial: Trial | undefined): number {
+  if (!trial) return PLAN_PRICING.standard.monthly;
+  return PLAN_PRICING[trial.plan][trial.cycle];
+}
+
+function planFeatures(trial: Trial | undefined): string[] {
+  const isPro = trial?.plan === "pro";
+  if (isPro) {
+    return [
+      "Unlimited users",
+      "Multi-client workspaces",
+      "Client-ready reports",
+      "Priority support",
+    ];
+  }
+  return [
+    "1 user",
+    "All Sequence Studio features",
+    "Calendar + Reports",
+    "AI ideas & insights",
+  ];
+}
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -142,15 +178,20 @@ export default function SettingsPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Plan" description="Pro · monthly" />
+          <CardHeader title="Plan" description={planDescription(profile?.trial)} />
           <div className="text-[26px] font-semibold tracking-tight text-text">
-            $29<span className="text-[14px] text-muted font-normal">/mo</span>
+            ${planPrice(profile?.trial)}
+            <span className="text-[14px] text-muted font-normal">/mo</span>
           </div>
+          {profile?.trial?.cycle === "annual" && (
+            <div className="mt-1.5 inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase text-accent bg-accent-soft border border-accent-border px-1.5 py-0.5 rounded tracking-wide">
+              60% off · billed yearly
+            </div>
+          )}
           <ul className="mt-4 space-y-2 text-[13px] text-muted">
-            <li>• 1 Instagram account</li>
-            <li>• Unlimited content items</li>
-            <li>• Weekly + monthly reports</li>
-            <li>• AI ideas & insights</li>
+            {planFeatures(profile?.trial).map((f) => (
+              <li key={f}>• {f}</li>
+            ))}
           </ul>
           <Button variant="outline" className="mt-5 w-full">
             Manage subscription

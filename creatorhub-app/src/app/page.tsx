@@ -20,10 +20,13 @@ export default async function Home() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("completed_at")
+    .select("completed_at, schema_version")
     .eq("user_id", user.id)
-    .returns<Array<{ completed_at: string | null }>>()
+    .returns<Array<{ completed_at: string | null; schema_version: number }>>()
     .maybeSingle();
 
-  redirect(profile?.completed_at ? "/dashboard" : "/onboarding");
+  /* Onboarding v2 gate: schema_version === 2 + completed_at. v1 rows are
+     legacy and get routed back through /onboarding. */
+  const onboarded = profile?.completed_at && profile.schema_version === 2;
+  redirect(onboarded ? "/dashboard" : "/onboarding");
 }

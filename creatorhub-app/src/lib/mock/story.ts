@@ -294,7 +294,6 @@ export type GeneratedSequence = {
 
 export type PersonaKey =
   | "coach"
-  | "tattoo"
   | "realestate"
   | "fitness"
   | "agency";
@@ -455,68 +454,6 @@ export const personas: Record<PersonaKey, PersonaData> = {
           "Save this. Run the check on your last 5 posts.",
           "Bookmark — pull up your last 5 and check the pattern.",
         ],
-      },
-    },
-  },
-
-  tattoo: {
-    label: "Tattoo artist",
-    brandContext: {
-      who: "Custom fine-line tattoo artist building a calm, premium studio brand.",
-      audience: "Clients who want quiet, intentional, single-session pieces.",
-      tone: "Calm, considered, craft-led. Quiet authority.",
-      cta: "Book consult, join waitlist.",
-    },
-    titleByGoal: {
-      dms: "Why most consults never turn into bookings",
-      authority: "What 200 healed tattoos actually taught me",
-      warmup: "Before you book — read this",
-      sell: "The studio difference",
-      proof: "Real healed work. Real client stories.",
-      educate: "How to tell good linework from average",
-    },
-    copyByGoal: {
-      dms: {
-        Hook: ["Most people DM 5 artists. Then ghost all of them.", "Quiet inbox? Your portfolio isn't the problem."],
-        Context: ["They're not flaky. The portfolio just didn't make the call obvious.", "When clients can't picture the consult, they pause."],
-        Proof: ["Adding a consult-walkthrough post lifted my DM-to-book rate from 18% → 41%.", "Two studio walkthroughs. Bookings tripled in a month."],
-        Insight: ["Show the room. Show the process. Make the consult feel done before it starts.", "The consult is sold before the DM."],
-        CTA: ["DM 'CONSULT' — I'll send my 6-question intake.", "Send 'CONSULT' to start the intake."],
-      },
-      authority: {
-        Hook: ["After 200 healed pieces, I stopped trusting fresh photos.", "Healed work tells a different story than day-one shots."],
-        Context: ["Day-one photos sell. Healed photos prove.", "Anyone can post day one. Healed at 6 months is the real test."],
-        Proof: ["6-month healed gallery. Same client. Same lighting. Different truth.", "Twelve healed pieces in this set. Each shot at 4–8 months."],
-        Insight: ["Linework holds. Saturation rarely does. That's the only test that matters.", "If it's still crisp at 6 months, it was done right."],
-        CTA: ["Save this. Then ask any artist for their healed work.", "Bookmark — show this to whoever you book next."],
-      },
-      warmup: {
-        Hook: ["Before you book, here's what a session with me actually feels like.", "What the consult looks like — start to finish."],
-        Context: ["Consult, design, day-of, aftercare — same four beats every time.", "We move slow. On purpose."],
-        Proof: ["Average client books a 2nd piece within 7 months.", "8 in 10 clients return. That's the only review I trust."],
-        Insight: ["Quiet sessions, no rush, healed work that lasts. That's the studio.", "Calm rooms make calm linework."],
-        CTA: ["Reply 'STUDIO' — I'll send the studio walkthrough.", "DM 'STUDIO' for the full walkthrough."],
-      },
-      sell: {
-        Hook: ["This is what €600 actually buys you here.", "Pricing is the conversation no one wants to have. So let's have it."],
-        Context: ["The chair time, the design hours, the studio space, the aftercare.", "Half the price is what happens before you sit down."],
-        Proof: ["Studio time, design hours, single-session policy, lifetime touch-ups.", "Three months of design queue. One session. Done right."],
-        Insight: ["Cheap tattoos are expensive. Healed work is the only honest price.", "You're not paying for ink. You're paying for the years it has to last."],
-        CTA: ["DM 'PRICING' — I'll send the full breakdown.", "Send 'PRICING' for the studio sheet."],
-      },
-      proof: {
-        Hook: ["Twelve healed pieces. All my clients. Real work.", "No filters. No fresh-shot lighting. Just healed."],
-        Context: ["Some at 4 months. Some at a year. All shot in studio light.", "Same lighting. Different timelines. Honest receipts."],
-        Proof: ["6-month healed: lines crisp, saturation true, no blowout.", "Linework still sharp at 12 months. Every single one."],
-        Insight: ["Healed proof is the only proof that matters in tattoo.", "Fresh ink looks great on everyone. Healed work tells the truth."],
-        CTA: ["DM 'HEALED' — I'll send the full archive.", "Reply 'HEALED' to see the full set."],
-      },
-      educate: {
-        Hook: ["Three things to check on every artist's portfolio before you book.", "The portfolio test most clients don't know to run."],
-        Context: ["Most portfolios show day-one photos in studio lighting. That's not the test.", "Studio lighting hides everything. Daylight is the test."],
-        Proof: ["Look for: healed shots, consistent linework, no fresh-only feed.", "Three signals: healed examples, consistent hand, real lighting."],
-        Insight: ["If every photo is day-one and beautiful, you're seeing 30% of the truth.", "Day-one is marketing. Healed is the receipt."],
-        CTA: ["Save this. Run the test before your next consult.", "Bookmark — use this on your next 3 portfolio reviews."],
       },
     },
   },

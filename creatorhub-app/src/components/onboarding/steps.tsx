@@ -5,94 +5,49 @@ import {
   User,
   Briefcase,
   Building2,
-  Palette,
   Dumbbell,
   Home,
-  Layers,
   HelpCircle,
   Sparkles,
-  Camera,
-  PlaySquare,
-  Hash,
-  Music,
-  ShoppingBag,
-  Wand2,
-  Image as ImageIcon,
-  FileBarChart,
-  Users,
-  Plug,
   ArrowRight,
   Check,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 import { HelpText } from "./primitives/HelpText";
 import { PickCard } from "./primitives/PickCard";
 import { ChipGroup } from "./primitives/ChipGroup";
 import { Segmented } from "./primitives/Segmented";
+import { PlanCard } from "./primitives/PlanCard";
 import {
   creatorTypes,
   niches,
-  goals,
-  platforms,
   contentFormats,
-  frequencies,
-  planningWorkflows,
   problems,
-  sellingTypes,
-  ctaStyles,
   brandTones,
-  sequenceUses,
-  assetTypes,
-  reportsNeeds,
-  teamSetups,
-  labelOf,
 } from "@/lib/onboarding/options";
 import type {
   ProfileDraft,
   CreatorType,
-  Goal,
-  Platform,
   ContentFormat,
-  Frequency,
-  PlanningWorkflow,
   Problem,
-  Selling,
-  Cta,
   BrandTone,
-  SequenceUse,
-  AssetType,
-  ReportsNeed,
-  TeamSetup,
-  StartMode,
+  TrialPlan,
+  TrialCycle,
 } from "@/lib/onboarding/types";
 
 type StepProps = {
   draft: ProfileDraft;
   update: (patch: Partial<ProfileDraft>) => void;
-  goToStep?: (n: number) => void;
 };
 
 const CREATOR_ICONS: Record<CreatorType, React.ReactNode> = {
   creator: <User className="w-4 h-4" />,
-  infoproduct: <Briefcase className="w-4 h-4" />,
   agency: <Building2 className="w-4 h-4" />,
-  tattoo: <Palette className="w-4 h-4" />,
-  fitness: <Dumbbell className="w-4 h-4" />,
+  infoproduct: <Briefcase className="w-4 h-4" />,
   realestate: <Home className="w-4 h-4" />,
-  brand: <Layers className="w-4 h-4" />,
+  fitness: <Dumbbell className="w-4 h-4" />,
   other: <HelpCircle className="w-4 h-4" />,
-};
-
-const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
-  instagram: <Camera className="w-4 h-4" />,
-  tiktok: <Music className="w-4 h-4" />,
-  youtube: <PlaySquare className="w-4 h-4" />,
-  linkedin: <Briefcase className="w-4 h-4" />,
-  x: <Hash className="w-4 h-4" />,
-  facebook: <Hash className="w-4 h-4" />,
 };
 
 /* ─── 0. Welcome ─────────────────────────────────────────────────── */
@@ -125,7 +80,7 @@ export function StepWelcome({ onStart }: { onStart: () => void }) {
         </Button>
       </div>
       <p className="text-[11.5px] text-muted mt-4">
-        Takes about 3 minutes · You can change anything later.
+        About 2 minutes · You can change anything later.
       </p>
     </div>
   );
@@ -168,7 +123,7 @@ export function StepNiche({ draft, update }: StepProps) {
     <>
       <HelpText
         eyebrow="Your space"
-        title="What niche are you in?"
+        title="What space are you in?"
         description="Helps us tune sample assets, idea hooks, and report copy."
       />
       <ChipGroup
@@ -181,7 +136,7 @@ export function StepNiche({ draft, update }: StepProps) {
       />
       <div className="mt-5 max-w-[460px] mx-auto">
         <label className="text-[12.5px] font-semibold text-text block mb-1.5">
-          Or type a custom niche
+          Or type your own
         </label>
         <input
           value={custom}
@@ -198,211 +153,98 @@ export function StepNiche({ draft, update }: StepProps) {
   );
 }
 
-/* ─── 3. Main goal ───────────────────────────────────────────────── */
+/* ─── 3. Offer (conditional — Agency / Info Product / Real Estate) ─ */
 
-export function StepGoal({ draft, update }: StepProps) {
-  const primary = draft.primaryGoal;
-  const secondaries = draft.secondaryGoals ?? [];
-  function pickPrimary(g: Goal) {
-    update({
-      primaryGoal: g,
-      secondaryGoals: secondaries.filter((x) => x !== g),
-    });
-  }
-  function toggleSecondary(g: Goal) {
-    if (g === primary) return;
-    if (secondaries.includes(g)) {
-      update({ secondaryGoals: secondaries.filter((x) => x !== g) });
-    } else if (secondaries.length < 3) {
-      update({ secondaryGoals: [...secondaries, g] });
-    }
-  }
+const OFFER_CHIPS: Array<{ label: string; sellingKey: "coaching" | "courses" | "services" | "local" }> = [
+  { label: "Coaching", sellingKey: "coaching" },
+  { label: "Course", sellingKey: "courses" },
+  { label: "Services", sellingKey: "services" },
+  { label: "Local service", sellingKey: "local" },
+];
+
+export function StepOffer({ draft, update }: StepProps) {
   return (
     <>
       <HelpText
-        eyebrow="Direction"
-        title="What's your main goal?"
-        description="Tap one as primary. Optionally add up to 3 secondary goals."
+        eyebrow="What you sell"
+        title="What's your offer?"
+        description="Drives the call-to-action language and sales sequences in Sequence Studio."
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {goals.map((g) => {
-          const isPrimary = primary === g.key;
-          const isSecondary = secondaries.includes(g.key);
-          return (
-            <div key={g.key} className="relative">
-              <PickCard
-                active={isPrimary || isSecondary}
-                onClick={() =>
-                  isPrimary
-                    ? toggleSecondary(g.key)
-                    : pickPrimary(g.key)
-                }
-                title={g.label}
-                description={g.description}
-                badge={
-                  isPrimary ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase text-white bg-accent px-1.5 py-0.5 rounded">
-                      <Star className="w-2.5 h-2.5" fill="currentColor" /> Primary
-                    </span>
-                  ) : isSecondary ? (
-                    <span className="text-[10px] font-semibold uppercase text-accent bg-accent-soft border border-accent-border px-1.5 py-0.5 rounded">
-                      Secondary
-                    </span>
-                  ) : null
-                }
-              />
-              {!isPrimary && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSecondary(g.key);
-                  }}
-                  className={cn(
-                    "absolute bottom-2.5 right-2.5 text-[10.5px] font-medium px-2 py-0.5 rounded-md cursor-pointer transition-colors",
-                    isSecondary
-                      ? "bg-accent text-white hover:bg-accent-2"
-                      : "bg-surface-2 text-muted hover:text-text border border-border"
-                  )}
-                >
-                  {isSecondary ? "Remove" : "+ also"}
-                </button>
-              )}
-            </div>
-          );
-        })}
+      <div className="max-w-[520px] mx-auto">
+        <label className="text-[12.5px] font-semibold text-text block mb-1.5">
+          What do you sell?
+        </label>
+        <input
+          value={draft.offerName ?? ""}
+          onChange={(e) => update({ offerName: e.target.value })}
+          placeholder="e.g. The DM Engine, Strength Cohort, $750k+ home tour…"
+          className="w-full h-11 px-3.5 rounded-[10px] bg-surface border border-border text-[14px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+        />
+        <div className="text-[11.5px] text-muted mt-2">
+          Quick start — pick a category to autofill:
+        </div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {OFFER_CHIPS.map((c) => {
+            const active = draft.selling?.[0] === c.sellingKey;
+            return (
+              <button
+                key={c.sellingKey}
+                onClick={() => {
+                  update({
+                    selling: [c.sellingKey],
+                    offerName: draft.offerName?.trim() ? draft.offerName : c.label,
+                  });
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-full border text-[12.5px] font-medium cursor-pointer transition-colors",
+                  active
+                    ? "border-accent/45 bg-accent-soft text-text"
+                    : "border-border bg-surface text-muted hover:border-accent/25 hover:text-text",
+                )}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </>
   );
 }
 
-/* ─── 4. Platforms ───────────────────────────────────────────────── */
+/* ─── 4. What do you create ──────────────────────────────────────── */
 
-export function StepPlatforms({ draft, update }: StepProps) {
-  const value = draft.platforms ?? [];
-  function toggle(p: Platform) {
-    update({
-      platforms: value.includes(p)
-        ? value.filter((x) => x !== p)
-        : [...value, p],
-    });
-  }
-  return (
-    <>
-      <HelpText
-        eyebrow="Where you publish"
-        title="What platforms do you use?"
-        description="Instagram is our primary integration today — others personalize copy + reports."
-      />
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {platforms.map((p) => (
-          <div key={p.key} className="relative">
-            <PickCard
-              active={value.includes(p.key)}
-              onClick={() => toggle(p.key)}
-              title={p.label}
-              description={p.description}
-              icon={PLATFORM_ICONS[p.key]}
-              multi
-            />
-            {p.key === "instagram" && (
-              <span className="absolute top-2.5 left-2.5 text-[9.5px] font-semibold uppercase text-accent bg-accent-soft border border-accent-border px-1.5 py-0.5 rounded">
-                Primary
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-/* ─── 5. Content shape (formats + frequency) ─────────────────────── */
-
-export function StepContentShape({ draft, update }: StepProps) {
+export function StepContentFormats({ draft, update }: StepProps) {
   const formats = draft.contentFormats ?? [];
   return (
     <>
       <HelpText
         eyebrow="Your output"
-        title="What do you create most?"
-        description="Pick everything that applies. We'll personalize sample assets + Sequence Studio defaults."
+        title="What do you create?"
+        description="Pick everything that applies. Personalizes Sequence Studio defaults + sample assets."
       />
-      <div className="mb-7">
-        <ChipGroup<ContentFormat>
-          multi
-          value={formats}
-          options={contentFormats}
-          onChange={(v) => update({ contentFormats: v })}
-        />
-      </div>
-      <div>
-        <div className="text-[12.5px] font-semibold text-text mb-2 text-center">
-          How often do you post?
-        </div>
-        <Segmented<Frequency>
-          value={draft.frequency}
-          options={frequencies}
-          onChange={(v) => update({ frequency: v })}
-        />
-      </div>
+      <ChipGroup<ContentFormat>
+        multi
+        value={formats}
+        options={contentFormats}
+        onChange={(v) => update({ contentFormats: v })}
+      />
     </>
   );
 }
 
-/* ─── 6. How you work today (workflow + biggest problem) ─────────── */
-
-export function StepWorkflowProblem({ draft, update }: StepProps) {
-  const wf = draft.planningWorkflow ?? [];
-  return (
-    <>
-      <HelpText
-        eyebrow="How you work today"
-        title="What's holding you back?"
-        description="Pick how you currently plan — and the biggest content problem you'd like CreatorHub to solve."
-      />
-      <div className="mb-7">
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          Current planning workflow
-        </div>
-        <ChipGroup<PlanningWorkflow>
-          multi
-          value={wf}
-          options={planningWorkflows}
-          onChange={(v) => update({ planningWorkflow: v })}
-        />
-      </div>
-      <div>
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          Biggest content problem
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {problems.map((p) => (
-            <PickCard
-              key={p.key}
-              size="sm"
-              active={draft.biggestProblem === p.key}
-              onClick={() => update({ biggestProblem: p.key as Problem })}
-              title={p.label}
-            />
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ─── 7. Audience ────────────────────────────────────────────────── */
+/* ─── 5. Audience (who + problem) ────────────────────────────────── */
 
 export function StepAudience({ draft, update }: StepProps) {
   const a = draft.audience ?? { who: "", wants: "", problem: "" };
-  const set = (k: "who" | "wants" | "problem", v: string) =>
+  const set = (k: "who" | "problem", v: string) =>
     update({ audience: { ...a, [k]: v } });
   return (
     <>
       <HelpText
         eyebrow="Halfway there"
-        title="Who's your audience?"
-        description="A few short notes. Drives the brand context the AI uses for every sequence."
+        title="Who are you reaching?"
+        description="Two short notes drive every brand context the AI uses."
       />
       <div className="space-y-4 max-w-[560px] mx-auto">
         <Field
@@ -412,19 +254,13 @@ export function StepAudience({ draft, update }: StepProps) {
           onChange={(v) => set("who", v)}
         />
         <Field
-          label="What do they want?"
-          value={a.wants}
-          placeholder="e.g. predictable inbound DMs"
-          onChange={(v) => set("wants", v)}
-        />
-        <Field
           label="What problem do you solve for them?"
           value={a.problem}
           placeholder="e.g. content with a system, not just posts"
           onChange={(v) => set("problem", v)}
         />
         <p className="text-[11.5px] text-muted text-center">
-          All optional &mdash; leave blank if you&rsquo;d rather skip.
+          Both optional &mdash; leave blank if you&rsquo;d rather skip.
         </p>
       </div>
     </>
@@ -457,363 +293,189 @@ function Field({
   );
 }
 
-/* ─── 8. Selling ─────────────────────────────────────────────────── */
+/* ─── 6. Brand tone (multi, max 2) ───────────────────────────────── */
 
-export function StepSelling({ draft, update }: StepProps) {
-  const value = draft.selling ?? [];
-  return (
-    <>
-      <HelpText
-        eyebrow="What you sell"
-        title="What do you sell or promote?"
-        description="Pick anything that applies. Skip if you're not selling yet."
-      />
-      <div className="mb-6">
-        <ChipGroup<Selling>
-          multi
-          value={value}
-          options={sellingTypes}
-          onChange={(v) => update({ selling: v })}
-        />
-      </div>
-      <div className="max-w-[460px] mx-auto">
-        <label className="text-[12.5px] font-semibold text-text block mb-1.5">
-          Offer / product / service name (optional)
-        </label>
-        <input
-          value={draft.offerName ?? ""}
-          onChange={(e) => update({ offerName: e.target.value })}
-          placeholder="e.g. The DM Engine, Studio booking, Strength cohort…"
-          className="w-full h-10 px-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
-        />
-      </div>
-    </>
-  );
-}
-
-/* ─── 9. CTA + brand voice ───────────────────────────────────────── */
-
-export function StepCtaTone({ draft, update }: StepProps) {
+export function StepBrandTone({ draft, update }: StepProps) {
   const tones = draft.brandTones ?? [];
-  const isCustomCta = draft.ctaStyle === "custom";
+  function toggle(t: BrandTone) {
+    if (tones.includes(t)) {
+      update({ brandTones: tones.filter((x) => x !== t) });
+    } else if (tones.length < 2) {
+      update({ brandTones: [...tones, t] });
+    }
+  }
   return (
     <>
       <HelpText
         eyebrow="Voice"
-        title="Preferred CTA + brand tone"
-        description="Pick how you usually call viewers to action — and the tones your copy should use."
+        title="What's your brand tone?"
+        description="Pick up to 2. Drives the default tone for every sequence + caption."
       />
-      <div className="mb-7">
-        <div className="text-[12.5px] font-semibold text-text mb-2">CTA style</div>
-        <ChipGroup<Cta>
-          value={draft.ctaStyle}
-          options={ctaStyles}
-          onChange={(v) => update({ ctaStyle: v })}
-        />
-        {isCustomCta && (
-          <input
-            value={draft.customCta ?? ""}
-            onChange={(e) => update({ customCta: e.target.value })}
-            placeholder="e.g. Visit our showroom this weekend"
-            className="w-full h-10 px-3 mt-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
-          />
-        )}
-      </div>
-      <div>
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          Brand tones (multi-select)
-        </div>
-        <ChipGroup<BrandTone>
-          multi
-          value={tones}
-          options={brandTones}
-          onChange={(v) => update({ brandTones: v })}
-        />
-      </div>
-    </>
-  );
-}
-
-/* ─── 10. Sequence Studio + Library ──────────────────────────────── */
-
-export function StepStudioLibrary({ draft, update }: StepProps) {
-  const seq = draft.sequenceUses ?? [];
-  const ats = draft.assetTypes ?? [];
-  return (
-    <>
-      <HelpText
-        eyebrow="Almost done"
-        title="How will you use Studio + Library?"
-        description="Sequence Studio works best with photos and short videos up to 15 seconds."
-      />
-      <div className="mb-7">
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          What should Sequence Studio help with?
-        </div>
-        <ChipGroup<SequenceUse>
-          multi
-          value={seq}
-          options={sequenceUses}
-          onChange={(v) => update({ sequenceUses: v })}
-        />
-      </div>
-      <div className="mb-7">
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          What kinds of assets do you have?
-        </div>
-        <ChipGroup<AssetType>
-          multi
-          value={ats}
-          options={assetTypes}
-          onChange={(v) => update({ assetTypes: v })}
-        />
-      </div>
-      <ToggleRow
-        title="Use niche-specific presets"
-        description="Pre-fill Studio with copy variants tuned to your niche."
-        checked={draft.wantsNichePresets ?? true}
-        onChange={(v) => update({ wantsNichePresets: v })}
-      />
-    </>
-  );
-}
-
-/* ─── 11. Reports + team ─────────────────────────────────────────── */
-
-export function StepReportsTeam({ draft, update }: StepProps) {
-  const rn = draft.reportsNeeds ?? [];
-  return (
-    <>
-      <HelpText
-        eyebrow="How you work"
-        title="Reports + team setup"
-        description="Tells us where to put effort in Reports and Pipeline."
-      />
-      <div className="mb-7">
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          What reports do you need?
-        </div>
-        <ChipGroup<ReportsNeed>
-          multi
-          value={rn}
-          options={reportsNeeds}
-          onChange={(v) => update({ reportsNeeds: v })}
-        />
-      </div>
-      <div>
-        <div className="text-[12.5px] font-semibold text-text mb-2">
-          Team setup
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {teamSetups.map((t) => (
-            <PickCard
+      <div className="flex flex-wrap gap-2 justify-center">
+        {brandTones.map((t) => {
+          const active = tones.includes(t.key);
+          return (
+            <button
               key={t.key}
-              size="sm"
-              active={draft.team === t.key}
-              onClick={() => update({ team: t.key as TeamSetup })}
-              title={t.label}
-              description={t.description}
-            />
-          ))}
-        </div>
+              onClick={() => toggle(t.key)}
+              className={cn(
+                "px-3.5 py-2 rounded-full border text-[13px] font-medium cursor-pointer transition-colors",
+                active
+                  ? "border-accent/45 bg-accent-soft text-text"
+                  : "border-border bg-surface text-text/70 hover:border-accent/25 hover:text-text",
+              )}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
+      <p className="text-[11.5px] text-muted text-center mt-3 tabular-nums">
+        {tones.length}/2 selected
+      </p>
     </>
   );
 }
 
-/* ─── 12. Connect or demo ────────────────────────────────────────── */
+/* ─── 7. Biggest current problem ─────────────────────────────────── */
 
-export function StepConnect({ draft, update }: StepProps) {
+export function StepBiggestProblem({ draft, update }: StepProps) {
   return (
     <>
       <HelpText
-        eyebrow="Final step"
-        title="Connect Instagram or use sample data?"
-        description="Connect to import real posts and performance — or explore the workspace with sample data first."
+        eyebrow="What's hardest"
+        title="What's your biggest problem right now?"
+        description="One pick. Drives your dashboard's 'Next move' callout."
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[680px] mx-auto">
-        <PickCard
-          size="lg"
-          active={draft.startMode === "instagram"}
-          onClick={() => update({ startMode: "instagram" as StartMode })}
-          title="Connect Instagram"
-          description="Import posts, understand performance, and turn data into better content decisions."
-          icon={<Plug className="w-4 h-4" />}
-        />
-        <PickCard
-          size="lg"
-          active={draft.startMode === "demo"}
-          onClick={() => update({ startMode: "demo" as StartMode })}
-          title="Use sample workspace"
-          description="Explore everything CreatorHub does with realistic mock data. Connect later from Integrations."
-          icon={<Sparkles className="w-4 h-4" />}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-[700px] mx-auto">
+        {problems.map((p) => (
+          <PickCard
+            key={p.key}
+            size="sm"
+            active={draft.biggestProblem === p.key}
+            onClick={() => update({ biggestProblem: p.key as Problem })}
+            title={p.label}
+          />
+        ))}
       </div>
     </>
   );
 }
 
-function ToggleRow({
-  title,
-  description,
-  checked,
-  onChange,
-}: {
-  title: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="rounded-[12px] border border-border bg-surface card-base p-4 flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <div className="text-[13px] font-semibold text-text">{title}</div>
-        <div className="text-[11.5px] text-muted mt-0.5">{description}</div>
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "relative w-9 h-5 rounded-full transition-colors cursor-pointer shrink-0",
-          checked ? "bg-accent" : "bg-surface-3"
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
-            checked && "translate-x-4"
-          )}
-        />
-      </button>
-    </div>
+/* ─── 8. Pick your plan ──────────────────────────────────────────── */
+
+const PRICING = {
+  standard: { monthly: 67, annual: 27, annualTotal: 322 },
+  pro:      { monthly: 149, annual: 60, annualTotal: 715 },
+} as const;
+
+export function StepPlan({ draft, update }: StepProps) {
+  const cycle = (draft.trial?.cycle ?? "annual") as TrialCycle;
+  const plan = (draft.trial?.plan ?? (draft.creatorType === "agency" ? "pro" : "standard")) as TrialPlan;
+
+  function setCycle(c: TrialCycle) {
+    update({
+      trial: {
+        plan,
+        cycle: c,
+        startedAt: draft.trial?.startedAt ?? "",
+        expiresAt: draft.trial?.expiresAt ?? "",
+      },
+    });
+  }
+  function setPlan(p: TrialPlan) {
+    update({
+      trial: {
+        plan: p,
+        cycle,
+        startedAt: draft.trial?.startedAt ?? "",
+        expiresAt: draft.trial?.expiresAt ?? "",
+      },
+    });
+  }
+
+  const annualBadge = (
+    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase text-accent bg-accent-soft border border-accent-border px-1.5 py-0.5 rounded tracking-wide">
+      60% off
+    </span>
   );
-}
 
-/* ─── 13. Summary ────────────────────────────────────────────────── */
-
-export function StepSummary({ draft, goToStep }: StepProps) {
-  const sectionGo = (n: number) => () => goToStep?.(n);
   return (
     <>
       <HelpText
-        eyebrow="Let's review"
-        title="Your workspace, at a glance"
-        description="Looks good? Click any section to revisit. Otherwise, build your workspace."
+        eyebrow="Your plan"
+        title="Pick your plan."
+        description="Start with a 7-day free trial. Cancel anytime."
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <SummaryCard label="Creator type" value={labelOf(creatorTypes, draft.creatorType)} onEdit={sectionGo(1)} />
-        <SummaryCard label="Niche" value={draft.niche ? (niches.find((n) => n.key === draft.niche)?.label ?? draft.niche) : "—"} onEdit={sectionGo(2)} />
-        <SummaryCard
-          label="Primary goal"
-          value={labelOf(goals, draft.primaryGoal)}
-          extra={(draft.secondaryGoals ?? []).map((g) => labelOf(goals, g)).join(" · ")}
-          onEdit={sectionGo(3)}
-        />
-        <SummaryCard
-          label="Platforms"
-          value={(draft.platforms ?? []).map((p) => labelOf(platforms, p)).join(" · ") || "—"}
-          onEdit={sectionGo(4)}
-        />
-        <SummaryCard
-          label="Content + cadence"
-          value={(draft.contentFormats ?? []).map((c) => labelOf(contentFormats, c)).join(" · ") || "—"}
-          extra={labelOf(frequencies, draft.frequency)}
-          onEdit={sectionGo(5)}
-        />
-        <SummaryCard
-          label="Workflow + problem"
-          value={(draft.planningWorkflow ?? []).map((w) => labelOf(planningWorkflows, w)).join(" · ") || "—"}
-          extra={labelOf(problems, draft.biggestProblem)}
-          onEdit={sectionGo(6)}
-        />
-        <SummaryCard
-          label="Audience"
-          value={draft.audience?.who?.trim() || "—"}
-          extra={draft.audience?.wants?.trim() || ""}
-          onEdit={sectionGo(7)}
-        />
-        <SummaryCard
-          label="Selling"
-          value={(draft.selling ?? []).map((s) => labelOf(sellingTypes, s)).join(" · ") || "—"}
-          extra={draft.offerName?.trim() || ""}
-          onEdit={sectionGo(8)}
-        />
-        <SummaryCard
-          label="CTA + tone"
-          value={labelOf(ctaStyles, draft.ctaStyle)}
-          extra={(draft.brandTones ?? []).map((t) => labelOf(brandTones, t)).join(" · ")}
-          onEdit={sectionGo(9)}
-        />
-        <SummaryCard
-          label="Studio + Library"
-          value={`${(draft.sequenceUses ?? []).length} Studio uses · ${(draft.assetTypes ?? []).length} asset types`}
-          extra={draft.wantsNichePresets ? "Niche presets ON" : "Niche presets OFF"}
-          onEdit={sectionGo(10)}
-        />
-        <SummaryCard
-          label="Reports + team"
-          value={(draft.reportsNeeds ?? []).map((r) => labelOf(reportsNeeds, r)).join(" · ") || "—"}
-          extra={labelOf(teamSetups, draft.team)}
-          onEdit={sectionGo(11)}
-        />
-        <SummaryCard
-          label="Start mode"
-          value={draft.startMode === "instagram" ? "Connect Instagram" : draft.startMode === "demo" ? "Use sample workspace" : "—"}
-          onEdit={sectionGo(12)}
+      <div className="max-w-[280px] mx-auto mb-5">
+        <Segmented<TrialCycle>
+          value={cycle}
+          options={[
+            { key: "monthly", label: "Monthly" },
+            { key: "annual", label: "Annual · save 60%" },
+          ]}
+          onChange={setCycle}
         />
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[700px] mx-auto">
+        <PlanCard
+          active={plan === "standard"}
+          onClick={() => setPlan("standard")}
+          name="Standard"
+          tagline="For solo creators."
+          priceTop={cycle === "monthly" ? `$${PRICING.standard.monthly}` : `$${PRICING.standard.annual}`}
+          priceUnit={
+            cycle === "monthly"
+              ? "/mo"
+              : `/mo · billed $${PRICING.standard.annualTotal}/yr`
+          }
+          discountBadge={cycle === "annual" ? annualBadge : undefined}
+          features={[
+            "1 user",
+            "All Sequence Studio features",
+            "Calendar + Reports",
+            "AI ideas + insights",
+          ]}
+          recommended={draft.creatorType !== "agency"}
+        />
+        <PlanCard
+          active={plan === "pro"}
+          onClick={() => setPlan("pro")}
+          name="Pro"
+          tagline="For agencies + multi-client teams."
+          priceTop={cycle === "monthly" ? `$${PRICING.pro.monthly}` : `$${PRICING.pro.annual}`}
+          priceUnit={
+            cycle === "monthly"
+              ? "/mo"
+              : `/mo · billed $${PRICING.pro.annualTotal}/yr`
+          }
+          discountBadge={cycle === "annual" ? annualBadge : undefined}
+          features={[
+            "Unlimited users",
+            "Multi-client workspaces",
+            "Client-ready reports",
+            "Priority support",
+          ]}
+          recommended={draft.creatorType === "agency"}
+        />
+      </div>
+      <p className="text-[11.5px] text-muted text-center mt-5">
+        7-day free trial · No charge today · Cancel anytime
+      </p>
     </>
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-  extra,
-  onEdit,
-}: {
-  label: string;
-  value: string;
-  extra?: string;
-  onEdit: () => void;
-}) {
-  return (
-    <Card padded={false} className="p-4 flex items-start justify-between gap-3">
-      <div className="min-w-0 flex-1">
-        <div
-          className="text-[10.5px] uppercase font-semibold text-muted mb-1"
-          style={{ letterSpacing: "0.06em" }}
-        >
-          {label}
-        </div>
-        <div className="text-[13.5px] text-text font-medium leading-snug">
-          {value || "—"}
-        </div>
-        {extra && (
-          <div className="text-[11.5px] text-muted mt-1 leading-snug">
-            {extra}
-          </div>
-        )}
-      </div>
-      <button
-        onClick={onEdit}
-        className="text-[11.5px] text-accent hover:text-accent-2 font-medium cursor-pointer shrink-0"
-      >
-        Edit
-      </button>
-    </Card>
-  );
-}
-
-/* ─── 14. Workspace ready ────────────────────────────────────────── */
+/* ─── 9. Workspace ready ─────────────────────────────────────────── */
 
 export function StepReady({
   displayName,
-  primaryGoalLabel,
+  focusLabel,
   quickActions,
   onPick,
 }: {
   displayName: string;
-  primaryGoalLabel: string;
+  focusLabel: string;
   quickActions: { label: string; href: string; hint: string }[];
   onPick: (href: string) => void;
 }) {
@@ -832,7 +494,7 @@ export function StepReady({
         className="text-[11px] uppercase font-semibold text-accent mb-2"
         style={{ letterSpacing: "0.10em" }}
       >
-        Setup complete · 100%
+        Trial active · 7 days
       </div>
       <h1 className="text-[32px] font-semibold tracking-[-0.015em] text-text leading-tight">
         Welcome to CreatorHub,
@@ -841,7 +503,7 @@ export function StepReady({
       </h1>
       <p className="text-[14px] text-muted mt-3 max-w-[480px] mx-auto leading-relaxed">
         Your workspace is built around{" "}
-        <span className="text-accent font-medium">{primaryGoalLabel}</span>.
+        <span className="text-accent font-medium">{focusLabel}</span>.
       </p>
 
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-[680px] mx-auto">
@@ -883,12 +545,3 @@ export function StepReady({
     </div>
   );
 }
-
-/* Re-export icon set for callers that need it */
-export {
-  Wand2,
-  ImageIcon,
-  FileBarChart,
-  Users,
-  ShoppingBag,
-};

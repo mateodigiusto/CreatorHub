@@ -4,10 +4,8 @@ export type CreatorType =
   | "creator"
   | "infoproduct"
   | "agency"
-  | "tattoo"
   | "fitness"
   | "realestate"
-  | "brand"
   | "other";
 
 export type Goal =
@@ -148,8 +146,18 @@ export type TeamSetup =
 
 export type StartMode = "instagram" | "demo";
 
+export type TrialPlan = "standard" | "pro";
+export type TrialCycle = "monthly" | "annual";
+
+export type Trial = {
+  plan: TrialPlan;
+  cycle: TrialCycle;
+  startedAt: string;     // ISO
+  expiresAt: string;     // ISO, +7d
+};
+
 export type Profile = {
-  version: 1;
+  version: 2;
   completedAt: string;
   displayName?: string;
   handle?: string;
@@ -174,6 +182,7 @@ export type Profile = {
   reportsNeeds: ReportsNeed[];
   team: TeamSetup;
   startMode: StartMode;
+  trial?: Trial;
 };
 
 /* In-progress draft — every field optional except the version stamp. */

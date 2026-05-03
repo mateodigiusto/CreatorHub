@@ -37,7 +37,12 @@ type ProfileRow = {
   reports_needs: string[];
   team: string | null;
   start_mode: string;
+  schema_version: number;
   completed_at: string | null;
+  trial_plan: string | null;
+  trial_cycle: string | null;
+  trial_started_at: string | null;
+  trial_expires_at: string | null;
 };
 
 export async function GET() {
@@ -54,18 +59,22 @@ export async function GET() {
         "platforms, content_formats, frequency, planning_workflow, biggest_problem, " +
         "audience_who, audience_wants, audience_problem, selling, offer_name, " +
         "cta_style, custom_cta, brand_tones, sequence_uses, wants_niche_presets, " +
-        "asset_types, reports_needs, team, start_mode, completed_at",
+        "asset_types, reports_needs, team, start_mode, schema_version, completed_at, " +
+        "trial_plan, trial_cycle, trial_started_at, trial_expires_at",
     )
     .eq("user_id", userRes.user.id)
     .returns<ProfileRow[]>()
     .maybeSingle();
 
-  if (!row || !row.completed_at) {
+  /* Onboarding v2 gate: only return a profile to the app if the row has
+     completed_at AND schema_version === 2. v1 rows (legacy) get `null` here
+     so the AppStateProvider treats them as un-onboarded → routed to /onboarding. */
+  if (!row || !row.completed_at || row.schema_version !== 2) {
     return NextResponse.json({ profile: null }, { status: 200 });
   }
 
   const profile: Profile = {
-    version: 1,
+    version: 2,
     completedAt: row.completed_at,
     displayName: row.display_name ?? undefined,
     handle: row.handle ?? undefined,
@@ -94,6 +103,15 @@ export async function GET() {
     reportsNeeds: row.reports_needs as Profile["reportsNeeds"],
     team: (row.team ?? "solo") as Profile["team"],
     startMode: row.start_mode as Profile["startMode"],
+    trial:
+      row.trial_plan && row.trial_cycle && row.trial_started_at && row.trial_expires_at
+        ? {
+            plan: row.trial_plan as "standard" | "pro",
+            cycle: row.trial_cycle as "monthly" | "annual",
+            startedAt: row.trial_started_at,
+            expiresAt: row.trial_expires_at,
+          }
+        : undefined,
   };
 
   return NextResponse.json({ profile });

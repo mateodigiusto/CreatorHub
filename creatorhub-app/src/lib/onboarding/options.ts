@@ -20,25 +20,23 @@ import type {
 type Opt<T extends string> = { key: T; label: string; description?: string };
 
 export const creatorTypes: Opt<CreatorType>[] = [
-  { key: "creator", label: "Creator / personal brand", description: "Solo creator building an audience around you." },
-  { key: "infoproduct", label: "Info-product business", description: "Selling courses, coaching, or knowledge products." },
+  { key: "creator", label: "Personal brand", description: "Solo creator building an audience around you." },
   { key: "agency", label: "Social media agency", description: "Running content for multiple clients." },
-  { key: "tattoo", label: "Tattoo artist / local creator", description: "Studio-led, booking-driven craft business." },
-  { key: "fitness", label: "Fitness creator", description: "Coaching, programming, transformations." },
-  { key: "realestate", label: "Real estate creator", description: "Listings, neighborhoods, market insights." },
-  { key: "brand", label: "Brand / content team", description: "In-house team for a product or company." },
+  { key: "infoproduct", label: "Info product / coaching", description: "Selling courses, coaching, or knowledge products." },
+  { key: "realestate", label: "Real estate", description: "Listings, neighborhoods, market insights." },
+  { key: "fitness", label: "Fitness", description: "Coaching, programming, transformations." },
   { key: "other", label: "Something else", description: "Pick this if none of the above fit." },
 ];
 
 export const niches: { key: string; label: string }[] = [
-  { key: "coaching", label: "Coaching / Education" },
-  { key: "tattoo", label: "Tattoo / Local service" },
-  { key: "fitness", label: "Fitness" },
   { key: "realestate", label: "Real estate" },
+  { key: "coaching", label: "Coaching / Education" },
   { key: "finance", label: "Finance" },
+  { key: "info", label: "Info / Content business" },
   { key: "beauty", label: "Beauty / Lifestyle" },
-  { key: "fashion", label: "Fashion" },
   { key: "marketing", label: "Business / Marketing" },
+  { key: "fitness", label: "Fitness" },
+  { key: "fashion", label: "Fashion" },
   { key: "music", label: "Music / Entertainment" },
   { key: "food", label: "Food / Hospitality" },
   { key: "other", label: "Other" },

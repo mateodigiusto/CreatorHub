@@ -9,7 +9,10 @@ export function readProfile(): Profile | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed?.version !== 1) return null;
+    /* v1 profiles are intentionally rejected — onboarding v2 forces every
+       existing user back through the new flow. They keep the row in localStorage
+       but the app treats them as un-onboarded until they complete v2. */
+    if (parsed?.version !== 2) return null;
     return parsed as Profile;
   } catch {
     return null;
