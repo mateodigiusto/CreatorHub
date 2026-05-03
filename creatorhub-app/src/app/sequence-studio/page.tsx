@@ -17,8 +17,10 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AddAssetCard } from "@/components/ui/AddAssetCard";
 import { cn } from "@/lib/cn";
+import { useAppState } from "@/lib/store";
+import { uploadAssetFile } from "@/lib/uploads";
 import { MAX_VIDEO_SECONDS } from "@/lib/mock/story";
 import type { ApiAsset } from "@/app/api/assets/route";
 
@@ -48,9 +50,11 @@ function pickGradient(seed: string): string {
 
 export default function SequenceStudioPage() {
   const router = useRouter();
+  const { showToast } = useAppState();
   const [assets, setAssets] = useState<ApiAsset[] | null>(null);
   const [sequences, setSequences] = useState<DbSequence[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const loadAssets = useCallback(async () => {
     try {
@@ -98,6 +102,41 @@ export default function SequenceStudioPage() {
       return true;
     });
   }, [assets]);
+
+  const onFiles = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      setUploading(true);
+      let added = 0;
+      let tooLong = 0;
+      let failed = 0;
+      for (const file of Array.from(files)) {
+        const r = await uploadAssetFile(file);
+        if (r.ok) {
+          added++;
+          if (r.tooLong) tooLong++;
+        } else {
+          failed++;
+        }
+      }
+      await loadAssets();
+      setUploading(false);
+
+      if (added === 0 && failed > 0) {
+        showToast(`Upload failed (${failed} file${failed === 1 ? "" : "s"})`);
+        return;
+      }
+      if (added === 0) return;
+      if (tooLong > 0) {
+        showToast(
+          `${added} added · ${tooLong} too long for sequences (max ${MAX_VIDEO_SECONDS}s)`,
+        );
+      } else {
+        showToast(`${added} asset${added === 1 ? "" : "s"} added`);
+      }
+    },
+    [loadAssets, showToast],
+  );
 
   function toggle(id: string) {
     setSelected((s) =>
@@ -214,18 +253,13 @@ export default function SequenceStudioPage() {
               />
             ))}
           </div>
-        ) : usable.length === 0 ? (
-          <EmptyState
-            title="No assets yet."
-            description="Upload photos or short videos in the Library to start building sequences."
-            showSampleDataCta={false}
-            primaryAction={{
-              label: "Open Library",
-              onClick: () => router.push("/library"),
-            }}
-          />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <AddAssetCard
+              onFiles={onFiles}
+              uploading={uploading}
+              context="picker"
+            />
             {usable.map((a) => {
               const sel = selected.includes(a.id);
               return (

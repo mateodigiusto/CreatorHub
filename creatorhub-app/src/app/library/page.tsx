@@ -6,10 +6,10 @@ import { Upload, Play, AlertTriangle, Wand2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { AddAssetCard } from "@/components/ui/AddAssetCard";
 import { cn } from "@/lib/cn";
 import { useAppState } from "@/lib/store";
-import { getSupabaseBrowser } from "@/lib/supabase/browser";
+import { uploadAssetFile } from "@/lib/uploads";
 import { MAX_VIDEO_SECONDS } from "@/lib/mock/story";
 import type { ApiAsset } from "@/app/api/assets/route";
 
@@ -73,108 +73,40 @@ export default function LibraryPage() {
   const photoCount = assets?.filter((a) => a.kind !== "video").length ?? 0;
   const videoCount = assets?.filter((a) => a.kind === "video").length ?? 0;
 
-  async function readVideoDuration(file: File): Promise<number> {
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(file);
-      const v = document.createElement("video");
-      v.preload = "metadata";
-      v.muted = true;
-      v.src = url;
-      v.onloadedmetadata = () => {
-        const d = v.duration;
-        URL.revokeObjectURL(url);
-        resolve(Number.isFinite(d) ? d : 0);
-      };
-      v.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(0);
-      };
-    });
-  }
+  const onFiles = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      setUploading(true);
+      let added = 0;
+      let tooLong = 0;
+      let failed = 0;
+      for (const file of Array.from(files)) {
+        const r = await uploadAssetFile(file);
+        if (r.ok) {
+          added++;
+          if (r.tooLong) tooLong++;
+        } else {
+          failed++;
+        }
+      }
+      await loadAssets();
+      setUploading(false);
 
-  async function uploadOne(file: File): Promise<{ ok: boolean; tooLong?: boolean }> {
-    const isVideo = file.type.startsWith("video/");
-    const isImage = file.type.startsWith("image/");
-    if (!isVideo && !isImage) return { ok: false };
-
-    const baseTitle = file.name.replace(/\.[^.]+$/, "").slice(0, 60) || "Untitled";
-    const durationSeconds = isVideo ? await readVideoDuration(file) : undefined;
-
-    /* 1. Get a signed upload URL + pre-inserted asset row. */
-    const initRes = await fetch("/api/assets/upload-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        kind: isVideo ? "video" : "photo",
-        title: baseTitle,
-        mimeType: file.type,
-        sizeBytes: file.size,
-        durationSeconds,
-      }),
-    });
-    if (!initRes.ok) {
-      const err = (await initRes.json().catch(() => ({}))) as { error?: string };
-      showToast(`Upload failed: ${err.error ?? initRes.status}`);
-      return { ok: false };
-    }
-    const init = (await initRes.json()) as {
-      assetId: string;
-      path: string;
-      token: string;
-    };
-
-    /* 2. PUT the bytes directly to Storage. */
-    const supabase = getSupabaseBrowser();
-    const { error: uploadErr } = await supabase.storage
-      .from("originals")
-      .uploadToSignedUrl(init.path, init.token, file, {
-        contentType: file.type,
-      });
-    if (uploadErr) {
-      showToast(`Upload failed: ${uploadErr.message}`);
-      return { ok: false };
-    }
-
-    /* 3. Tell the server the bytes landed → marks playable. */
-    const finalizeRes = await fetch(`/api/assets/${init.assetId}/finalize`, {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!finalizeRes.ok) {
-      const err = (await finalizeRes.json().catch(() => ({}))) as { error?: string };
-      showToast(`Finalize failed: ${err.error ?? finalizeRes.status}`);
-      return { ok: false };
-    }
-
-    return {
-      ok: true,
-      tooLong: isVideo && (durationSeconds ?? 0) > MAX_VIDEO_SECONDS,
-    };
-  }
-
-  async function onFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    let added = 0;
-    let tooLong = 0;
-    for (const file of Array.from(files)) {
-      const r = await uploadOne(file);
-      if (r.ok) added++;
-      if (r.tooLong) tooLong++;
-    }
-    await loadAssets();
-    setUploading(false);
-
-    if (added === 0) return;
-    if (tooLong > 0) {
-      showToast(
-        `${added} added · ${tooLong} too long for sequences (max ${MAX_VIDEO_SECONDS}s)`,
-      );
-    } else {
-      showToast(`${added} asset${added === 1 ? "" : "s"} added to library`);
-    }
-  }
+      if (added === 0 && failed > 0) {
+        showToast(`Upload failed (${failed} file${failed === 1 ? "" : "s"})`);
+        return;
+      }
+      if (added === 0) return;
+      if (tooLong > 0) {
+        showToast(
+          `${added} added · ${tooLong} too long for sequences (max ${MAX_VIDEO_SECONDS}s)`,
+        );
+      } else {
+        showToast(`${added} asset${added === 1 ? "" : "s"} added to library`);
+      }
+    },
+    [loadAssets, showToast],
+  );
 
   return (
     <>
@@ -223,22 +155,13 @@ export default function LibraryPage() {
             />
           ))}
         </div>
-      ) : visible.length === 0 ? (
-        <EmptyState
-          title={tab === "videos" ? "No videos yet." : "No assets yet."}
-          description={
-            tab === "videos"
-              ? `Upload a clip up to ${MAX_VIDEO_SECONDS}s to use it in a sequence.`
-              : "Upload photos or videos to start building your library."
-          }
-          showSampleDataCta={false}
-          primaryAction={{
-            label: "Upload",
-            onClick: () => fileInputRef.current?.click(),
-          }}
-        />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          <AddAssetCard
+            onFiles={onFiles}
+            uploading={uploading}
+            context="library"
+          />
           {visible.map((a) => (
             <AssetTile key={a.id} asset={a} />
           ))}
