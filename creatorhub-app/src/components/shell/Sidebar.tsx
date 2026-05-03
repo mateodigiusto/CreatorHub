@@ -13,6 +13,7 @@ import {
   Plug,
   Wand2,
   Images,
+  Microscope,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -40,6 +41,7 @@ const workspace: NavItem[] = [
 
 const tools: NavItem[] = [
   { href: "/sequence-studio", label: "Sequence Studio", icon: Wand2 },
+  { href: "/content-dna", label: "Content DNA", icon: Microscope },
   { href: "/reports", label: "Reports", icon: FileBarChart },
 ];
 

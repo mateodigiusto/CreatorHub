@@ -35,7 +35,7 @@ describe("migrations", () => {
     `;
     /* Bump this when adding a migration to supabase/migrations/. The CI
        step `npm run schema:version` prints the count for sanity. */
-    const EXPECTED = 15;
+    const EXPECTED = 16;
     expect(rows[0].v).toBe(EXPECTED);
   });
 

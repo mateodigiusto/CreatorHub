@@ -423,6 +423,68 @@ export const deletionRequests = pgTable(
   ],
 );
 
+/* ─── content_dna (analyses + drafts) ────────────────────────────── */
+
+export const analysisStatusEnum = pgEnum("analysis_status_t", [
+  "analyzing",
+  "ready",
+  "failed",
+]);
+
+export const sourcePlatformEnum = pgEnum("source_platform_t", [
+  "youtube",
+  "instagram",
+  "tiktok",
+  "other",
+]);
+
+export const contentAnalyses = pgTable(
+  "content_analyses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sourceUrl: text("source_url").notNull(),
+    sourcePlatform: sourcePlatformEnum("source_platform").notNull(),
+    sourceTitle: text("source_title"),
+    sourceCreator: text("source_creator"),
+    sourceThumbnail: text("source_thumbnail"),
+    transcription: text("transcription"),
+    hook: text("hook"),
+    structure: jsonb("structure"),
+    whyItWorked: jsonb("why_it_worked"),
+    variations: jsonb("variations"),
+    status: analysisStatusEnum("status").notNull().default("analyzing"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("content_analyses_user_created_idx").on(t.userId, sql`created_at desc`),
+  ],
+);
+
+export const contentDrafts = pgTable(
+  "content_drafts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    analysisId: uuid("analysis_id").notNull().references(() => contentAnalyses.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    angle: text("angle"),
+    audience: text("audience"),
+    targetPlatform: text("target_platform"),
+    tone: text("tone"),
+    script: text("script"),
+    hooks: jsonb("hooks"),
+    shots: jsonb("shots"),
+    captions: jsonb("captions"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("content_drafts_analysis_idx").on(t.analysisId),
+    index("content_drafts_user_created_idx").on(t.userId, sql`created_at desc`),
+  ],
+);
+
 /* ─── schema_migrations ──────────────────────────────────────────── */
 
 export const schemaMigrations = pgTable("schema_migrations", {
