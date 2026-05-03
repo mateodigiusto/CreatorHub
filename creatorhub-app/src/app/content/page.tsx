@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,7 @@ import { Thumb } from "@/components/ui/Thumb";
 import { Tabs } from "@/components/ui/Tabs";
 import { Plus, Filter, Wand2 } from "lucide-react";
 import { useAppState } from "@/lib/store";
-import { posts } from "@/lib/mock/data";
+import { posts as mockPosts } from "@/lib/mock/data";
 import { ContentStatus, Post } from "@/lib/mock/types";
 import { PlanContentDrawer } from "@/components/plan/PlanContentDrawer";
 
@@ -33,13 +33,102 @@ const PIPELINE_COLS: ContentStatus[] = [
   "Published",
 ];
 
+const PLACEHOLDER_GRADIENTS = [
+  "linear-gradient(135deg,#1E293B,#3B82F6)",
+  "linear-gradient(135deg,#0F766E,#14B8A6)",
+  "linear-gradient(135deg,#7C2D12,#F59E0B)",
+  "linear-gradient(135deg,#312E81,#6366F1)",
+  "linear-gradient(135deg,#0F172A,#94A3B8)",
+];
+
+function pickGradient(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i)) % 9999;
+  return PLACEHOLDER_GRADIENTS[hash % PLACEHOLDER_GRADIENTS.length];
+}
+
+type DbSequence = {
+  id: string;
+  title: string;
+  status: string;
+  goal: string | null;
+  content_style: string | null;
+  brief: string | null;
+  slides: unknown[];
+  scheduled_at: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function statusToContentStatus(s: string): ContentStatus {
+  switch (s) {
+    case "draft":
+      return "Idea";
+    case "review":
+      return "Review";
+    case "scheduled":
+      return "Scheduled";
+    case "published":
+      return "Published";
+    default:
+      return "Idea";
+  }
+}
+
+function dbSequenceToPost(seq: DbSequence): Post {
+  return {
+    id: `db-${seq.id}`,
+    title: seq.title,
+    caption: seq.brief ?? "",
+    type: "Story",
+    platform: "Instagram",
+    status: statusToContentStatus(seq.status),
+    thumbnail: pickGradient(seq.id),
+    publishedAt: seq.published_at ?? undefined,
+    scheduledAt: seq.scheduled_at ?? undefined,
+    reach: 0,
+    likes: 0,
+    comments: 0,
+    saves: 0,
+    shares: 0,
+    engagementRate: 0,
+  };
+}
+
 export default function ContentPage() {
   const { connected, extraPosts } = useAppState();
   const [view, setView] = useState<"library" | "pipeline">("library");
   const [filter, setFilter] = useState<"all" | ContentStatus>("all");
   const [planOpen, setPlanOpen] = useState(false);
+  const [dbSequences, setDbSequences] = useState<DbSequence[] | null>(null);
 
-  const allPosts = [...extraPosts, ...posts];
+  const loadSequences = useCallback(async () => {
+    try {
+      const r = await fetch("/api/sequences", { credentials: "include" });
+      if (!r.ok) {
+        setDbSequences([]);
+        return;
+      }
+      const json = (await r.json()) as { sequences: DbSequence[] };
+      setDbSequences(json.sequences);
+    } catch {
+      setDbSequences([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap fetch on mount */
+    void loadSequences();
+  }, [loadSequences]);
+
+  /* Real DB sequences first (newest), then any localStorage extras, then
+     the demo mock data behind. As DB usage grows the mock pile naturally
+     shrinks below the fold. */
+  const allPosts = useMemo<Post[]>(() => {
+    const dbPosts = (dbSequences ?? []).map(dbSequenceToPost);
+    return [...dbPosts, ...extraPosts, ...mockPosts];
+  }, [dbSequences, extraPosts]);
 
   if (!connected) {
     return (
@@ -55,7 +144,7 @@ export default function ContentPage() {
   }
 
   const filtered = allPosts.filter(
-    (p) => filter === "all" || p.status === filter
+    (p) => filter === "all" || p.status === filter,
   );
 
   return (
@@ -203,4 +292,3 @@ function Pipeline({ posts }: { posts: Post[] }) {
     </div>
   );
 }
-

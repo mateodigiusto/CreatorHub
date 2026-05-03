@@ -17,14 +17,60 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { theme, setTheme, profile, clearProfile } = useAppState();
-  const name = displayNameFor(profile);
-  const handle = handleFor(profile);
+  const { theme, setTheme, profile, setProfile, clearProfile, showToast } = useAppState();
+  const initialName = displayNameFor(profile);
+  const initialHandle = handleFor(profile);
   const ct = creatorTypeLabel(profile);
+
+  /* Controlled drafts so the inputs work + the save button has something to send. */
+  const [nameDraft, setNameDraft] = useState(initialName);
+  const [handleDraft, setHandleDraft] = useState(initialHandle);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const dirty = nameDraft !== initialName || handleDraft !== initialHandle;
 
   function restartSetup() {
     clearProfile();
     router.push("/onboarding");
+  }
+
+  function cancelEdit() {
+    setNameDraft(initialName);
+    setHandleDraft(initialHandle);
+  }
+
+  async function saveProfile() {
+    if (!dirty || savingProfile) return;
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/profile/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          displayName: nameDraft,
+          handle: handleDraft,
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        showToast(`Couldn't save: ${err.error ?? res.status}`);
+        setSavingProfile(false);
+        return;
+      }
+      /* Update local state so the Sidebar reflects immediately. */
+      if (profile) {
+        setProfile({
+          ...profile,
+          displayName: nameDraft.trim() || undefined,
+          handle: handleDraft.trim() || undefined,
+        });
+      }
+      showToast("Profile saved");
+    } catch {
+      showToast("Network error. Try again.");
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   const [deleting, setDeleting] = useState(false);
@@ -65,14 +111,29 @@ export default function SettingsPage() {
         <Card className="col-span-2">
           <CardHeader title="Profile" description="How you appear in CreatorHub" />
           <div className="space-y-4">
-            <Field label="Name" value={name} />
-            <Field label="Handle" value={`@${handle}`} />
-            <Field label="Workspace" value={ct} />
+            <Field
+              label="Name"
+              value={nameDraft}
+              onChange={setNameDraft}
+              placeholder="Your full name"
+            />
+            <Field
+              label="Handle"
+              value={handleDraft}
+              onChange={setHandleDraft}
+              placeholder="creatorhandle"
+              prefix="@"
+            />
+            <Field label="Workspace" value={ct} readOnly />
           </div>
           <div className="flex items-center justify-between gap-2 mt-6 pt-5 border-t border-border">
             <div className="flex items-center gap-2">
-              <Button>Save changes</Button>
-              <Button variant="ghost">Cancel</Button>
+              <Button onClick={saveProfile} disabled={!dirty || savingProfile}>
+                {savingProfile ? "Saving…" : "Save changes"}
+              </Button>
+              <Button variant="ghost" onClick={cancelEdit} disabled={!dirty || savingProfile}>
+                Cancel
+              </Button>
             </div>
             <Button variant="outline" size="sm" onClick={restartSetup}>
               <RefreshCw className="w-3.5 h-3.5" /> Restart workspace setup
@@ -210,14 +271,42 @@ export default function SettingsPage() {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  prefix,
+  readOnly,
+}: {
+  label: string;
+  value: string;
+  onChange?: (v: string) => void;
+  placeholder?: string;
+  prefix?: string;
+  readOnly?: boolean;
+}) {
   return (
     <div>
       <div className="text-[12px] text-muted mb-1">{label}</div>
-      <input
-        defaultValue={value}
-        className="w-full h-10 px-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
-      />
+      <div className="relative">
+        {prefix && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13.5px] text-muted pointer-events-none">
+            {prefix}
+          </span>
+        )}
+        <input
+          value={value}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          readOnly={readOnly || !onChange}
+          placeholder={placeholder}
+          className={cn(
+            "w-full h-10 pr-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20",
+            prefix ? "pl-7" : "pl-3",
+            (readOnly || !onChange) && "text-muted",
+          )}
+        />
+      </div>
     </div>
   );
 }

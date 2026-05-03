@@ -153,14 +153,78 @@ export default function NewSequencePage() {
   );
 }
 
+/* Stable per-id placeholder gradient (matches Library + landing). */
+const SS_GRADIENTS = [
+  "linear-gradient(135deg,#1E293B,#3B82F6)",
+  "linear-gradient(135deg,#0F766E,#14B8A6)",
+  "linear-gradient(135deg,#7C2D12,#F59E0B)",
+  "linear-gradient(135deg,#312E81,#6366F1)",
+  "linear-gradient(135deg,#0F172A,#94A3B8)",
+];
+function ssGradient(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h + seed.charCodeAt(i)) % 9999;
+  return SS_GRADIENTS[h % SS_GRADIENTS.length];
+}
+
+type ApiAssetLite = {
+  id: string;
+  kind: string;
+  title: string;
+  durationSeconds: number | null;
+  state: "playable" | "processing" | "failed";
+  signedUrl: string | null;
+  createdAt: string;
+};
+
+function dbAssetToMockShape(a: ApiAssetLite, idx: number): Asset {
+  return {
+    id: a.id,
+    title: a.title,
+    kind: (a.kind === "video" ? "video" : "photo") as Asset["kind"],
+    gradient: ssGradient(a.id),
+    mood: "Custom upload",
+    scene: "User asset",
+    /* Bias newer uploads slightly higher so AI-pick reaches for fresh
+       content first. Mock assets use real scores; uploads get 7.0–8.0. */
+    aestheticScore: 7.0 + Math.min(1, idx * 0.05),
+    tags: ["upload"],
+    recommendedUse: "Hook or supporting slide",
+    duration: a.durationSeconds ?? undefined,
+    src: a.signedUrl ?? undefined,
+  };
+}
+
 function NewSequenceContent() {
   const router = useRouter();
   const params = useSearchParams();
   const { extraAssets, appendContentItem, showToast, profile } = useAppState();
 
+  const [dbAssets, setDbAssets] = useState<Asset[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/assets", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { assets: ApiAssetLite[] } | null) => {
+        if (cancelled || !data) return;
+        const playable = data.assets.filter((a) => a.state === "playable");
+        setDbAssets(playable.map((a, i) => dbAssetToMockShape(a, i)));
+      })
+      .catch(() => {
+        /* Network blip → builder still functions on extraAssets + sampleAssets. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const allAssets = useMemo(
-    () => [...extraAssets, ...sampleAssets].filter(isVideoUsableInSequence),
-    [extraAssets]
+    () =>
+      [...dbAssets, ...extraAssets, ...sampleAssets].filter(
+        isVideoUsableInSequence,
+      ),
+    [dbAssets, extraAssets],
   );
 
   const initialIds = useMemo(() => {
