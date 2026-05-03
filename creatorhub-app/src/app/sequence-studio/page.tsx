@@ -10,14 +10,27 @@ import {
   Play,
   ArrowUpRight,
   Sparkles,
+  FileText,
+  Clock,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/cn";
 import { MAX_VIDEO_SECONDS } from "@/lib/mock/story";
 import type { ApiAsset } from "@/app/api/assets/route";
+
+type DbSequence = {
+  id: string;
+  title: string;
+  status: string;
+  scheduled_at: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 const PLACEHOLDER_GRADIENTS = [
   "linear-gradient(135deg,#1E293B,#3B82F6)",
@@ -36,6 +49,7 @@ function pickGradient(seed: string): string {
 export default function SequenceStudioPage() {
   const router = useRouter();
   const [assets, setAssets] = useState<ApiAsset[] | null>(null);
+  const [sequences, setSequences] = useState<DbSequence[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
 
   const loadAssets = useCallback(async () => {
@@ -52,10 +66,25 @@ export default function SequenceStudioPage() {
     }
   }, []);
 
+  const loadSequences = useCallback(async () => {
+    try {
+      const r = await fetch("/api/sequences", { credentials: "include" });
+      if (!r.ok) {
+        setSequences([]);
+        return;
+      }
+      const json = (await r.json()) as { sequences: DbSequence[] };
+      setSequences(json.sequences);
+    } catch {
+      setSequences([]);
+    }
+  }, []);
+
   useEffect(() => {
     /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap fetch on mount */
     void loadAssets();
-  }, [loadAssets]);
+    void loadSequences();
+  }, [loadAssets, loadSequences]);
 
   /* Only playable assets, and videos must fit the sequence cap. Sequences
      can mix photos + short videos; long videos live in /library only. */
@@ -130,6 +159,32 @@ export default function SequenceStudioPage() {
           description="Preview, refine, schedule or publish."
         />
       </div>
+
+      {sequences && sequences.length > 0 && (
+        <Card className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-[15px] font-semibold tracking-[-0.005em] text-text">
+                Recent sequences
+              </h3>
+              <p className="text-[13px] text-muted mt-0.5">
+                Pick up where you left off.
+              </p>
+            </div>
+            <Link
+              href="/content"
+              className="text-[12.5px] text-accent font-medium inline-flex items-center gap-1"
+            >
+              All in Content <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sequences.slice(0, 6).map((s) => (
+              <RecentSequenceTile key={s.id} sequence={s} />
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card>
         <div className="flex items-center justify-between mb-4 gap-3">
@@ -251,6 +306,56 @@ function StepChip({
       <p className="text-[11.5px] text-muted mt-0.5 leading-snug">{description}</p>
     </div>
   );
+}
+
+function RecentSequenceTile({ sequence }: { sequence: DbSequence }) {
+  const gradient = pickGradient(sequence.id);
+  const date = new Date(sequence.updated_at);
+  const ago = formatAgo(date);
+  const tone: "accent" | "green" | "neutral" =
+    sequence.status === "scheduled"
+      ? "accent"
+      : sequence.status === "published"
+        ? "green"
+        : "neutral";
+  return (
+    <Link
+      href={`/content`}
+      className="lift block rounded-[12px] border border-border bg-surface card-base overflow-hidden cursor-pointer"
+    >
+      <div className="aspect-[16/7] relative" style={{ background: gradient }}>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+        <div className="absolute top-2 left-2">
+          <span className="bg-black/30 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide inline-flex items-center gap-1">
+            <FileText className="w-2.5 h-2.5" /> Sequence
+          </span>
+        </div>
+      </div>
+      <div className="px-3.5 py-3">
+        <div className="text-[13.5px] font-semibold text-text truncate">
+          {sequence.title}
+        </div>
+        <div className="text-[11.5px] text-muted mt-1 flex items-center gap-2">
+          <Badge tone={tone}>{sequence.status}</Badge>
+          <span className="inline-flex items-center gap-1">
+            <Clock className="w-3 h-3" /> {ago}
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function formatAgo(date: Date): string {
+  const ms = Date.now() - date.getTime();
+  const min = Math.round(ms / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.round(hr / 24);
+  if (day < 30) return `${day}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function PickerTile({

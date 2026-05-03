@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -36,11 +36,94 @@ import {
 import { welcomeCopy, nextActionFor } from "@/lib/onboarding/personalize";
 import { cn } from "@/lib/cn";
 
+const PLACEHOLDER_GRADIENTS = [
+  "linear-gradient(135deg,#1E293B,#3B82F6)",
+  "linear-gradient(135deg,#0F766E,#14B8A6)",
+  "linear-gradient(135deg,#7C2D12,#F59E0B)",
+  "linear-gradient(135deg,#312E81,#6366F1)",
+  "linear-gradient(135deg,#0F172A,#94A3B8)",
+];
+function pickGradient(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i)) % 9999;
+  return PLACEHOLDER_GRADIENTS[hash % PLACEHOLDER_GRADIENTS.length];
+}
+
+type DbSequence = {
+  id: string;
+  title: string;
+  status: string;
+  scheduled_at: string | null;
+  published_at: string | null;
+};
+
+type ScheduleItem = {
+  id: string;
+  title: string;
+  platform: string;
+  thumbnail: string;
+  scheduledAt: string;
+};
+
 export default function DashboardPage() {
   const { connected, profile } = useAppState();
   const [range, setRange] = useState<DateRange>(() => rangeForPreset("30d"));
+  const [dbSequences, setDbSequences] = useState<DbSequence[] | null>(null);
+  const now = useMemo(() => new Date(), []);
   const welcome = welcomeCopy(profile);
   const nextAction = nextActionFor(profile);
+
+  const loadSequences = useCallback(async () => {
+    try {
+      const r = await fetch("/api/sequences", { credentials: "include" });
+      if (!r.ok) {
+        setDbSequences([]);
+        return;
+      }
+      const json = (await r.json()) as { sequences: DbSequence[] };
+      setDbSequences(json.sequences);
+    } catch {
+      setDbSequences([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap */
+    void loadSequences();
+  }, [loadSequences]);
+
+  /* DB sequences scheduled in the next 7 days, then mock upcoming as fallback. */
+  const scheduleItems = useMemo<ScheduleItem[]>(() => {
+    const nowMs = now.getTime();
+    const horizon = nowMs + 7 * 24 * 60 * 60 * 1000;
+    const dbItems: ScheduleItem[] = (dbSequences ?? [])
+      .filter((s) => {
+        if (!s.scheduled_at) return false;
+        const t = new Date(s.scheduled_at).getTime();
+        return t >= nowMs && t <= horizon;
+      })
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        platform: "Instagram",
+        thumbnail: pickGradient(s.id),
+        scheduledAt: s.scheduled_at as string,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+      );
+    const mockItems: ScheduleItem[] = upcoming
+      .filter((p) => p.scheduledAt)
+      .map((p) => ({
+        id: p.id,
+        title: p.title,
+        platform: p.platform,
+        thumbnail: p.thumbnail,
+        scheduledAt: p.scheduledAt as string,
+      }));
+    return [...dbItems, ...mockItems];
+  }, [dbSequences, now]);
 
   if (!connected) {
     return (
@@ -148,7 +231,7 @@ export default function DashboardPage() {
               </Link>
             }
           />
-          <ScheduleList />
+          <ScheduleList items={scheduleItems} />
         </Card>
       </div>
 
@@ -170,13 +253,13 @@ export default function DashboardPage() {
   );
 }
 
-function ScheduleList() {
+function ScheduleList({ items }: { items: ScheduleItem[] }) {
   return (
     <div className="flex flex-col">
-      {upcoming.slice(0, 3).map((p, i) => {
-        const date = p.scheduledAt ? new Date(p.scheduledAt) : null;
-        const day = date?.toLocaleDateString("en-US", { weekday: "short" });
-        const time = date?.toLocaleTimeString("en-US", {
+      {items.slice(0, 3).map((p, i) => {
+        const date = new Date(p.scheduledAt);
+        const day = date.toLocaleDateString("en-US", { weekday: "short" });
+        const time = date.toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
@@ -204,7 +287,7 @@ function ScheduleList() {
           </div>
         );
       })}
-      {upcoming.length === 0 && (
+      {items.length === 0 && (
         <div className="text-[13px] text-muted py-4 flex items-center gap-2">
           <CalendarIcon className="w-3.5 h-3.5" />
           Nothing scheduled. Plan your week →
