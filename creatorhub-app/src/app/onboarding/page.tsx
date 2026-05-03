@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAppState } from "@/lib/store";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 import {
@@ -78,15 +78,42 @@ function prevStep(current: number, draft: ProfileDraft): number {
 }
 
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={null}>
+      <OnboardingPageInner />
+    </Suspense>
+  );
+}
+
+function OnboardingPageInner() {
   const router = useRouter();
+  const params = useSearchParams();
   const { setProfile, profile: existingProfile } = useAppState();
 
-  const [step, setStep] = useState(0);
+  /* Returning from Stripe Checkout — finalize profile + jump to Ready step.
+     The webhook writes subscriptions row in the background; the UI is
+     optimistic but accurate (Stripe wouldn't redirect unless the session
+     succeeded). */
+  const stripeStatus = params.get("stripe");
+  const initialStep = stripeStatus === "success" ? 9 : stripeStatus === "cancel" ? 8 : 0;
+
+  const [step, setStep] = useState(initialStep);
   const [draft, setDraft] = useState<ProfileDraft>(
     existingProfile && existingProfile.version === 2
       ? { ...existingProfile }
       : { secondaryGoals: [], platforms: ["instagram"], wantsNichePresets: true }
   );
+  const [submittingPlan, setSubmittingPlan] = useState(false);
+
+  /* When the user lands on /onboarding?stripe=success, finalize the profile
+     once on mount. Step 9 already shows the success screen. */
+  useEffect(() => {
+    if (stripeStatus !== "success") return;
+    const p = buildProfile();
+    setProfile(p);
+    void persistProfile(p);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [stripeStatus]);
 
   function update(patch: Partial<ProfileDraft>) {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -184,8 +211,37 @@ export default function OnboardingPage() {
 
   const nextLabel =
     step === 0 ? "Get started" :
-    step === 8 ? "Start 7-day free trial" :
+    step === 8 ? (submittingPlan ? "Redirecting…" : "Start 7-day free trial") :
     "Next";
+
+  /* On Step 8 → try Stripe Checkout. If unconfigured (503), fall back to
+     the UI-only mock (write profile + go to step 9). */
+  async function startTrialOrMock() {
+    const plan = draft.trial?.plan ?? (draft.creatorType === "agency" ? "pro" : "standard");
+    const cycle = draft.trial?.cycle ?? "annual";
+    setSubmittingPlan(true);
+    try {
+      const res = await fetch("/api/stripe/checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ plan, cycle }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { url: string };
+        window.location.href = json.url;
+        return;
+      }
+      /* 503 stripe_not_configured / 401 unauthorized → mock fallback. */
+    } catch {
+      /* Network error → mock fallback. */
+    }
+    const p = buildProfile();
+    setProfile(p);
+    void persistProfile(p);
+    setSubmittingPlan(false);
+    next();
+  }
 
   const isReady = step === 9;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,9 +262,8 @@ export default function OnboardingPage() {
       onBack={back}
       onNext={() => {
         if (step === 8) {
-          const p = buildProfile();
-          setProfile(p);
-          void persistProfile(p);
+          void startTrialOrMock();
+          return;
         }
         next();
       }}

@@ -113,6 +113,35 @@ export default function SettingsPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  async function openPortal() {
+    setOpeningPortal(true);
+    try {
+      const res = await fetch("/api/stripe/portal-session", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { url: string };
+        window.location.href = json.url;
+        return;
+      }
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      if (err.error === "stripe_not_configured") {
+        showToast("Billing not set up yet — coming soon.");
+      } else if (err.error === "no_customer") {
+        showToast("No subscription on file. Restart setup to start a trial.");
+      } else {
+        showToast(`Couldn't open billing: ${err.error ?? res.status}`);
+      }
+    } catch {
+      showToast("Network error. Try again.");
+    } finally {
+      setOpeningPortal(false);
+    }
+  }
+
   async function deleteAccount() {
     setDeleting(true);
     setDeleteError(null);
@@ -193,8 +222,13 @@ export default function SettingsPage() {
               <li key={f}>• {f}</li>
             ))}
           </ul>
-          <Button variant="outline" className="mt-5 w-full">
-            Manage subscription
+          <Button
+            variant="outline"
+            className="mt-5 w-full"
+            onClick={openPortal}
+            disabled={openingPortal}
+          >
+            {openingPortal ? "Opening…" : "Manage subscription"}
           </Button>
         </Card>
 

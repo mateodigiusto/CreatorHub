@@ -115,9 +115,46 @@ export const profiles = pgTable("profiles", {
   trialCycle: text("trial_cycle"),
   trialStartedAt: timestamp("trial_started_at", { withTimezone: true }),
   trialExpiresAt: timestamp("trial_expires_at", { withTimezone: true }),
+  /* Stripe customer id — set on first /api/stripe/checkout-session call.
+     Reused for subsequent checkouts + Customer Portal sessions. */
+  stripeCustomerId: text("stripe_customer_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* ─── subscriptions ──────────────────────────────────────────────── */
+
+export const subscriptionStatusEnum = pgEnum("subscription_status_t", [
+  "trialing",
+  "active",
+  "past_due",
+  "canceled",
+  "incomplete",
+  "incomplete_expired",
+  "unpaid",
+  "paused",
+]);
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    stripeCustomerId: text("stripe_customer_id").notNull(),
+    stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+    plan: text("plan").notNull(),     // 'standard' | 'pro' (CHECK in SQL)
+    cycle: text("cycle").notNull(),   // 'monthly' | 'annual' (CHECK in SQL)
+    status: subscriptionStatusEnum("status").notNull(),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("subscriptions_user_idx").on(t.userId),
+    index("subscriptions_customer_idx").on(t.stripeCustomerId),
+  ],
+);
 
 /* ─── oauth_states ────────────────────────────────────────────────── */
 
