@@ -24,7 +24,9 @@ export async function register() {
 }
 
 async function registerServer() {
-  /* Bind Sentry first so any errors in the schema check land in Sentry. */
+  /* Initialize Sentry SDK first (no-op if SENTRY_DSN unset) so any errors
+     in the schema check land in Sentry. */
+  await import("./sentry.server.config");
   try {
     const Sentry = await import("@sentry/nextjs");
     const { bindSentry } = await import("@/lib/log");
@@ -97,8 +99,9 @@ async function registerServer() {
 }
 
 async function registerEdge() {
-  /* Edge runtime: bind Sentry only. No DB check — edge can't open Postgres
-     connections, and the server already enforces the assertion. */
+  /* Edge runtime: init + bind Sentry only. No DB check — edge can't open
+     Postgres connections, and the server already enforces the assertion. */
+  await import("./sentry.edge.config");
   try {
     const Sentry = await import("@sentry/nextjs");
     const { bindSentry } = await import("@/lib/log");

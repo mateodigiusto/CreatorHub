@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -14,23 +14,65 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/cn";
-import { useAppState } from "@/lib/store";
-import { sampleAssets, isVideoUsableInSequence, Asset } from "@/lib/mock/story";
+import { MAX_VIDEO_SECONDS } from "@/lib/mock/story";
+import type { ApiAsset } from "@/app/api/assets/route";
+
+const PLACEHOLDER_GRADIENTS = [
+  "linear-gradient(135deg,#1E293B,#3B82F6)",
+  "linear-gradient(135deg,#0F766E,#14B8A6)",
+  "linear-gradient(135deg,#7C2D12,#F59E0B)",
+  "linear-gradient(135deg,#312E81,#6366F1)",
+  "linear-gradient(135deg,#0F172A,#94A3B8)",
+];
+
+function pickGradient(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i)) % 9999;
+  return PLACEHOLDER_GRADIENTS[hash % PLACEHOLDER_GRADIENTS.length];
+}
 
 export default function SequenceStudioPage() {
   const router = useRouter();
-  const { extraAssets } = useAppState();
+  const [assets, setAssets] = useState<ApiAsset[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const allAssets = useMemo(
-    () => [...extraAssets, ...sampleAssets].filter(isVideoUsableInSequence),
-    [extraAssets]
-  );
+  const loadAssets = useCallback(async () => {
+    try {
+      const r = await fetch("/api/assets", { credentials: "include" });
+      if (!r.ok) {
+        setAssets([]);
+        return;
+      }
+      const json = (await r.json()) as { assets: ApiAsset[] };
+      setAssets(json.assets);
+    } catch {
+      setAssets([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap fetch on mount */
+    void loadAssets();
+  }, [loadAssets]);
+
+  /* Only playable assets, and videos must fit the sequence cap. Sequences
+     can mix photos + short videos; long videos live in /library only. */
+  const usable = useMemo(() => {
+    if (!assets) return null;
+    return assets.filter((a) => {
+      if (a.state !== "playable") return false;
+      if (a.kind === "video" && (a.durationSeconds ?? 0) > MAX_VIDEO_SECONDS) {
+        return false;
+      }
+      return true;
+    });
+  }, [assets]);
 
   function toggle(id: string) {
     setSelected((s) =>
-      s.includes(id) ? s.filter((x) => x !== id) : s.length >= 5 ? s : [...s, id]
+      s.includes(id) ? s.filter((x) => x !== id) : s.length >= 5 ? s : [...s, id],
     );
   }
 
@@ -96,42 +138,58 @@ export default function SequenceStudioPage() {
               Your library
             </h3>
             <p className="text-[13px] text-muted mt-0.5">
-              {allAssets.length} asset{allAssets.length === 1 ? "" : "s"} ready
-              to use. Click to select up to 5.
+              {usable === null
+                ? "Loading…"
+                : `${usable.length} asset${usable.length === 1 ? "" : "s"} ready to use. Click to select up to 5.`}
             </p>
           </div>
           {selected.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelected([])}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setSelected([])}>
               Clear
             </Button>
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {allAssets.map((a) => {
-            const sel = selected.includes(a.id);
-            return (
-              <PickerTile
-                key={a.id}
-                asset={a}
-                selected={sel}
-                order={sel ? selected.indexOf(a.id) : -1}
-                onToggle={() => toggle(a.id)}
+        {usable === null ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-[4/5] rounded-[12px] bg-surface-2 border border-border animate-pulse"
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : usable.length === 0 ? (
+          <EmptyState
+            title="No assets yet."
+            description="Upload photos or short videos in the Library to start building sequences."
+            showSampleDataCta={false}
+            primaryAction={{
+              label: "Open Library",
+              onClick: () => router.push("/library"),
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {usable.map((a) => {
+              const sel = selected.includes(a.id);
+              return (
+                <PickerTile
+                  key={a.id}
+                  asset={a}
+                  selected={sel}
+                  order={sel ? selected.indexOf(a.id) : -1}
+                  onToggle={() => toggle(a.id)}
+                />
+              );
+            })}
+          </div>
+        )}
       </Card>
 
       {canStart && (
         <div className="sticky bottom-4 mt-4 flex justify-center pointer-events-none">
-          <div
-            className="pointer-events-auto inline-flex items-center gap-3 px-4 py-2.5 rounded-full bg-surface border border-border shadow-[var(--shadow-lift)] backdrop-blur-xl"
-          >
+          <div className="pointer-events-auto inline-flex items-center gap-3 px-4 py-2.5 rounded-full bg-surface border border-border shadow-[var(--shadow-lift)] backdrop-blur-xl">
             <Sparkles className="w-4 h-4 text-accent" />
             <span className="text-[13px] font-medium text-text tabular-nums">
               {selected.length} selected
@@ -163,9 +221,7 @@ function StepChip({
     <div
       className={cn(
         "rounded-[12px] border px-4 py-3 transition-colors bg-surface card-base",
-        active
-          ? "border-accent/35 bg-accent-soft/40"
-          : "border-border"
+        active ? "border-accent/35 bg-accent-soft/40" : "border-border",
       )}
     >
       <div className="flex items-center gap-2 mb-1">
@@ -178,7 +234,7 @@ function StepChip({
         <div
           className={cn(
             "w-5 h-5 rounded-md grid place-items-center text-white",
-            active ? "bg-accent" : "bg-surface-3 text-muted"
+            active ? "bg-accent" : "bg-surface-3 text-muted",
           )}
           style={
             active
@@ -192,9 +248,7 @@ function StepChip({
       <div className="text-[13.5px] font-semibold text-text tracking-[-0.005em]">
         {title}
       </div>
-      <p className="text-[11.5px] text-muted mt-0.5 leading-snug">
-        {description}
-      </p>
+      <p className="text-[11.5px] text-muted mt-0.5 leading-snug">{description}</p>
     </div>
   );
 }
@@ -205,39 +259,37 @@ function PickerTile({
   order,
   onToggle,
 }: {
-  asset: Asset;
+  asset: ApiAsset;
   selected: boolean;
   order: number;
   onToggle: () => void;
 }) {
   const isVideo = asset.kind === "video";
+  const gradient = pickGradient(asset.id);
   return (
     <button
       onClick={onToggle}
       className={cn(
         "lift text-left rounded-[12px] border bg-surface card-base overflow-hidden relative transition-colors",
-        selected ? "border-accent/55" : "border-border"
+        selected ? "border-accent/55" : "border-border",
       )}
     >
-      <div
-        className="aspect-[4/5] relative"
-        style={{ background: asset.gradient }}
-      >
-        {asset.src && !isVideo && (
+      <div className="aspect-[4/5] relative" style={{ background: gradient }}>
+        {asset.signedUrl && !isVideo && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={asset.src}
+            src={asset.signedUrl}
             alt={asset.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        {asset.src && isVideo && (
-          // eslint-disable-next-line creatorhub/no-bare-video -- demo blob-URL preview, no Cloudflare Stream variants yet; replaced by VideoPlayer in Phase 1 part 2 when DB-backed assets land
+        {asset.signedUrl && isVideo && (
+          // eslint-disable-next-line creatorhub/no-bare-video --- click-to-play poster swap is in Phase 1 part 2 follow-up; preload="none" + muted keeps Storage egress low
           <video
-            src={asset.src}
+            src={asset.signedUrl}
             muted
             playsInline
-            preload="metadata"
+            preload="none"
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
@@ -253,7 +305,7 @@ function PickerTile({
               "w-5 h-5 rounded-full border grid place-items-center transition-colors",
               selected
                 ? "bg-accent border-accent text-white"
-                : "bg-white/85 border-white/70 text-transparent"
+                : "bg-white/85 border-white/70 text-transparent",
             )}
           >
             {selected ? (
@@ -263,11 +315,11 @@ function PickerTile({
             )}
           </div>
         </div>
-        {isVideo && (
+        {isVideo && asset.durationSeconds != null && (
           <div className="absolute bottom-2 left-2">
             <span className="inline-flex items-center gap-1 bg-black/45 backdrop-blur-sm text-white text-[10.5px] px-1.5 py-0.5 rounded font-medium tabular-nums">
               <Play className="w-3 h-3" fill="currentColor" />
-              0:{String(Math.round(asset.duration ?? 0)).padStart(2, "0")}
+              0:{String(Math.round(asset.durationSeconds)).padStart(2, "0")}
             </span>
           </div>
         )}
@@ -275,14 +327,6 @@ function PickerTile({
           <span className="text-white text-[12px] font-semibold drop-shadow truncate block">
             {asset.title}
           </span>
-        </div>
-      </div>
-      <div className="px-2.5 py-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10.5px] text-accent bg-accent-soft px-1.5 py-0.5 rounded font-medium">
-            {asset.mood}
-          </span>
-          <span className="text-[10.5px] text-muted truncate">{asset.scene}</span>
         </div>
       </div>
     </button>

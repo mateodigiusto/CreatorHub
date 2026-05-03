@@ -498,7 +498,7 @@ Boot guard: `instrumentation.ts` asserts `EXPECTED_SCHEMA_VERSION` matches `max(
 
 ### Out of scope (don't drift)
 
-- Stories publishing (revisit Phase 3+ if Meta API stabilizes).
+- ~~Stories publishing~~ — included in Phase 2 (Meta opened Story API for Business accounts in 2023/24). API supports single photo/video Stories only; stickers/polls/music/swipe-ups remain in-app only and we surface a "finish in Instagram" affordance.
 - Apple Sign-In (revisit when shipping mobile).
 - Real AI generation (separate project — not Phase 1 or 2).
 - Stripe billing (separate project — needed before user 2).

@@ -381,6 +381,31 @@ function NewSequenceContent() {
       engagementRate: 0,
     };
     appendContentItem(post);
+
+    /* Fire-and-forget DB save. Authenticated users get cross-device
+       persistence; demo / unauthenticated visitors silently no-op (the
+       endpoint returns 401, the localStorage copy still works). */
+    void fetch("/api/sequences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        title: sequence.title,
+        goal,
+        contentStyle,
+        brandTone,
+        persona,
+        brief: brief || null,
+        slides: sequence.slides,
+        status: action === "schedule" ? "scheduled" : "review",
+        scheduledAt: action === "schedule" ? new Date().toISOString() : undefined,
+        accentColor: accent,
+        decorations: activeDecorations,
+      }),
+    }).catch(() => {
+      /* network blip — localStorage post still saved above. */
+    });
+
     showToast(
       action === "schedule"
         ? `Sequence scheduled · ${sequence.slides.length} slides`

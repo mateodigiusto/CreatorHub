@@ -41,7 +41,65 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   }
 
+  if (kind === "cleanup") {
+    const result = await runCleanupEphemera();
+    return NextResponse.json(result);
+  }
+
   return NextResponse.json({ ok: true, skipped: kind });
+}
+
+/**
+ * Daily sweep that keeps auxiliary tables bounded. Each table has a
+ * different retention window driven by its purpose:
+ *   - oauth_states: 1 day (TTL is 10 min anyway; we keep for short-term debug)
+ *   - webhook_events: 90 days (idempotency window + dispute history)
+ *   - sync_runs: 30 days (debugging recent syncs)
+ *   - jobs (terminal): 30 days (replays + observability)
+ *   - deletion_requests (completed): 1 year (compliance window)
+ * Audit log is never deleted by this job — it's the only "forever" table.
+ */
+async function runCleanupEphemera() {
+  type CountRow = { count: string };
+  const counts: Record<string, number> = {};
+
+  const oauth = (await dbInternal.execute(sql`
+    with d as (delete from oauth_states where expires_at < now() - interval '1 day' returning 1)
+    select count(*)::text as count from d
+  `)) as unknown as CountRow[];
+  counts.oauth_states = Number(oauth[0]?.count ?? 0);
+
+  const webhooks = (await dbInternal.execute(sql`
+    with d as (delete from webhook_events where received_at < now() - interval '90 days' returning 1)
+    select count(*)::text as count from d
+  `)) as unknown as CountRow[];
+  counts.webhook_events = Number(webhooks[0]?.count ?? 0);
+
+  const syncs = (await dbInternal.execute(sql`
+    with d as (delete from sync_runs where started_at < now() - interval '30 days' returning 1)
+    select count(*)::text as count from d
+  `)) as unknown as CountRow[];
+  counts.sync_runs = Number(syncs[0]?.count ?? 0);
+
+  const jobsDeleted = (await dbInternal.execute(sql`
+    with d as (
+      delete from jobs
+      where finished_at < now() - interval '30 days'
+        and status in ('completed','failed','dead')
+      returning 1
+    )
+    select count(*)::text as count from d
+  `)) as unknown as CountRow[];
+  counts.jobs = Number(jobsDeleted[0]?.count ?? 0);
+
+  const deletions = (await dbInternal.execute(sql`
+    with d as (delete from deletion_requests where completed_at < now() - interval '1 year' returning 1)
+    select count(*)::text as count from d
+  `)) as unknown as CountRow[];
+  counts.deletion_requests = Number(deletions[0]?.count ?? 0);
+
+  log.info("cron.cleanup.complete", counts);
+  return { ok: true, deleted: counts };
 }
 
 type TranscodePayload = {
