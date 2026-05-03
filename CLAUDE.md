@@ -192,7 +192,7 @@ The original demo is complete. We're pivoting to a real product in four phases (
 - Real Meta / Instagram OAuth (Phase 2; Meta App Review prereqs in flight)
 - TikTok / YouTube / LinkedIn / X / Facebook integrations (Phase 3)
 - Real AI generation (separate project)
-- Stripe billing
+- Stripe billing — code is shipped (commit `3742ba3`), gated on env vars. Activation runbook: [creatorhub-app/docs/runbooks/stripe-activation.md](creatorhub-app/docs/runbooks/stripe-activation.md). When unset, onboarding paywall falls back to UI-only mock.
 - Multi-workspace / team mode
 - Stories publishing (revisit Phase 3+ if Meta API stabilizes)
 - Apple Sign-In (revisit when shipping mobile)
