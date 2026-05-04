@@ -62,14 +62,22 @@ export function MessagesPanel({ relationshipId, selfUserId }: Props) {
         credentials: "include",
       });
       if (!r.ok) {
-        setMessages([]);
+        setMessages((prev) => prev ?? []);
         return;
       }
       const json = (await r.json()) as { messages: RelationshipMessageRow[] };
-      setMessages(json.messages);
-      cursorRef.current = json.messages.at(-1)?.createdAt ?? null;
+      /* Merge with anything Realtime delivered while the GET was in flight
+         instead of replacing — `setMessages(json.messages)` would clobber
+         a fresh inbound message until the next 30s resync. */
+      setMessages((prev) =>
+        prev && prev.length > 0 ? appendDeduped(json.messages, prev) : json.messages,
+      );
+      const lastCreated = json.messages.at(-1)?.createdAt;
+      if (lastCreated && (!cursorRef.current || lastCreated > cursorRef.current)) {
+        cursorRef.current = lastCreated;
+      }
     } catch {
-      setMessages([]);
+      setMessages((prev) => prev ?? []);
     }
   }, [relationshipId]);
 
@@ -176,7 +184,9 @@ export function MessagesPanel({ relationshipId, selfUserId }: Props) {
           ? prev.map((m) => (m.id === optimistic.id ? json.message : m))
           : [json.message],
       );
-      cursorRef.current = json.message.createdAt;
+      if (!cursorRef.current || json.message.createdAt > cursorRef.current) {
+        cursorRef.current = json.message.createdAt;
+      }
     } finally {
       setSending(false);
     }
