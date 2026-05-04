@@ -14,6 +14,7 @@ import {
   Wand2,
   Images,
   Microscope,
+  Users,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -37,6 +38,7 @@ const workspace: NavItem[] = [
   { href: "/library", label: "Asset Library", icon: Images },
   { href: "/content", label: "Content", icon: FileText },
   { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/clients", label: "Clients", icon: Users },
 ];
 
 const tools: NavItem[] = [

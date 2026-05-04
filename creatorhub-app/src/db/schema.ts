@@ -15,6 +15,7 @@ import {
   uuid,
   text,
   timestamp,
+  date,
   boolean,
   integer,
   numeric,
@@ -22,6 +23,8 @@ import {
   customType,
   index,
   uniqueIndex,
+  primaryKey,
+  check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -486,6 +489,148 @@ export const contentDrafts = pgTable(
   ],
 );
 
+/* ─── Creator Hub: relationships, tasks, streaks, docs, links, messages ── */
+
+export const relationshipStatusEnum = pgEnum("relationship_status_t", [
+  "pending", "active", "declined", "ended", "expired",
+]);
+export const taskRecurrenceEnum = pgEnum("task_recurrence_t", ["none", "daily"]);
+export const taskStatusEnum = pgEnum("task_status_t", [
+  "pending", "in_progress", "done",
+]);
+export const notificationKindEnum = pgEnum("notification_kind_t", [
+  "invite", "message", "task_assigned", "task_due", "streak_at_risk",
+]);
+
+export const creatorRelationships = pgTable(
+  "creator_relationships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    managerId: uuid("manager_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }),
+    invitedEmail: text("invited_email"),
+    inviteToken: text("invite_token").unique(),
+    status: relationshipStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true })
+      .notNull()
+      .default(sql`(now() + interval '14 days')`),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("creator_relationships_manager_idx").on(t.managerId, t.status),
+    index("creator_relationships_creator_idx").on(t.creatorId, t.status),
+    index("creator_relationships_pending_email_idx").on(t.invitedEmail),
+    check(
+      "creator_relationships_target_check",
+      sql`creator_id is not null or invited_email is not null`,
+    ),
+  ],
+);
+
+export const relationshipTasks = pgTable(
+  "relationship_tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by").notNull().references(() => users.id),
+    assignedTo: uuid("assigned_to").notNull().references(() => users.id),
+    title: text("title").notNull(),
+    notes: text("notes"),
+    creatorNote: text("creator_note"),
+    recurrence: taskRecurrenceEnum("recurrence").notNull().default("none"),
+    deadline: timestamp("deadline", { withTimezone: true }),
+    status: taskStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("relationship_tasks_rel_idx").on(t.relationshipId, t.recurrence, t.endedAt),
+    index("relationship_tasks_assigned_idx").on(t.assignedTo, t.status),
+  ],
+);
+
+export const relationshipTaskCompletions = pgTable(
+  "relationship_task_completions",
+  {
+    taskId: uuid("task_id").notNull().references(() => relationshipTasks.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.taskId, t.day] }),
+    index("relationship_task_completions_day_idx").on(t.day, t.taskId),
+  ],
+);
+
+export const relationshipDocuments = pgTable(
+  "relationship_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
+    assetId: uuid("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
+    sharedBy: uuid("shared_by").notNull().references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("relationship_documents_rel_asset_uniq").on(t.relationshipId, t.assetId),
+    index("relationship_documents_rel_idx").on(t.relationshipId, sql`created_at desc`),
+  ],
+);
+
+export const relationshipLinks = pgTable(
+  "relationship_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
+    addedBy: uuid("added_by").notNull().references(() => users.id),
+    url: text("url").notNull(),
+    title: text("title"),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("relationship_links_rel_idx").on(t.relationshipId, sql`created_at desc`),
+  ],
+);
+
+export const relationshipMessages = pgTable(
+  "relationship_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id").notNull().references(() => users.id),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("relationship_messages_rel_idx").on(t.relationshipId, sql`created_at desc`),
+    index("relationship_messages_unread_idx").on(t.relationshipId),
+  ],
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recipientId: uuid("recipient_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: notificationKindEnum("kind").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    body: text("body"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("notifications_unread_idx").on(t.recipientId, sql`created_at desc`),
+  ],
+);
+
 /* ─── schema_migrations ──────────────────────────────────────────── */
 
 export const schemaMigrations = pgTable("schema_migrations", {
@@ -512,3 +657,11 @@ export type Job = typeof jobs.$inferSelect;
 export type NewJob = typeof jobs.$inferInsert;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type NewAuditEntry = typeof auditLog.$inferInsert;
+export type CreatorRelationship = typeof creatorRelationships.$inferSelect;
+export type NewCreatorRelationship = typeof creatorRelationships.$inferInsert;
+export type RelationshipTask = typeof relationshipTasks.$inferSelect;
+export type NewRelationshipTask = typeof relationshipTasks.$inferInsert;
+export type RelationshipMessage = typeof relationshipMessages.$inferSelect;
+export type NewRelationshipMessage = typeof relationshipMessages.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
