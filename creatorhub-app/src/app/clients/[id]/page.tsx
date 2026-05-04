@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Tabs } from "@/components/ui/Tabs";
 import { useAppState } from "@/lib/store";
+import { TasksPanel } from "@/components/clients/TasksPanel";
+import { StreakPanel } from "@/components/clients/StreakPanel";
 import type { RelationshipDetail } from "@/lib/clients/types";
 
 type Tab = "tasks" | "streak" | "docs" | "links" | "messages";
@@ -175,7 +177,16 @@ export default function RelationshipHubPage({
             />
           </div>
           <Card>
-            <PanelStub tab={tab} />
+            {tab === "tasks" ? (
+              <TasksPanel
+                relationshipId={relationship.id}
+                perspective={relationship.perspective}
+              />
+            ) : tab === "streak" ? (
+              <StreakPanel relationshipId={relationship.id} />
+            ) : (
+              <PanelStub tab={tab} />
+            )}
           </Card>
         </>
       )}

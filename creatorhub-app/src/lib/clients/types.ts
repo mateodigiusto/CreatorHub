@@ -72,9 +72,10 @@ export type RelationshipMessageRow = {
 export type StreakResponse = {
   current: number;
   longest: number;
-  /* 30-day grid: oldest → newest, each entry = "complete" | "miss" | "no_tasks" */
+  /* 30-day grid: oldest → newest. "in_progress" is today when expected
+     tasks remain — distinct from "miss" because the day isn't over yet. */
   grid: Array<{
     day: string;
-    state: "complete" | "miss" | "no_tasks";
+    state: "complete" | "miss" | "no_tasks" | "in_progress";
   }>;
 };
