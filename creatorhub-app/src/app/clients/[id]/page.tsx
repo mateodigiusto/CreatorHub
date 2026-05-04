@@ -25,6 +25,7 @@ import { TasksPanel } from "@/components/clients/TasksPanel";
 import { StreakPanel } from "@/components/clients/StreakPanel";
 import { DocsPanel } from "@/components/clients/DocsPanel";
 import { LinksPanel } from "@/components/clients/LinksPanel";
+import { MessagesPanel } from "@/components/clients/MessagesPanel";
 import type { RelationshipDetail } from "@/lib/clients/types";
 
 type Tab = "tasks" | "streak" | "docs" | "links" | "messages";
@@ -190,6 +191,15 @@ export default function RelationshipHubPage({
               <DocsPanel relationshipId={relationship.id} />
             ) : tab === "links" ? (
               <LinksPanel relationshipId={relationship.id} />
+            ) : tab === "messages" ? (
+              <MessagesPanel
+                relationshipId={relationship.id}
+                selfUserId={
+                  relationship.perspective === "manager"
+                    ? relationship.managerId
+                    : (relationship.creatorId ?? "")
+                }
+              />
             ) : (
               <PanelStub tab={tab} />
             )}

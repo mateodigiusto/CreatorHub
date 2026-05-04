@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, Bell, Plus, Sun, Moon, Menu } from "lucide-react";
+import { Search, Plus, Sun, Moon, Menu } from "lucide-react";
+import { NotificationsBell } from "@/components/ui/NotificationsBell";
 import { usePathname } from "next/navigation";
 import { useAppState } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
@@ -115,9 +116,7 @@ export function Topbar({
           {theme === "dark" ? <Sun className="w-[15px] h-[15px]" /> : <Moon className="w-[15px] h-[15px]" />}
         </IconButton>
 
-        <IconButton aria-label="Notifications" title="Notifications" className="hidden sm:grid">
-          <Bell className="w-[15px] h-[15px]" />
-        </IconButton>
+        <NotificationsBell />
 
         <AuthMenu />
 
