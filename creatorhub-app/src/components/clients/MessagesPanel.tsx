@@ -5,6 +5,7 @@ import { Send } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAppState } from "@/lib/store";
 import { cn } from "@/lib/cn";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import type { RelationshipMessageRow } from "@/lib/clients/types";
 
 type Props = {
@@ -12,7 +13,40 @@ type Props = {
   selfUserId: string;
 };
 
-const POLL_MS = 5000;
+/* Live path: postgres_changes subscription on relationship_messages.
+   RESYNC_MS is a safety net for missed events (channel drop, brief blip). */
+const RESYNC_MS = 30_000;
+
+type MessageInsertPayload = {
+  id: string;
+  relationship_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+function rowFromPayload(p: MessageInsertPayload): RelationshipMessageRow {
+  return {
+    id: p.id,
+    relationshipId: p.relationship_id,
+    senderId: p.sender_id,
+    body: p.body,
+    createdAt: p.created_at,
+    readAt: p.read_at,
+  };
+}
+
+function appendDeduped(
+  prev: RelationshipMessageRow[] | null,
+  incoming: RelationshipMessageRow[],
+): RelationshipMessageRow[] {
+  const base = prev ?? [];
+  const seen = new Set(base.map((m) => m.id));
+  const fresh = incoming.filter((m) => !seen.has(m.id));
+  if (fresh.length === 0) return base;
+  return [...base, ...fresh];
+}
 
 export function MessagesPanel({ relationshipId, selfUserId }: Props) {
   const { showToast } = useAppState();
@@ -39,7 +73,7 @@ export function MessagesPanel({ relationshipId, selfUserId }: Props) {
     }
   }, [relationshipId]);
 
-  const pollNew = useCallback(async () => {
+  const resync = useCallback(async () => {
     if (!cursorRef.current) return;
     try {
       const r = await fetch(
@@ -49,7 +83,7 @@ export function MessagesPanel({ relationshipId, selfUserId }: Props) {
       if (!r.ok) return;
       const json = (await r.json()) as { messages: RelationshipMessageRow[] };
       if (json.messages.length === 0) return;
-      setMessages((prev) => (prev ? [...prev, ...json.messages] : json.messages));
+      setMessages((prev) => appendDeduped(prev, json.messages));
       cursorRef.current = json.messages.at(-1)?.createdAt ?? cursorRef.current;
     } catch {
       /* swallow — next tick retries */
@@ -61,12 +95,44 @@ export function MessagesPanel({ relationshipId, selfUserId }: Props) {
     void loadInitial();
   }, [loadInitial]);
 
+  /* Realtime subscription — primary delivery path. */
+  useEffect(() => {
+    const supabase = getSupabaseBrowser();
+    const channel = supabase
+      .channel(`relationship-messages:${relationshipId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "relationship_messages",
+          filter: `relationship_id=eq.${relationshipId}`,
+        },
+        (payload) => {
+          const row = rowFromPayload(payload.new as MessageInsertPayload);
+          /* Own messages are already handled by the optimistic-insert →
+             POST round-trip in send(). Acting on the Realtime echo would
+             race with the swap and produce duplicates. */
+          if (row.senderId === selfUserId) return;
+          setMessages((prev) => appendDeduped(prev, [row]));
+          if (!cursorRef.current || row.createdAt > cursorRef.current) {
+            cursorRef.current = row.createdAt;
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [relationshipId, selfUserId]);
+
+  /* Periodic resync — catches anything Realtime missed. */
   useEffect(() => {
     const id = setInterval(() => {
-      void pollNew();
-    }, POLL_MS);
+      void resync();
+    }, RESYNC_MS);
     return () => clearInterval(id);
-  }, [pollNew]);
+  }, [resync]);
 
   /* Auto-scroll to bottom on new messages. */
   useEffect(() => {
