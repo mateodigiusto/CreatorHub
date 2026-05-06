@@ -608,6 +608,7 @@ export type Database = {
           cta_style: string | null
           custom_cta: string | null
           display_name: string | null
+          email_notifications: boolean
           frequency: string | null
           handle: string | null
           niche: string
@@ -647,6 +648,7 @@ export type Database = {
           cta_style?: string | null
           custom_cta?: string | null
           display_name?: string | null
+          email_notifications?: boolean
           frequency?: string | null
           handle?: string | null
           niche: string
@@ -686,6 +688,7 @@ export type Database = {
           cta_style?: string | null
           custom_cta?: string | null
           display_name?: string | null
+          email_notifications?: boolean
           frequency?: string | null
           handle?: string | null
           niche?: string

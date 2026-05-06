@@ -15,6 +15,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
 import { notify } from "@/lib/notifications";
+import { inviteAcceptedEmail } from "@/lib/email/templates";
 import type { RelationshipDetail, RelationshipStatus } from "@/lib/clients/types";
 
 type RelationshipRow = {
@@ -188,17 +189,28 @@ export async function PATCH(
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
 
-  /* Notify the counterparty of the state change. */
+  /* Notify the counterparty of the state change. Email only on `active`
+     (the meaningful "they accepted!" moment) — declines and endings stay
+     in-app to avoid feeling sad-mail-spammy. */
   const counterpartyId = isManager ? current.creator_id : current.manager_id;
   if (counterpartyId) {
     const verb =
       next === "active" ? "accepted" : next === "declined" ? "declined" : "ended";
+    const actorName = userRes.user.email?.split("@")[0] ?? "Someone";
     await notify({
       recipientId: counterpartyId,
       kind: "invite",
       body: `Your relationship was ${verb}`,
       targetType: "relationship",
       targetId: id,
+      email:
+        next === "active"
+          ? inviteAcceptedEmail({
+              recipientName: "",
+              counterpartyName: actorName,
+              relationshipId: id,
+            })
+          : undefined,
     });
   }
 

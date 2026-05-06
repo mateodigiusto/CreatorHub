@@ -16,6 +16,7 @@ import {
   sendAuthInvite,
 } from "@/lib/clients/invite";
 import { notify } from "@/lib/notifications";
+import { newInviteEmail } from "@/lib/email/templates";
 import type { RelationshipSummary } from "@/lib/clients/types";
 
 type RelationshipRow = {
@@ -176,12 +177,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "insert_failed" }, { status: 500 });
     }
 
+    const managerName = userRes.user.email?.split("@")[0] ?? "Someone";
     await notify({
       recipientId: existingUserId,
       kind: "invite",
       body: `${userRes.user.email ?? "Someone"} added you as a managed creator`,
       targetType: "relationship",
       targetId: data.id,
+      email: newInviteEmail({
+        recipientName: email.split("@")[0],
+        managerName,
+        relationshipId: data.id,
+      }),
     });
 
     return NextResponse.json({

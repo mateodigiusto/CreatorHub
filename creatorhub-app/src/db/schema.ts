@@ -113,6 +113,7 @@ export const profiles = pgTable("profiles", {
   timezone: text("timezone").notNull().default("UTC"),
   schemaVersion: integer("schema_version").notNull().default(1),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  emailNotifications: boolean("email_notifications").notNull().default(true),
   /* Onboarding v2 trial fields. Nullable until the user picks a plan in the
      paywall step; CHECK constraints in the migration enforce the enums. */
   trialPlan: text("trial_plan"),

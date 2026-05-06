@@ -11,6 +11,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
 import { notify } from "@/lib/notifications";
+import { taskAssignedEmail } from "@/lib/email/templates";
 import type { RelationshipTaskRow } from "@/lib/clients/types";
 
 type DbTaskRow = {
@@ -217,12 +218,19 @@ export async function POST(
 
   /* Notify the assignee (typically the creator). */
   if (assignedTo !== userRes.user.id) {
+    const managerName = userRes.user.email?.split("@")[0] ?? "Your manager";
     await notify({
       recipientId: assignedTo,
       kind: "task_assigned",
       body: `New task: ${title.slice(0, 60)}`,
       targetType: "task",
       targetId: data.id,
+      email: taskAssignedEmail({
+        recipientName: "",
+        managerName,
+        taskTitle: title,
+        relationshipId: id,
+      }),
     });
   }
 

@@ -10,6 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
 import { notify } from "@/lib/notifications";
+import { newMessageEmail } from "@/lib/email/templates";
 import type { RelationshipMessageRow } from "@/lib/clients/types";
 
 type DbMsgRow = {
@@ -132,12 +133,19 @@ export async function POST(
     const counterpartyId =
       rel.manager_id === userRes.user.id ? rel.creator_id : rel.manager_id;
     if (counterpartyId) {
+      const senderName = userRes.user.email?.split("@")[0] ?? "Someone";
       await notify({
         recipientId: counterpartyId,
         kind: "message",
         body: text.slice(0, 80),
         targetType: "relationship",
         targetId: id,
+        email: newMessageEmail({
+          recipientName: "",
+          senderName,
+          preview: text.slice(0, 240),
+          relationshipId: id,
+        }),
       });
     }
   }
