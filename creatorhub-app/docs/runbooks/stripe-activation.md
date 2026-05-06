@@ -35,19 +35,41 @@ To flip the whole system live, do this once. After that, every new sign-up that 
 
 Set these in **Vercel → Project Settings → Environment Variables** (Production + Preview separately) **and** in your local `creatorhub-app/.env.local`:
 
+### Required (current redirect-based Checkout flow)
+
 ```
 STRIPE_SECRET_KEY=sk_test_…
-STRIPE_PUBLISHABLE_KEY=pk_test_…
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_…    # same value, exposed to the browser
 STRIPE_WEBHOOK_SECRET=whsec_…
 STRIPE_PRICE_STANDARD_MONTHLY=price_…
 STRIPE_PRICE_STANDARD_ANNUAL=price_…
 STRIPE_PRICE_PRO_MONTHLY=price_…
 STRIPE_PRICE_PRO_ANNUAL=price_…
-APP_URL=https://creatorhub.app                  # canonical URL for return links
+APP_URL=https://creatorhub.app
 ```
 
+### Forward-compatibility (keep blank unless you add Stripe.js inline forms)
+
+```
+STRIPE_PUBLISHABLE_KEY=pk_test_…
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_…
+```
+
+The current flow uses **server-created Checkout sessions** + redirect, which doesn't need the publishable key on the client. The two are placeholders for when we add Elements / inline payment forms.
+
 After saving in Vercel, **redeploy** — Vercel doesn't auto-rebuild on env var changes.
+
+### Quick checklist
+
+Print and tick when activating:
+
+- [ ] Stripe products + prices created (4 price IDs noted)
+- [ ] Webhook endpoint registered + signing secret copied
+- [ ] All 7 required env vars set in Vercel **production** scope
+- [ ] All 7 required env vars set in Vercel **preview** scope (same values are fine for test mode)
+- [ ] Redeployed after setting envs
+- [ ] Test card `4242 4242 4242 4242` checkout completed → `subscriptions` row written
+- [ ] Settings → Manage subscription opens the Customer Portal
+- [ ] Cancel from portal → `subscriptions.status='canceled'` after webhook fires
 
 ---
 
