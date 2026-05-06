@@ -271,10 +271,33 @@ export default function SettingsPage() {
         <Card className="col-span-2">
           <CardHeader title="Notifications" description="Choose what you hear about" />
           <div className="space-y-3.5">
-            <Toggle label="Weekly report ready" checked />
-            <Toggle label="Top post detected" checked />
-            <Toggle label="Content overdue" checked />
-            <Toggle label="New AI ideas available" />
+            <Toggle
+              label="Email me about invites, messages, and tasks"
+              checked={profile?.emailNotifications ?? true}
+              onChange={async (next) => {
+                /* Optimistic UI — flip immediately, persist after. */
+                if (profile) setProfile({ ...profile, emailNotifications: next });
+                try {
+                  const res = await fetch("/api/profile/update", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ emailNotifications: next }),
+                  });
+                  if (!res.ok) throw new Error("non_ok");
+                } catch {
+                  /* Rollback on failure. */
+                  if (profile) {
+                    setProfile({ ...profile, emailNotifications: !next });
+                  }
+                  showToast("Couldn't save preference. Try again.");
+                }
+              }}
+            />
+            <div className="text-[12px] text-muted leading-relaxed pt-1">
+              In-app notifications (the bell) always fire. This toggle controls
+              whether we also email you. More notification types coming soon.
+            </div>
           </div>
         </Card>
 
@@ -389,13 +412,23 @@ function Field({
 function Toggle({
   label,
   checked = false,
+  onChange,
 }: {
   label: string;
   checked?: boolean;
+  onChange?: (next: boolean) => void | Promise<void>;
 }) {
   return (
     <label className="flex items-center justify-between gap-3 cursor-pointer">
       <span className="text-[13.5px] text-text">{label}</span>
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={(e) => {
+          if (onChange) void onChange(e.target.checked);
+        }}
+      />
       <span
         className={cn(
           "relative w-9 h-5 rounded-full transition-colors",

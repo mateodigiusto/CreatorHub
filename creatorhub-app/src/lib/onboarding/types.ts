@@ -183,6 +183,7 @@ export type Profile = {
   team: TeamSetup;
   startMode: StartMode;
   trial?: Trial;
+  emailNotifications?: boolean;
 };
 
 /* In-progress draft — every field optional except the version stamp. */

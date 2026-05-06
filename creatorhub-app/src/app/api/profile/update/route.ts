@@ -16,6 +16,7 @@ import { log } from "@/lib/log";
 type PatchBody = {
   displayName?: string | null;
   handle?: string | null;
+  emailNotifications?: boolean;
 };
 
 export async function PATCH(req: NextRequest) {
@@ -34,7 +35,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   /* Validate + normalize. Empty string → null (clear). */
-  const patch: Record<string, string | null> = {};
+  const patch: Record<string, string | null | boolean> = {};
   if (body.displayName !== undefined) {
     const trimmed = (body.displayName ?? "").trim();
     patch.displayName = trimmed.length === 0 ? null : trimmed.slice(0, 80);
@@ -45,6 +46,9 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "invalid_handle" }, { status: 400 });
     }
     patch.handle = trimmed.length === 0 ? null : trimmed;
+  }
+  if (body.emailNotifications !== undefined) {
+    patch.emailNotifications = Boolean(body.emailNotifications);
   }
 
   if (Object.keys(patch).length === 0) {

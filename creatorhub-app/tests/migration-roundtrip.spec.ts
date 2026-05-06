@@ -99,6 +99,13 @@ describe("migrations", () => {
       "asset_kind_t",
       "job_status_t",
       "job_kind_t",
+      "subscription_status_t",
+      "analysis_status_t",
+      "source_platform_t",
+      "relationship_status_t",
+      "task_recurrence_t",
+      "task_status_t",
+      "notification_kind_t",
     ];
     for (const t of expected) {
       expect(got.has(t), `Missing enum ${t}`).toBe(true);

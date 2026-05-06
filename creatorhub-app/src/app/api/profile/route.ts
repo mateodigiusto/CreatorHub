@@ -43,6 +43,7 @@ type ProfileRow = {
   trial_cycle: string | null;
   trial_started_at: string | null;
   trial_expires_at: string | null;
+  email_notifications: boolean;
 };
 
 export async function GET() {
@@ -60,7 +61,7 @@ export async function GET() {
         "audience_who, audience_wants, audience_problem, selling, offer_name, " +
         "cta_style, custom_cta, brand_tones, sequence_uses, wants_niche_presets, " +
         "asset_types, reports_needs, team, start_mode, schema_version, completed_at, " +
-        "trial_plan, trial_cycle, trial_started_at, trial_expires_at",
+        "trial_plan, trial_cycle, trial_started_at, trial_expires_at, email_notifications",
     )
     .eq("user_id", userRes.user.id)
     .returns<ProfileRow[]>()
@@ -112,6 +113,7 @@ export async function GET() {
             expiresAt: row.trial_expires_at,
           }
         : undefined,
+    emailNotifications: row.email_notifications,
   };
 
   return NextResponse.json({ profile });
