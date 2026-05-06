@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   ArrowUpRight,
+  Search,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -50,11 +51,16 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+/* Show the search box once the user has more than this many relationships
+   total — below it the page is short enough to scan without filtering. */
+const SEARCH_THRESHOLD = 5;
+
 export default function ClientsPage() {
   const router = useRouter();
   const [relationships, setRelationships] = useState<
     RelationshipSummary[] | null
   >(null);
+  const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -77,10 +83,23 @@ export default function ClientsPage() {
 
   const groups = useMemo(() => {
     if (!relationships) return null;
-    const managing = relationships.filter((r) => r.perspective === "manager");
-    const workingWith = relationships.filter((r) => r.perspective === "creator");
+    const q = query.trim().toLowerCase();
+    const matches = (r: RelationshipSummary) => {
+      if (!q) return true;
+      const name = (r.counterpartyName ?? "").toLowerCase();
+      const email = (r.counterpartyEmail ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    };
+    const managing = relationships
+      .filter((r) => r.perspective === "manager")
+      .filter(matches);
+    const workingWith = relationships
+      .filter((r) => r.perspective === "creator")
+      .filter(matches);
     return { managing, workingWith };
-  }, [relationships]);
+  }, [relationships, query]);
+
+  const showSearch = (relationships?.length ?? 0) > SEARCH_THRESHOLD;
 
   if (relationships === null) {
     return (
@@ -129,6 +148,13 @@ export default function ClientsPage() {
     );
   }
 
+  const noResults =
+    showSearch &&
+    query.trim().length > 0 &&
+    groups &&
+    groups.managing.length === 0 &&
+    groups.workingWith.length === 0;
+
   return (
     <>
       <PageHeader
@@ -142,6 +168,25 @@ export default function ClientsPage() {
           </Link>
         }
       />
+
+      {showSearch && (
+        <div className="relative max-w-[420px] mb-4">
+          <Search className="w-3.5 h-3.5 text-muted absolute left-[11px] top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or email…"
+            className="w-full h-9 pl-9 pr-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+          />
+        </div>
+      )}
+
+      {noResults && (
+        <div className="text-[13px] text-muted py-8 text-center">
+          No relationships match &ldquo;{query.trim()}&rdquo;.
+        </div>
+      )}
 
       {groups && groups.managing.length > 0 && (
         <Card className="mb-4">

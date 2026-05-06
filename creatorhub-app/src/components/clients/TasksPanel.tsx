@@ -176,6 +176,34 @@ export function TasksPanel({ relationshipId, perspective }: Props) {
     }
   }
 
+  async function renameTask(task: RelationshipTaskRow, nextTitle: string) {
+    const trimmed = nextTitle.trim();
+    if (!trimmed || trimmed === task.title) return;
+    /* Optimistic */
+    setTasks((prev) =>
+      prev
+        ? prev.map((t) => (t.id === task.id ? { ...t, title: trimmed } : t))
+        : prev,
+    );
+    try {
+      const r = await fetch(
+        `/api/clients/${relationshipId}/tasks/${task.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ title: trimmed }),
+        },
+      );
+      if (!r.ok) {
+        showToast("Couldn't rename.");
+        await load();
+      }
+    } catch {
+      await load();
+    }
+  }
+
   if (tasks === null) {
     return (
       <div className="space-y-2">
@@ -295,6 +323,7 @@ export function TasksPanel({ relationshipId, perspective }: Props) {
                 isManager={isManager}
                 onToggle={() => toggleDailyComplete(t)}
                 onDelete={() => deleteTask(t)}
+                onRename={(next) => renameTask(t, next)}
               />
             ))}
           </div>
@@ -315,6 +344,7 @@ export function TasksPanel({ relationshipId, perspective }: Props) {
                 now={now}
                 onStatus={(next) => toggleOneOffStatus(t, next)}
                 onDelete={() => deleteTask(t)}
+                onRename={(next) => renameTask(t, next)}
               />
             ))}
           </div>
@@ -337,11 +367,13 @@ function DailyTaskRow({
   isManager,
   onToggle,
   onDelete,
+  onRename,
 }: {
   task: RelationshipTaskRow;
   isManager: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  onRename: (next: string) => void;
 }) {
   const completed = !!task.completedToday;
   return (
@@ -366,14 +398,12 @@ function DailyTaskRow({
         )}
       </button>
       <div className="flex-1 min-w-0">
-        <div
-          className={cn(
-            "text-[13.5px] font-medium truncate",
-            completed ? "text-muted line-through" : "text-text",
-          )}
-        >
-          {task.title}
-        </div>
+        <InlineEditableTitle
+          title={task.title}
+          editable={isManager}
+          completed={completed}
+          onRename={onRename}
+        />
         {task.notes && (
           <div className="text-[11.5px] text-muted truncate mt-0.5">
             {task.notes}
@@ -394,18 +424,77 @@ function DailyTaskRow({
   );
 }
 
+function InlineEditableTitle({
+  title,
+  editable,
+  completed,
+  onRename,
+}: {
+  title: string;
+  editable: boolean;
+  completed?: boolean;
+  onRename: (next: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+
+  if (!editable || !editing) {
+    return (
+      <div
+        className={cn(
+          "text-[13.5px] font-medium truncate",
+          completed ? "text-muted line-through" : "text-text",
+          editable && "hover:text-accent cursor-text transition-colors",
+        )}
+        onClick={() => {
+          if (!editable) return;
+          setDraft(title);
+          setEditing(true);
+        }}
+        title={editable ? "Click to rename" : undefined}
+      >
+        {title}
+      </div>
+    );
+  }
+
+  return (
+    <input
+      autoFocus
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        onRename(draft);
+        setEditing(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          onRename(draft);
+          setEditing(false);
+        } else if (e.key === "Escape") {
+          setDraft(title);
+          setEditing(false);
+        }
+      }}
+      className="w-full text-[13.5px] font-medium text-text bg-transparent border-b border-accent focus:outline-none"
+    />
+  );
+}
+
 function OneOffTaskRow({
   task,
   isManager,
   now,
   onStatus,
   onDelete,
+  onRename,
 }: {
   task: RelationshipTaskRow;
   isManager: boolean;
   now: number;
   onStatus: (next: "pending" | "in_progress" | "done") => void;
   onDelete: () => void;
+  onRename: (next: string) => void;
 }) {
   const isDone = task.status === "done";
   const next = isDone ? "pending" : "done";
@@ -434,14 +523,12 @@ function OneOffTaskRow({
         )}
       </button>
       <div className="flex-1 min-w-0">
-        <div
-          className={cn(
-            "text-[13.5px] font-medium truncate",
-            isDone ? "text-muted line-through" : "text-text",
-          )}
-        >
-          {task.title}
-        </div>
+        <InlineEditableTitle
+          title={task.title}
+          editable={isManager}
+          completed={isDone}
+          onRename={onRename}
+        />
         <div className="flex items-center gap-2 mt-0.5">
           {task.notes && (
             <span className="text-[11.5px] text-muted truncate">
