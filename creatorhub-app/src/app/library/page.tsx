@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Upload, Play, AlertTriangle, Wand2 } from "lucide-react";
+import {
+  Upload,
+  Play,
+  AlertTriangle,
+  Wand2,
+  CheckCircle2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
@@ -43,6 +51,23 @@ export default function LibraryPage() {
   const [assets, setAssets] = useState<ApiAsset[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const exitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelected(new Set());
+  }, []);
 
   const loadAssets = useCallback(async () => {
     try {
@@ -72,6 +97,40 @@ export default function LibraryPage() {
 
   const photoCount = assets?.filter((a) => a.kind !== "video").length ?? 0;
   const videoCount = assets?.filter((a) => a.kind === "video").length ?? 0;
+
+  const bulkDelete = useCallback(async () => {
+    if (selected.size === 0 || deleting) return;
+    if (
+      !window.confirm(
+        `Delete ${selected.size} asset${selected.size === 1 ? "" : "s"}? This can't be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    const ids = Array.from(selected);
+    /* Parallel — server-side per-asset audit + storage cleanup. */
+    const results = await Promise.allSettled(
+      ids.map((id) =>
+        fetch(`/api/assets/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        }).then((r) => (r.ok ? id : Promise.reject(new Error(`status_${r.status}`)))),
+      ),
+    );
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.length - ok;
+    setDeleting(false);
+    exitSelectMode();
+    await loadAssets();
+    if (failed === 0) {
+      showToast(`Deleted ${ok} asset${ok === 1 ? "" : "s"}`);
+    } else if (ok === 0) {
+      showToast("Couldn't delete. Try again.");
+    } else {
+      showToast(`Deleted ${ok}, failed ${failed} — try the rest again.`);
+    }
+  }, [selected, deleting, exitSelectMode, loadAssets, showToast]);
 
   const onFiles = useCallback(
     async (files: FileList | null) => {
@@ -108,42 +167,78 @@ export default function LibraryPage() {
     [loadAssets, showToast],
   );
 
+  const headerActions = selectMode ? (
+    <>
+      <span className="text-[12.5px] text-muted">
+        {selected.size} selected
+      </span>
+      <Button
+        variant="outline"
+        size="md"
+        onClick={exitSelectMode}
+        disabled={deleting}
+      >
+        <X className="w-3.5 h-3.5" />
+        Cancel
+      </Button>
+      <Button
+        size="md"
+        onClick={bulkDelete}
+        disabled={deleting || selected.size === 0}
+        className="!bg-red-600 hover:!bg-red-700"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+        {deleting ? "Deleting…" : `Delete ${selected.size}`}
+      </Button>
+    </>
+  ) : (
+    <>
+      <Tabs<Tab>
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "all", label: `All (${assets?.length ?? 0})` },
+          { value: "photos", label: `Photos (${photoCount})` },
+          { value: "videos", label: `Videos (${videoCount})` },
+        ]}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          void onFiles(e.target.files);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+      />
+      {assets && assets.length > 0 && (
+        <Button
+          variant="outline"
+          size="md"
+          onClick={() => setSelectMode(true)}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Select
+        </Button>
+      )}
+      <Button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+      >
+        <Upload className="w-3.5 h-3.5" />
+        {uploading ? "Uploading…" : "Upload"}
+      </Button>
+    </>
+  );
+
   return (
     <>
       <PageHeader
         title="Asset Library"
         description={`Photos and short videos for your sequences. Videos used in Sequence Studio must be ${MAX_VIDEO_SECONDS}s or shorter.`}
-        actions={
-          <>
-            <Tabs<Tab>
-              value={tab}
-              onChange={setTab}
-              options={[
-                { value: "all", label: `All (${assets?.length ?? 0})` },
-                { value: "photos", label: `Photos (${photoCount})` },
-                { value: "videos", label: `Videos (${videoCount})` },
-              ]}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              hidden
-              onChange={(e) => {
-                void onFiles(e.target.files);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              <Upload className="w-3.5 h-3.5" />
-              {uploading ? "Uploading…" : "Upload"}
-            </Button>
-          </>
-        }
+        actions={headerActions}
       />
 
       {visible === null ? (
@@ -157,13 +252,21 @@ export default function LibraryPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-          <AddAssetCard
-            onFiles={onFiles}
-            uploading={uploading}
-            context="library"
-          />
+          {!selectMode && (
+            <AddAssetCard
+              onFiles={onFiles}
+              uploading={uploading}
+              context="library"
+            />
+          )}
           {visible.map((a) => (
-            <AssetTile key={a.id} asset={a} />
+            <AssetTile
+              key={a.id}
+              asset={a}
+              selectMode={selectMode}
+              isSelected={selected.has(a.id)}
+              onToggleSelect={() => toggleSelected(a.id)}
+            />
           ))}
         </div>
       )}
@@ -171,7 +274,17 @@ export default function LibraryPage() {
   );
 }
 
-function AssetTile({ asset }: { asset: ApiAsset }) {
+function AssetTile({
+  asset,
+  selectMode,
+  isSelected,
+  onToggleSelect,
+}: {
+  asset: ApiAsset;
+  selectMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}) {
   const isVideo = asset.kind === "video";
   const tooLong =
     isVideo && (asset.durationSeconds ?? 0) > MAX_VIDEO_SECONDS;
@@ -179,11 +292,31 @@ function AssetTile({ asset }: { asset: ApiAsset }) {
 
   return (
     <div
+      onClick={selectMode ? onToggleSelect : undefined}
       className={cn(
-        "lift bg-surface border border-border rounded-[14px] card-base overflow-hidden",
+        "relative bg-surface border rounded-[14px] card-base overflow-hidden transition-all",
+        !selectMode && "lift",
+        selectMode && "cursor-pointer",
+        selectMode && isSelected
+          ? "border-accent ring-2 ring-accent/30"
+          : "border-border",
         tooLong && "opacity-75",
       )}
     >
+      {selectMode && (
+        <div className="absolute z-10 top-2 right-2 pointer-events-none">
+          <span
+            className={cn(
+              "w-6 h-6 rounded-full grid place-items-center border-2 backdrop-blur-sm shadow-md",
+              isSelected
+                ? "bg-accent border-accent text-white"
+                : "bg-black/40 border-white/80 text-transparent",
+            )}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+          </span>
+        </div>
+      )}
       <div className="aspect-[4/5] relative" style={{ background: gradient }}>
         {asset.state === "playable" && asset.signedUrl && !isVideo && (
           // eslint-disable-next-line @next/next/no-img-element

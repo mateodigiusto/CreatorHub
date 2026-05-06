@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/shell/AppShell";
 import { AppStateProvider } from "@/lib/store";
+import { PageviewTracker } from "@/components/analytics/PageviewTracker";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full">
         <AppStateProvider>
+          <PageviewTracker />
           <AppShell>{children}</AppShell>
         </AppStateProvider>
       </body>

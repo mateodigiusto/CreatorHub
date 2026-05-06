@@ -25,6 +25,10 @@ import {
   displayNameFor,
   quickActionsFor,
 } from "@/lib/onboarding/personalize";
+import {
+  readOnboardingDraft,
+  writeOnboardingDraft,
+} from "@/lib/onboarding/persistence";
 
 const TOTAL_STEPS = 10; // 0–9
 
@@ -95,15 +99,39 @@ function OnboardingPageInner() {
      optimistic but accurate (Stripe wouldn't redirect unless the session
      succeeded). */
   const stripeStatus = params.get("stripe");
-  const initialStep = stripeStatus === "success" ? 9 : stripeStatus === "cancel" ? 8 : 0;
+
+  /* Resume mid-flow: if there's a saved draft from a previous session,
+     pick up where the user left off. Stripe-redirect short-circuits this
+     because the success/cancel intent overrides any stored step. */
+  const resumed = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    if (existingProfile && existingProfile.version === 2) return null;
+    return readOnboardingDraft();
+  }, [existingProfile]);
+
+  const initialStep =
+    stripeStatus === "success"
+      ? 9
+      : stripeStatus === "cancel"
+        ? 8
+        : (resumed?.step ?? 0);
 
   const [step, setStep] = useState(initialStep);
   const [draft, setDraft] = useState<ProfileDraft>(
     existingProfile && existingProfile.version === 2
       ? { ...existingProfile }
-      : { secondaryGoals: [], platforms: ["instagram"], wantsNichePresets: true }
+      : resumed?.draft ??
+        { secondaryGoals: [], platforms: ["instagram"], wantsNichePresets: true },
   );
   const [submittingPlan, setSubmittingPlan] = useState(false);
+
+  /* Persist the in-progress draft on every step or field change so a
+     reload doesn't lose the user's work. Cleared by writeProfile() once
+     they finish and persistProfile lands. */
+  useEffect(() => {
+    if (existingProfile && existingProfile.version === 2) return;
+    writeOnboardingDraft({ step, draft, savedAt: Date.now() });
+  }, [step, draft, existingProfile]);
 
   /* When the user lands on /onboarding?stripe=success, finalize the profile
      once on mount. Step 9 already shows the success screen. */
@@ -292,11 +320,13 @@ function OnboardingPageInner() {
 
 function labelForType(type: CreatorType): string {
   switch (type) {
-    case "creator":     return "your personal brand";
-    case "agency":      return "running clients";
-    case "infoproduct": return "your offer";
-    case "realestate":  return "listings + neighborhood";
-    case "fitness":     return "training + transformation";
-    case "other":       return "your work";
+    case "creator":         return "your personal brand";
+    case "agency":          return "running clients";
+    case "infoproduct":     return "your offer";
+    case "realestate":      return "listings + neighborhood";
+    case "fitness":         return "training + transformation";
+    case "content_manager": return "your creators' accounts";
+    case "editor":          return "your client roster";
+    case "other":           return "your work";
   }
 }
