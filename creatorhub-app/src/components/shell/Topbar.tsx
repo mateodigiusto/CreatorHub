@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Search, Plus, Sun, Moon, Menu } from "lucide-react";
 import { NotificationsBell } from "@/components/ui/NotificationsBell";
 import { usePathname } from "next/navigation";
@@ -7,6 +9,7 @@ import { useAppState } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { AuthMenu } from "./AuthMenu";
+import { ClientSwitcher } from "./ClientSwitcher";
 import { cn } from "@/lib/cn";
 
 const titles: Record<string, string> = {
@@ -19,6 +22,9 @@ const titles: Record<string, string> = {
   "/reports": "Reports",
   "/sequence-studio": "Sequence Studio",
   "/sequence-studio/new": "Create content",
+  "/scripts": "Scripts",
+  "/content-dna": "Transcribe & Analyze",
+  "/clients": "Clients",
   "/settings": "Settings",
   "/integrations": "Integrations",
   "/help": "Help",
@@ -30,8 +36,32 @@ export function Topbar({
   onOpenMobileNav?: () => void;
 } = {}) {
   const pathname = usePathname();
-  const { connected, setConnected, theme, toggleTheme } = useAppState();
+  const { theme, toggleTheme } = useAppState();
   const title = titles[pathname] || "Dashboard";
+  const [activeIntegrations, setActiveIntegrations] = useState<number | null>(null);
+
+  /* Fetch real integration count once on mount. The pill is informational
+     only — clicking goes to /integrations rather than toggling demo state. */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/integrations", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { activeCount: number } | null) => {
+        if (cancelled || !data) return;
+        setActiveIntegrations(data.activeCount);
+      })
+      .catch(() => {
+        /* ignore — pill stays in loading state */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isConnected = (activeIntegrations ?? 0) > 0;
+  const platformLabel = isConnected
+    ? `${activeIntegrations} platform${activeIntegrations === 1 ? "" : "s"} connected`
+    : "No platforms connected";
 
   return (
     <header
@@ -51,7 +81,7 @@ export function Topbar({
         >
           <Menu className="w-5 h-5" />
         </button>
-        <span className="hidden sm:inline text-[13px] text-muted">Workspace</span>
+        <ClientSwitcher />
         <span className="hidden sm:inline text-[13px] text-muted">/</span>
         <span className="text-[14px] sm:text-[13px] font-medium text-text truncate">
           {title}
@@ -73,22 +103,25 @@ export function Topbar({
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Connection pill — collapsed on mobile to just the dot */}
-        <button
-          onClick={() => setConnected(!connected)}
+        {/* Connection pill — links to /integrations. Reflects real
+            integrations table state, not the legacy demo toggle. */}
+        <Link
+          href="/integrations"
           className={cn(
             "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11.5px] font-medium border cursor-pointer transition-colors",
-            connected
+            isConnected
               ? "text-accent border-accent/20"
-              : "text-muted border-border hover:text-text"
+              : "text-muted border-border hover:text-text",
           )}
           style={
-            connected
+            isConnected
               ? { background: "rgba(37,99,235,0.10)" }
               : undefined
           }
+          aria-label={platformLabel}
+          title={platformLabel}
         >
-          {connected ? (
+          {isConnected ? (
             <>
               <span
                 className="inline-block w-1.5 h-1.5 rounded-full"
@@ -97,16 +130,20 @@ export function Topbar({
                   boxShadow: "0 0 6px rgba(16,185,129,0.6)",
                 }}
               />
-              <span className="hidden sm:inline">4 platforms connected</span>
+              <span className="hidden sm:inline">{platformLabel}</span>
               <span className="sm:hidden">Live</span>
             </>
           ) : (
             <>
-              <span className="hidden sm:inline">No platforms connected</span>
-              <span className="sm:hidden">Off</span>
+              <span className="hidden sm:inline">
+                {activeIntegrations === null ? "Loading…" : "No platforms connected"}
+              </span>
+              <span className="sm:hidden">
+                {activeIntegrations === null ? "…" : "Off"}
+              </span>
             </>
           )}
-        </button>
+        </Link>
 
         <IconButton
           onClick={toggleTheme}

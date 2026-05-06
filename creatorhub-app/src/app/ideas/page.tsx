@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { DemoBadge } from "@/components/ui/DemoBadge";
 import { AiCallout } from "@/components/ui/AiCallout";
 import { Tabs } from "@/components/ui/Tabs";
 import { useAppState } from "@/lib/store";
@@ -57,6 +58,7 @@ export default function IdeasPage() {
 
   return (
     <>
+      <DemoBadge />
       <PageHeader
         title="Ideas"
         description="AI-generated hooks aligned with your last 30 days of performance."

@@ -6,6 +6,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { DemoBadge } from "@/components/ui/DemoBadge";
 import { AiCallout } from "@/components/ui/AiCallout";
 import { Thumb } from "@/components/ui/Thumb";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -145,6 +146,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <DemoBadge />
       <PageHeader
         title={welcome.greeting}
         description={welcome.sub}
