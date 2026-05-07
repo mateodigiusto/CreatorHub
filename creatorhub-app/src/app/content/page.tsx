@@ -97,7 +97,7 @@ function dbSequenceToPost(seq: DbSequence): Post {
 }
 
 export default function ContentPage() {
-  const { connected, extraPosts } = useAppState();
+  const { connected, extraPosts, currentClient } = useAppState();
   const [view, setView] = useState<"library" | "pipeline">("library");
   const [filter, setFilter] = useState<"all" | ContentStatus>("all");
   const [planOpen, setPlanOpen] = useState(false);
@@ -105,7 +105,10 @@ export default function ContentPage() {
 
   const loadSequences = useCallback(async () => {
     try {
-      const r = await fetch("/api/sequences", { credentials: "include" });
+      const url = currentClient
+        ? `/api/sequences?relationship_id=${encodeURIComponent(currentClient.relationshipId)}`
+        : "/api/sequences";
+      const r = await fetch(url, { credentials: "include" });
       if (!r.ok) {
         setDbSequences([]);
         return;
@@ -115,7 +118,7 @@ export default function ContentPage() {
     } catch {
       setDbSequences([]);
     }
-  }, []);
+  }, [currentClient]);
 
   useEffect(() => {
     /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap fetch on mount */

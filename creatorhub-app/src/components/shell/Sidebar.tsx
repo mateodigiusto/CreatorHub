@@ -15,6 +15,10 @@ import {
   Images,
   Microscope,
   Users,
+  ScrollText,
+  IdCard,
+  Compass,
+  Send,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -24,6 +28,7 @@ import {
   avatarInitialsFor,
   creatorTypeLabel,
 } from "@/lib/onboarding/personalize";
+import type { CreatorType } from "@/lib/onboarding/types";
 
 type NavItem = {
   href: string;
@@ -31,21 +36,60 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-const workspace: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/ideas", label: "Ideas", icon: Lightbulb },
-  { href: "/library", label: "Asset Library", icon: Images },
-  { href: "/content", label: "Content", icon: FileText },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/clients", label: "Clients", icon: Users },
+const ITEMS = {
+  dashboard: { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  ideas:     { href: "/ideas",     label: "Ideas",     icon: Lightbulb },
+  library:   { href: "/library",   label: "Asset Library", icon: Images },
+  content:   { href: "/content",   label: "Content",   icon: FileText },
+  calendar:  { href: "/calendar",  label: "Calendar",  icon: Calendar },
+  clients:   { href: "/clients",   label: "Clients",   icon: Users },
+} as const satisfies Record<string, NavItem>;
+
+const baseWorkspace: NavItem[] = [
+  ITEMS.dashboard, ITEMS.analytics, ITEMS.ideas,
+  ITEMS.library, ITEMS.content, ITEMS.calendar, ITEMS.clients,
 ];
 
-const tools: NavItem[] = [
+/** Order the Workspace nav by what the role uses every day. Same items —
+ *  daily-power-user roles get their primary surfaces first. */
+function workspaceForRole(creatorType: CreatorType | undefined): NavItem[] {
+  switch (creatorType) {
+    case "editor":
+      return [
+        ITEMS.clients, ITEMS.content, ITEMS.calendar,
+        ITEMS.dashboard, ITEMS.library, ITEMS.analytics, ITEMS.ideas,
+      ];
+    case "content_manager":
+      return [
+        ITEMS.content, ITEMS.calendar, ITEMS.clients,
+        ITEMS.dashboard, ITEMS.library, ITEMS.analytics, ITEMS.ideas,
+      ];
+    default:
+      return baseWorkspace;
+  }
+}
+
+const baseTools: NavItem[] = [
   { href: "/sequence-studio", label: "Sequence Studio", icon: Wand2 },
-  { href: "/content-dna", label: "Content DNA", icon: Microscope },
+  { href: "/content-dna", label: "Transcribe & Analyze", icon: Microscope },
+  { href: "/scripts", label: "Scripts", icon: ScrollText },
   { href: "/reports", label: "Reports", icon: FileBarChart },
 ];
+
+/** Editors get a Portfolio item, Creator directory + Outreach target list
+ *  added to Tools. Non-editors don't see the discovery / pitching surface. */
+function toolsForRole(creatorType: CreatorType | undefined): NavItem[] {
+  if (creatorType === "editor") {
+    return [
+      ...baseTools,
+      { href: "/portfolio", label: "Portfolio", icon: IdCard },
+      { href: "/creators",  label: "Find creators", icon: Compass },
+      { href: "/outreach",  label: "Outreach",     icon: Send },
+    ];
+  }
+  return baseTools;
+}
 
 const system: NavItem[] = [
   { href: "/integrations", label: "Integrations", icon: Plug },
@@ -157,6 +201,8 @@ export function Sidebar({
   const userSubtitle = profile
     ? creatorTypeLabel(profile)
     : "Pro plan · 2 seats";
+  const workspace = workspaceForRole(profile?.creatorType);
+  const tools = toolsForRole(profile?.creatorType);
 
   return (
     <>

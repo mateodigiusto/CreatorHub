@@ -41,9 +41,37 @@ const USER_OWNED_TABLES: Array<{
       primary_goal: "audience",
     }),
   },
-  /* TODO: extend coverage as Phase 1 adds: assets, sequences, posts,
-     integrations (status='active' rows only — service role can write),
-     ideas, reports. Each entry above gets a row here. */
+  /* PDF expansion (v22-v24). The 5 tables that introduce new RLS-isolated
+     surface area. Tables with FK dependencies on creator_directory rows
+     (editor_creator_targets, creator_outreach_log) are excluded — they
+     need a separate fixture to seed a directory row first. */
+  {
+    table: "generated_scripts",
+    insertSql: (userId) => ({
+      user_id: userId,
+      platform: "instagram",
+      format: "reel",
+      title: "RLS test script",
+    }),
+  },
+  {
+    table: "script_preferences",
+    insertSql: (userId) => ({ user_id: userId }),
+  },
+  {
+    table: "editor_portfolios",
+    insertSql: (userId) => ({
+      user_id: userId,
+      /* Slug must satisfy the v24 CHECK regex: ^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])?$
+         Use the user's id (UUIDs are all lowercase hex + hyphens). */
+      slug: `rls-${userId.slice(0, 8)}`,
+    }),
+  },
+  /* TODO: extend coverage to v18 relationship tables (creator_relationships,
+     relationship_*, notifications) + Phase 1 tables (assets, sequences,
+     posts, integrations, content_analyses, content_drafts). Each FK
+     dependency needs a fixture pattern — defer until the round-trip test
+     framework supports per-test setUp blocks. */
 ];
 
 let userA: { id: string; client: SupabaseClient };

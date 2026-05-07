@@ -27,6 +27,17 @@ export type AnalysisOutput = {
     angles: string[];
     titles: string[];
   };
+  /* v21: richer Transcribe-tab output. */
+  hook_analysis: {
+    text: string;
+    why_it_works: string;
+    attention_arc: string[];
+  };
+  themes: string[];
+  tone: string;
+  cta: string;
+  content_score: number;   // 0.0–10.0
+  steal_notes: string;
 };
 
 export function analysisPrompt(args: {
@@ -60,8 +71,20 @@ Output a JSON object with this exact shape:
     "hooks": ["5 different opening hooks the creator could test, same psychological lever"],
     "angles": ["5 distinct angle pivots — same structure, different topic"],
     "titles": ["5 alternative title or thumbnail copy options"]
-  }
-}`;
+  },
+  "hook_analysis": {
+    "text": "<the verbatim first 1–3 sentences>",
+    "why_it_works": "1–2 sentences naming the cognitive lever AND why it fits this audience",
+    "attention_arc": ["3–5 short bullets describing the attention pacing in the opening 10s"]
+  },
+  "themes": ["3–6 single-phrase themes the video covers, lowercased, no leading hashtag (e.g. 'morning routines', 'cold exposure', 'creator burnout')"],
+  "tone": "one of: educational, entertaining, authoritative, conversational, raw, hype, calm, sales",
+  "cta": "the call to action observed in the video, verbatim if explicit, or '<implicit: ...>' if implied",
+  "content_score": 7.5,
+  "steal_notes": "3–5 sentences for a creator on what to specifically borrow — angles, hook style, visual technique. Concrete, not abstract."
+}
+
+The content_score is your overall quality rating from 0.0 to 10.0. Weight: 40% hook strength, 30% structure clarity, 20% CTA effectiveness, 10% retention pacing. Be honest — most viral videos score 6.0–8.5. Very few are 9+.`;
 }
 
 export const DRAFT_SYSTEM = `You are an expert short-form video scriptwriter. Given an analysis of a viral piece of content, generate a fresh script for the user that uses the SAME structural pattern but for THEIR audience and offer.

@@ -6,6 +6,8 @@ export type CreatorType =
   | "agency"
   | "fitness"
   | "realestate"
+  | "content_manager"
+  | "editor"
   | "other";
 
 export type Goal =

@@ -22,6 +22,11 @@ import {
   Pencil,
   FileText,
   RotateCcw,
+  Hash,
+  MicVocal,
+  Megaphone,
+  Gauge,
+  Lightbulb,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -29,6 +34,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tabs } from "@/components/ui/Tabs";
 import { useAppState } from "@/lib/store";
+import { useClientQuery } from "@/lib/clients/use-client-query";
 import { cn } from "@/lib/cn";
 import type {
   StructureBeat,
@@ -49,6 +55,18 @@ type AnalysisRow = {
   structure: StructureBeat[] | null;
   why_it_worked: WhyItWorked | null;
   variations: AnalysisVariations | null;
+  /* v21 enrichment fields populated by the AI pipeline. All nullable —
+     legacy rows analyzed before v21 won't have these. */
+  hook_analysis: {
+    text: string;
+    why_it_works: string;
+    attention_arc: string[];
+  } | null;
+  themes: string[] | null;
+  tone: string | null;
+  cta: string | null;
+  content_score: number | null;
+  steal_notes: string | null;
   status: string;
 };
 
@@ -73,6 +91,7 @@ export default function ContentDnaAnalysisPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { showToast } = useAppState();
+  const clientQ = useClientQuery();
 
   const [analysis, setAnalysis] = useState<AnalysisRow | null>(null);
   const [drafts, setDrafts] = useState<DraftRow[]>([]);
@@ -86,7 +105,7 @@ export default function ContentDnaAnalysisPage() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`/api/content-dna/${id}`, { credentials: "include" });
+      const r = await fetch(`/api/content-dna/${id}${clientQ.q}`, { credentials: "include" });
       if (!r.ok) {
         setLoading(false);
         return;
@@ -99,7 +118,7 @@ export default function ContentDnaAnalysisPage() {
     } catch {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, clientQ.q]);
 
   useEffect(() => {
     /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap */
@@ -122,10 +141,43 @@ export default function ContentDnaAnalysisPage() {
     [drafts, activeDraftId],
   );
 
+  const [generatingScript, setGeneratingScript] = useState(false);
+
+  /* "Generate Script From This" — POST to /api/scripts/generate with
+     sourceAnalysisId so the script generator inherits the hook + themes
+     of this transcript. On success, navigate to /scripts/[id]. */
+  async function handleGenerateScript() {
+    if (generatingScript || !analysis) return;
+    setGeneratingScript(true);
+    try {
+      const r = await fetch(`/api/scripts/generate${clientQ.q}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          platform: "instagram",
+          format: "reel",
+          sourceAnalysisId: analysis.id,
+        }),
+      });
+      if (!r.ok) {
+        const err = (await r.json().catch(() => ({}))) as { error?: string };
+        showToast(`Couldn't generate: ${err.error ?? r.status}`);
+        setGeneratingScript(false);
+        return;
+      }
+      const json = (await r.json()) as { script: { id: string } };
+      router.push(`/scripts/${json.script.id}`);
+    } catch {
+      showToast("Network error. Try again.");
+      setGeneratingScript(false);
+    }
+  }
+
   async function handleDeleteAnalysis() {
     setDeleting(true);
     try {
-      const r = await fetch(`/api/content-dna/${id}`, {
+      const r = await fetch(`/api/content-dna/${id}${clientQ.q}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -149,7 +201,7 @@ export default function ContentDnaAnalysisPage() {
       return;
     }
     try {
-      const r = await fetch(`/api/content-dna/${id}`, {
+      const r = await fetch(`/api/content-dna/${id}${clientQ.q}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -169,7 +221,7 @@ export default function ContentDnaAnalysisPage() {
 
   async function handleDeleteDraft(draftId: string) {
     try {
-      const r = await fetch(`/api/content-dna/${id}/draft/${draftId}`, {
+      const r = await fetch(`/api/content-dna/${id}/draft/${draftId}${clientQ.q}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -190,7 +242,7 @@ export default function ContentDnaAnalysisPage() {
 
   async function handleSaveDraftScript(draftId: string, script: string) {
     try {
-      const r = await fetch(`/api/content-dna/${id}/draft/${draftId}`, {
+      const r = await fetch(`/api/content-dna/${id}/draft/${draftId}${clientQ.q}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -371,6 +423,38 @@ export default function ContentDnaAnalysisPage() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => {
+                window.open(
+                  `/api/content-dna/${id}/export-pdf${clientQ.q}`,
+                  "_blank",
+                );
+              }}
+              disabled={analysis.status !== "ready"}
+              title={
+                analysis.status !== "ready"
+                  ? "Wait for the analysis to finish"
+                  : "Download this breakdown as a branded PDF"
+              }
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export PDF</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleGenerateScript}
+              disabled={generatingScript || analysis.status !== "ready"}
+              title={
+                analysis.status !== "ready"
+                  ? "Wait for the analysis to finish"
+                  : "Generate a new script that inherits this video's hook + themes"
+              }
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              {generatingScript ? "Generating…" : "Generate Script"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setConfirmingDelete(true)}
               className="border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-500/5"
             >
@@ -406,7 +490,7 @@ export default function ContentDnaAnalysisPage() {
           onDeleteDraft={handleDeleteDraft}
           onSaveDraftScript={handleSaveDraftScript}
           onGenerate={async (input) => {
-            const r = await fetch(`/api/content-dna/${id}/draft`, {
+            const r = await fetch(`/api/content-dna/${id}/draft${clientQ.q}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
@@ -440,6 +524,7 @@ export default function ContentDnaAnalysisPage() {
 
 function ImportStep({ analysis }: { analysis: AnalysisRow }) {
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <Card className="lg:col-span-2">
         <CardHeader
@@ -496,6 +581,192 @@ function ImportStep({ analysis }: { analysis: AnalysisRow }) {
           />
         </div>
       </Card>
+    </div>
+
+    <EnrichmentPanel analysis={analysis} />
+    </>
+  );
+}
+
+/* ─── v21 enrichment panel ───────────────────────────────────────── */
+
+function EnrichmentPanel({ analysis }: { analysis: AnalysisRow }) {
+  const hasEnrichment =
+    analysis.hook_analysis ||
+    (analysis.themes && analysis.themes.length > 0) ||
+    analysis.tone ||
+    analysis.cta ||
+    analysis.content_score !== null ||
+    analysis.steal_notes;
+
+  /* Skip the panel entirely for legacy rows analyzed before v21 — they
+     just don't have enrichment data and a panel of nulls would look broken. */
+  if (!hasEnrichment) return null;
+
+  return (
+    <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <Card className="lg:col-span-2">
+        <CardHeader
+          title="Hook breakdown"
+          description="What the first 3 seconds did + why it landed."
+        />
+        {analysis.hook_analysis ? (
+          <div className="space-y-3">
+            <div className="rounded-[10px] border border-accent/30 bg-accent-soft p-3">
+              <div className="text-[10.5px] uppercase font-semibold text-accent mb-1" style={{ letterSpacing: "0.06em" }}>
+                Verbatim hook
+              </div>
+              <div className="text-[13.5px] font-medium text-text leading-snug">
+                {analysis.hook_analysis.text}
+              </div>
+            </div>
+            <div className="rounded-[10px] border border-border p-3">
+              <div className="text-[10.5px] uppercase font-semibold text-muted mb-1" style={{ letterSpacing: "0.06em" }}>
+                Why it works
+              </div>
+              <div className="text-[12.5px] text-text/85 leading-snug">
+                {analysis.hook_analysis.why_it_works}
+              </div>
+            </div>
+            {analysis.hook_analysis.attention_arc?.length > 0 && (
+              <div className="rounded-[10px] border border-border p-3">
+                <div className="text-[10.5px] uppercase font-semibold text-muted mb-1.5" style={{ letterSpacing: "0.06em" }}>
+                  Attention arc (first 10s)
+                </div>
+                <ul className="space-y-1">
+                  {analysis.hook_analysis.attention_arc.map((a, i) => (
+                    <li key={i} className="text-[12.5px] text-text/85 leading-snug flex gap-2">
+                      <span className="text-muted shrink-0">{i + 1}.</span>
+                      <span>{a}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-[12.5px] text-muted italic">No hook breakdown available.</div>
+        )}
+
+        {analysis.steal_notes && (
+          <div className="mt-4">
+            <CardHeader
+              title={
+                <span className="inline-flex items-center gap-1.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-accent" /> What to steal
+                </span>
+              }
+              description="Specific things to borrow — angles, hook style, visual technique."
+            />
+            <div className="rounded-[10px] border border-accent/20 bg-accent-soft/50 p-3 text-[13px] text-text/90 leading-relaxed whitespace-pre-wrap">
+              {analysis.steal_notes}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader title="At a glance" />
+        <div className="space-y-3">
+          {analysis.content_score !== null && (
+            <ScoreRow score={analysis.content_score} />
+          )}
+          {analysis.tone && (
+            <FactRow
+              icon={<MicVocal className="w-3.5 h-3.5" />}
+              label="Tone"
+              value={analysis.tone}
+            />
+          )}
+          {analysis.cta && (
+            <FactRow
+              icon={<Megaphone className="w-3.5 h-3.5" />}
+              label="Call to action"
+              value={analysis.cta}
+            />
+          )}
+          {analysis.themes && analysis.themes.length > 0 && (
+            <div className="rounded-[10px] border border-border p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-accent">
+                  <Hash className="w-3.5 h-3.5" />
+                </span>
+                <span
+                  className="text-[10.5px] uppercase font-semibold text-muted"
+                  style={{ letterSpacing: "0.06em" }}
+                >
+                  Themes
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.themes.map((t, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 rounded-full bg-surface-2 border border-border text-[11.5px] text-text/85"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function ScoreRow({ score }: { score: number }) {
+  /* Score color follows the same palette as the rest of the app:
+     accent for "good" (≥7), muted for middling, warning red below 4. */
+  const tone =
+    score >= 7 ? "text-accent" : score >= 4 ? "text-text" : "text-red-600 dark:text-red-400";
+  return (
+    <div className="rounded-[10px] border border-border p-3">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-accent">
+          <Gauge className="w-3.5 h-3.5" />
+        </span>
+        <span
+          className="text-[10.5px] uppercase font-semibold text-muted"
+          style={{ letterSpacing: "0.06em" }}
+        >
+          Content score
+        </span>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className={cn("text-[28px] font-semibold tabular-nums tracking-tight", tone)}>
+          {score.toFixed(1)}
+        </span>
+        <span className="text-[13px] text-muted">/ 10</span>
+      </div>
+    </div>
+  );
+}
+
+function FactRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[10px] border border-border p-3">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-accent">{icon}</span>
+        <span
+          className="text-[10.5px] uppercase font-semibold text-muted"
+          style={{ letterSpacing: "0.06em" }}
+        >
+          {label}
+        </span>
+      </div>
+      <div className="text-[12.5px] text-text/90 leading-snug capitalize first-letter:uppercase">
+        {value}
+      </div>
     </div>
   );
 }

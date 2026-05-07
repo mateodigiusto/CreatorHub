@@ -443,27 +443,62 @@ export const sourcePlatformEnum = pgEnum("source_platform_t", [
   "other",
 ]);
 
+/** v21: input mode discriminator for the Transcription Engine. */
+export const sourceKindEnum = pgEnum("source_kind_t", [
+  "url",
+  "username",
+  "upload",
+]);
+
 export const contentAnalyses = pgTable(
   "content_analyses",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    sourceUrl: text("source_url").notNull(),
+    /** v21: nullable for username/upload flows that defer URL resolution. */
+    sourceUrl: text("source_url"),
     sourcePlatform: sourcePlatformEnum("source_platform").notNull(),
     sourceTitle: text("source_title"),
     sourceCreator: text("source_creator"),
     sourceThumbnail: text("source_thumbnail"),
+    /** v21: how the user provided the source — drives the input UI tab. */
+    sourceKind: sourceKindEnum("source_kind").notNull().default("url"),
+    /** v21: handle for username flow (e.g. "@hubermanlab"). */
+    sourceHandle: text("source_handle"),
+    /** v21: asset row for upload flow. */
+    uploadAssetId: uuid("upload_asset_id").references(() => assets.id, { onDelete: "set null" }),
     transcription: text("transcription"),
     hook: text("hook"),
     structure: jsonb("structure"),
     whyItWorked: jsonb("why_it_worked"),
     variations: jsonb("variations"),
+    /** v21: jsonb { hook_text, why_it_works, attention_arc[] } */
+    hookAnalysis: jsonb("hook_analysis"),
+    /** v21: bulleted themes for filtering and search. */
+    themes: text("themes").array().notNull().default(sql`array[]::text[]`),
+    /** v21: educational | entertaining | authoritative | conversational | ... */
+    tone: text("tone"),
+    cta: text("cta"),
+    /** v21: 0.0–10.0 quality score from the AI enrichment pass. */
+    contentScore: numeric("content_score", { precision: 3, scale: 1 }),
+    /** v21: "what to steal" — actionable adaptation notes for the user. */
+    stealNotes: text("steal_notes"),
     status: analysisStatusEnum("status").notNull().default("analyzing"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("content_analyses_user_created_idx").on(t.userId, sql`created_at desc`),
+    index("content_analyses_themes_gin").using("gin", t.themes),
+    index("content_analyses_user_kind_created_idx")
+      .on(t.userId, t.sourceKind, sql`created_at desc`),
+    index("content_analyses_upload_asset_idx")
+      .on(t.uploadAssetId)
+      .where(sql`upload_asset_id is not null`),
+    check(
+      "content_analyses_content_score_check",
+      sql`content_score is null or (content_score >= 0 and content_score <= 10)`,
+    ),
   ],
 );
 
@@ -632,6 +667,223 @@ export const notifications = pgTable(
   ],
 );
 
+/* ─── PDF expansion: AI Script Generator (v22 + v23) ─────────────── */
+
+export const scriptFormatEnum = pgEnum("script_format_t", [
+  "reel", "longform", "vsl", "story_sequence", "email",
+]);
+export const scriptStatusEnum = pgEnum("script_status_t", [
+  "draft", "approved", "used", "archived",
+]);
+export const scriptFrequencyEnum = pgEnum("script_frequency_t", [
+  "daily", "three_x_week", "weekly", "biweekly", "monthly", "custom",
+]);
+
+export const generatedScripts = pgTable(
+  "generated_scripts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sourceAnalysisId: uuid("source_analysis_id").references(() => contentAnalyses.id, { onDelete: "set null" }),
+    platform: platformEnum("platform").notNull(),
+    format: scriptFormatEnum("format").notNull(),
+    title: text("title"),
+    hook: text("hook"),
+    setup: text("setup"),
+    /** jsonb: [{ title, body }, ...] */
+    keyPoints: jsonb("key_points").notNull().default(sql`'[]'::jsonb`),
+    cta: text("cta"),
+    bRollNotes: text("b_roll_notes"),
+    status: scriptStatusEnum("status").notNull().default("draft"),
+    feedback: text("feedback"),
+    linkedSequenceId: uuid("linked_sequence_id").references(() => sequences.id, { onDelete: "set null" }),
+    linkedPostId: uuid("linked_post_id").references(() => posts.id, { onDelete: "set null" }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("generated_scripts_user_status_created_idx").on(t.userId, t.status, sql`created_at desc`),
+    index("generated_scripts_user_platform_idx").on(t.userId, t.platform),
+    index("generated_scripts_source_analysis_idx")
+      .on(t.sourceAnalysisId)
+      .where(sql`source_analysis_id is not null`),
+    index("generated_scripts_linked_sequence_idx")
+      .on(t.linkedSequenceId)
+      .where(sql`linked_sequence_id is not null`),
+    index("generated_scripts_linked_post_idx")
+      .on(t.linkedPostId)
+      .where(sql`linked_post_id is not null`),
+  ],
+);
+
+export const scriptPreferences = pgTable(
+  "script_preferences",
+  {
+    userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+    scriptsPerPeriod: integer("scripts_per_period").notNull().default(3),
+    frequency: scriptFrequencyEnum("frequency").notNull().default("weekly"),
+    /** 5-field cron expression. Required when frequency = 'custom'. */
+    customCron: text("custom_cron"),
+    defaultFormat: scriptFormatEnum("default_format").notNull().default("reel"),
+    defaultPlatforms: platformEnum("default_platforms").array().notNull()
+      .default(sql`array['instagram']::platform_t[]`),
+    /** jsonb { system_prompt?, style_guide?, banned_phrases?[] } */
+    systemPromptOverrides: jsonb("system_prompt_overrides").notNull().default(sql`'{}'::jsonb`),
+    /** Null → use plan-tier default cap. */
+    monthlyCap: integer("monthly_cap"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  () => [
+    check(
+      "script_preferences_per_period_check",
+      sql`scripts_per_period >= 1 and scripts_per_period <= 100`,
+    ),
+    check(
+      "script_preferences_monthly_cap_check",
+      sql`monthly_cap is null or monthly_cap > 0`,
+    ),
+    check(
+      "script_preferences_custom_cron_check",
+      sql`frequency != 'custom' or (custom_cron is not null and length(custom_cron) > 0)`,
+    ),
+  ],
+);
+
+/* ─── PDF expansion: Editor Portfolio Builder (v24) ──────────────── */
+
+export const editorPortfolios = pgTable(
+  "editor_portfolios",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    bio: text("bio"),
+    specialties: text("specialties").array().notNull().default(sql`array[]::text[]`),
+    platforms: platformEnum("platforms").array().notNull().default(sql`array[]::platform_t[]`),
+    yearsExperience: integer("years_experience"),
+    contactEmail: text("contact_email"),
+    /** jsonb { website?, twitter?, instagram?, youtube?, linkedin?, calendly? } */
+    contactLinks: jsonb("contact_links").notNull().default(sql`'{}'::jsonb`),
+    /** jsonb [{ video_url, description, results, thumbnail_url? }, ...] */
+    workSamples: jsonb("work_samples").notNull().default(sql`'[]'::jsonb`),
+    nicheTags: text("niche_tags").array().notNull().default(sql`array[]::text[]`),
+    /** jsonb [{ name, logo_url? }, ...] */
+    clientLogos: jsonb("client_logos").notNull().default(sql`'[]'::jsonb`),
+    /** jsonb [{ quote, attribution, link?, avatar_url? }, ...] */
+    testimonials: jsonb("testimonials").notNull().default(sql`'[]'::jsonb`),
+    isPublic: boolean("is_public").notNull().default(false),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("editor_portfolios_slug_uniq").on(sql`lower(${t.slug})`),
+    check(
+      "editor_portfolios_years_experience_check",
+      sql`years_experience is null or (years_experience >= 0 and years_experience <= 80)`,
+    ),
+    check(
+      "editor_portfolios_slug_check",
+      sql`slug ~ '^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])?$'`,
+    ),
+  ],
+);
+
+/* ─── PDF expansion: Creator Database + Outreach (v25 + v26 + v27) ─ */
+
+export const followerRangeEnum = pgEnum("follower_range_t", [
+  "under_10k", "10k_50k", "50k_250k", "250k_1m", "over_1m",
+]);
+export const postingFrequencyEnum = pgEnum("posting_frequency_t", [
+  "rarely", "weekly", "few_per_week", "daily", "multi_daily",
+]);
+export const targetStatusEnum = pgEnum("target_status_t", [
+  "pitched", "responded", "client", "pass",
+]);
+export const outreachMethodEnum = pgEnum("outreach_method_t", [
+  "dm", "email", "comment", "followup", "voice_note",
+]);
+export const outreachOutcomeEnum = pgEnum("outreach_outcome_t", [
+  "pending", "no_response", "declined", "interested", "converted",
+]);
+
+export const creatorDirectory = pgTable(
+  "creator_directory",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    handle: text("handle").notNull(),
+    displayName: text("display_name"),
+    primaryPlatform: platformEnum("primary_platform").notNull(),
+    niche: text("niche").notNull(),
+    followerRange: followerRangeEnum("follower_range"),
+    platforms: platformEnum("platforms").array().notNull().default(sql`array[]::platform_t[]`),
+    postingFrequency: postingFrequencyEnum("posting_frequency"),
+    bio: text("bio"),
+    avatarUrl: text("avatar_url"),
+    /** jsonb { engagement_rate?, content_themes?, language?, region?, notes? } */
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    /** Audit-only — who curated this row. */
+    curatedBy: text("curated_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("creator_directory_handle_platform_uniq")
+      .on(sql`lower(${t.handle})`, t.primaryPlatform),
+    index("creator_directory_niche_idx").on(t.niche),
+    index("creator_directory_follower_range_idx")
+      .on(t.followerRange)
+      .where(sql`follower_range is not null`),
+  ],
+);
+
+export const editorCreatorTargets = pgTable(
+  "editor_creator_targets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    creatorId: uuid("creator_id").notNull().references(() => creatorDirectory.id, { onDelete: "cascade" }),
+    status: targetStatusEnum("status").notNull().default("pitched"),
+    notes: text("notes"),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+    /** Stamped by trg_touch_target_status_change on every status flip. */
+    lastStatusChangeAt: timestamp("last_status_change_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("editor_creator_targets_user_creator_uniq").on(t.userId, t.creatorId),
+    index("editor_creator_targets_user_status_idx").on(t.userId, t.status, sql`added_at desc`),
+    index("editor_creator_targets_creator_idx").on(t.creatorId),
+  ],
+);
+
+export const creatorOutreachLog = pgTable(
+  "creator_outreach_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    creatorId: uuid("creator_id").notNull().references(() => creatorDirectory.id, { onDelete: "cascade" }),
+    targetId: uuid("target_id").references(() => editorCreatorTargets.id, { onDelete: "set null" }),
+    outreachMethod: outreachMethodEnum("outreach_method").notNull(),
+    messageText: text("message_text").notNull(),
+    /** Logical FK only — deleting transcripts shouldn't bork the log. */
+    sourceAnalysisIds: uuid("source_analysis_ids").array().notNull().default(sql`array[]::uuid[]`),
+    outcome: outreachOutcomeEnum("outcome").notNull().default("pending"),
+    outreachDate: timestamp("outreach_date", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("creator_outreach_log_user_date_idx").on(t.userId, sql`outreach_date desc`),
+    index("creator_outreach_log_creator_idx").on(t.creatorId, sql`outreach_date desc`),
+    index("creator_outreach_log_target_idx")
+      .on(t.targetId)
+      .where(sql`target_id is not null`),
+  ],
+);
+
 /* ─── schema_migrations ──────────────────────────────────────────── */
 
 export const schemaMigrations = pgTable("schema_migrations", {
@@ -666,3 +918,18 @@ export type RelationshipMessage = typeof relationshipMessages.$inferSelect;
 export type NewRelationshipMessage = typeof relationshipMessages.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
+/* PDF expansion (v21-v27). */
+export type ContentAnalysis = typeof contentAnalyses.$inferSelect;
+export type NewContentAnalysis = typeof contentAnalyses.$inferInsert;
+export type GeneratedScript = typeof generatedScripts.$inferSelect;
+export type NewGeneratedScript = typeof generatedScripts.$inferInsert;
+export type ScriptPreferences = typeof scriptPreferences.$inferSelect;
+export type NewScriptPreferences = typeof scriptPreferences.$inferInsert;
+export type EditorPortfolio = typeof editorPortfolios.$inferSelect;
+export type NewEditorPortfolio = typeof editorPortfolios.$inferInsert;
+export type CreatorDirectoryEntry = typeof creatorDirectory.$inferSelect;
+export type NewCreatorDirectoryEntry = typeof creatorDirectory.$inferInsert;
+export type EditorCreatorTarget = typeof editorCreatorTargets.$inferSelect;
+export type NewEditorCreatorTarget = typeof editorCreatorTargets.$inferInsert;
+export type CreatorOutreachLogEntry = typeof creatorOutreachLog.$inferSelect;
+export type NewCreatorOutreachLogEntry = typeof creatorOutreachLog.$inferInsert;

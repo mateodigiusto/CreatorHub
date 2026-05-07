@@ -1,13 +1,23 @@
 /**
- * POST /api/sequences  — persist a generated sequence to DB.
- * GET  /api/sequences  — list the user's saved sequences (newest first).
+ * POST /api/sequences  — persist a sequence (own or, when ?relationship_id is
+ *                        set, an active client's).
+ * GET  /api/sequences  — list the effective user's sequences (newest first).
  *
- * RLS on `sequences` enforces self-CRUD (`user_id = auth.uid()`), so we use
- * the supabase server client and rely on policies for the security boundary.
+ * Without `?relationship_id`: RLS on `sequences` enforces self-CRUD via the
+ * editor's session — fast path for the 95% case.
+ *
+ * With `?relationship_id`: the editor is "acting as" a client they manage.
+ * resolveEffectiveUser() verifies membership using the editor's RLS-scoped
+ * session, then we use the SERVICE-ROLE client to read/write as the client
+ * (bypassing RLS — the membership check IS the security boundary).
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import {
+  getSupabaseServer,
+  getSupabaseServiceRole,
+} from "@/lib/supabase/server";
+import { resolveEffectiveUser } from "@/lib/clients/effective-user";
 import { log } from "@/lib/log";
 
 type SaveBody = {
@@ -44,6 +54,7 @@ export async function POST(req: NextRequest) {
   if (!userRes.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const editorId = userRes.user.id;
 
   let body: SaveBody;
   try {
@@ -56,8 +67,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   }
 
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, editorId, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+
   const insertRow = {
-    user_id: userRes.user.id,
+    user_id: eff.userId,
     title: body.title.slice(0, 200),
     goal: body.goal ?? null,
     content_style: body.contentStyle ?? null,
@@ -71,36 +88,79 @@ export async function POST(req: NextRequest) {
     decorations: body.decorations ?? [],
   };
 
-  const { data, error } = await supabase
-    .from("sequences")
-    /* `as never` — supabase-js 2.45 vs PostgrestVersion 14.5 narrowing. */
-    .insert(insertRow as never)
-    .select("id")
-    .returns<Array<{ id: string }>>()
-    .single();
+  /* Editor's own session writes via RLS; client-acting writes via
+     service role after the membership check above. The two Supabase
+     clients have different generic shapes so we branch instead of
+     unifying — keeps TS happy without `any`. */
+  let inserted: { id: string } | null = null;
+  let writeError: unknown = null;
+  if (eff.isClient) {
+    const service = getSupabaseServiceRole();
+    const r = await service
+      .from("sequences")
+      .insert(insertRow as never)
+      .select("id")
+      .returns<Array<{ id: string }>>()
+      .single();
+    inserted = r.data ?? null;
+    writeError = r.error;
+  } else {
+    const r = await supabase
+      .from("sequences")
+      .insert(insertRow as never)
+      .select("id")
+      .returns<Array<{ id: string }>>()
+      .single();
+    inserted = r.data ?? null;
+    writeError = r.error;
+  }
 
-  if (error || !data) {
-    log.error("sequences.insert_failed", error ?? new Error("no row returned"));
+  if (writeError || !inserted) {
+    log.error("sequences.insert_failed", writeError ?? new Error("no row returned"));
     return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ id: data.id, ok: true });
+  return NextResponse.json({ id: inserted.id, ok: true });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await getSupabaseServer();
   const { data: userRes } = await supabase.auth.getUser();
   if (!userRes.user) {
     return NextResponse.json({ sequences: [] }, { status: 200 });
   }
+  const editorId = userRes.user.id;
 
-  const { data: rows } = await supabase
-    .from("sequences")
-    .select(
-      "id, title, status, goal, content_style, brief, slides, scheduled_at, published_at, created_at, updated_at",
-    )
-    .order("created_at", { ascending: false })
-    .returns<SequenceRow[]>();
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, editorId, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
 
-  return NextResponse.json({ sequences: rows ?? [] });
+  /* Same logic as POST: own-data via RLS, client-data via service role
+     filtered by user_id. Branch instead of unifying for TS friendliness. */
+  let rows: SequenceRow[] | null = null;
+  if (eff.isClient) {
+    const service = getSupabaseServiceRole();
+    const r = await service
+      .from("sequences")
+      .select(
+        "id, title, status, goal, content_style, brief, slides, scheduled_at, published_at, created_at, updated_at",
+      )
+      .eq("user_id", eff.userId)
+      .order("created_at", { ascending: false })
+      .returns<SequenceRow[]>();
+    rows = r.data ?? [];
+  } else {
+    const r = await supabase
+      .from("sequences")
+      .select(
+        "id, title, status, goal, content_style, brief, slides, scheduled_at, published_at, created_at, updated_at",
+      )
+      .order("created_at", { ascending: false })
+      .returns<SequenceRow[]>();
+    rows = r.data ?? [];
+  }
+
+  return NextResponse.json({ sequences: rows, actingAsClient: eff.isClient });
 }

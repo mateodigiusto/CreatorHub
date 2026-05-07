@@ -1,6 +1,10 @@
-import type { getSupabaseServer } from "@/lib/supabase/server";
+import type { getSupabaseServiceRole } from "@/lib/supabase/server";
 
-type Client = Awaited<ReturnType<typeof getSupabaseServer>>;
+/* Accepts either the session-bound or service-role client. Both expose
+   the same PostgREST surface; we pin to the service-role generic so the
+   `readerFor()` return type from effective-user.ts passes type-checking
+   when the editor is acting as a client. */
+type Client = ReturnType<typeof getSupabaseServiceRole>;
 
 const STANDARD_MONTHLY_LIMIT = 15;
 

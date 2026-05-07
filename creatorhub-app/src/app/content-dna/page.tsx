@@ -16,30 +16,40 @@ import {
   Music,
   Globe,
   AlertCircle,
+  Upload,
+  History as HistoryIcon,
+  User as UserIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Tabs } from "@/components/ui/Tabs";
 import { useAppState } from "@/lib/store";
+import { useClientQuery } from "@/lib/clients/use-client-query";
+import { uploadAssetFile } from "@/lib/uploads";
 import { cn } from "@/lib/cn";
 import { detectPlatform, canonicalizeUrl } from "@/lib/content-dna/stubs";
 import type { SourcePlatform } from "@/lib/content-dna/types";
 
 type ApiAnalysis = {
   id: string;
-  source_url: string;
+  source_url: string | null;
   source_platform: string;
   source_title: string | null;
   source_creator: string | null;
   source_thumbnail: string | null;
+  /** v21: how the user provided the source — drives History grouping. */
+  source_kind?: "url" | "username" | "upload";
+  source_handle?: string | null;
   status: string;
   created_at: string;
   updated_at: string;
 };
 
 type SortKey = "newest" | "oldest" | "title";
+type TabKey = "competitor" | "my_videos" | "history";
 
 const SAMPLE_URLS = [
   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -50,6 +60,8 @@ const SAMPLE_URLS = [
 export default function ContentDnaPage() {
   const router = useRouter();
   const { connected, showToast } = useAppState();
+  const clientQ = useClientQuery();
+  const [tab, setTab] = useState<TabKey>("competitor");
   const [url, setUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -59,7 +71,7 @@ export default function ContentDnaPage() {
 
   const loadAnalyses = useCallback(async () => {
     try {
-      const r = await fetch("/api/content-dna", { credentials: "include" });
+      const r = await fetch(`/api/content-dna${clientQ.q}`, { credentials: "include" });
       if (!r.ok) {
         setAnalyses([]);
         return;
@@ -69,10 +81,10 @@ export default function ContentDnaPage() {
     } catch {
       setAnalyses([]);
     }
-  }, []);
+  }, [clientQ.q]);
 
   useEffect(() => {
-    /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap */
+    /* eslint-disable-next-line react-hooks/set-state-in-effect --- reload when active client changes */
     void loadAnalyses();
   }, [loadAnalyses]);
 
@@ -94,7 +106,8 @@ export default function ContentDnaPage() {
             (a.source_title ?? "").toLowerCase().includes(q) ||
             (a.source_creator ?? "").toLowerCase().includes(q) ||
             a.source_platform.toLowerCase().includes(q) ||
-            a.source_url.toLowerCase().includes(q)
+            (a.source_url ?? "").toLowerCase().includes(q) ||
+            (a.source_handle ?? "").toLowerCase().includes(q)
           );
         })
       : analyses.slice();
@@ -119,7 +132,7 @@ export default function ContentDnaPage() {
     }
     setSubmitting(true);
     try {
-      const r = await fetch("/api/content-dna", {
+      const r = await fetch(`/api/content-dna${clientQ.q}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -167,9 +180,45 @@ export default function ContentDnaPage() {
   return (
     <>
       <PageHeader
-        title="Content DNA"
-        description="Paste a competitor video. We extract the structure. You build the original."
+        title="Transcribe & Analyze"
+        description="Pull the structure out of any video — yours or a competitor's."
+        actions={
+          <Tabs<TabKey>
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "competitor", label: "Competitor Research" },
+              { value: "my_videos", label: "My Videos" },
+              { value: "history", label: "History" },
+            ]}
+          />
+        }
       />
+
+      {tab === "my_videos" && (
+        <MyVideosPanel
+          clientQ={clientQ.q}
+          onAnalysisCreated={(analysisId) => {
+            void loadAnalyses();
+            router.push(`/content-dna/${analysisId}`);
+          }}
+          onError={(msg) => showToast(msg)}
+        />
+      )}
+
+      {tab === "history" && (
+        <HistoryPanel
+          analyses={filteredAnalyses}
+          search={search}
+          setSearch={setSearch}
+          sort={sort}
+          setSort={setSort}
+          totalCount={analyses?.length ?? 0}
+          onOpen={(id) => router.push(`/content-dna/${id}`)}
+        />
+      )}
+
+      {tab !== "competitor" ? null : <>
 
       {/* Hero / paste form */}
       <Card className="mb-5">
@@ -266,6 +315,16 @@ export default function ContentDnaPage() {
           />
         </div>
       </Card>
+
+      {/* Bulk-by-handle */}
+      <TranscribeByHandlePanel
+        clientQ={clientQ.q}
+        onCreated={() => {
+          void loadAnalyses();
+          showToast("Breakdowns created — see Recent below.");
+        }}
+        onError={(msg) => showToast(msg)}
+      />
 
       {/* AI-discover mode (deferred) */}
       <Card className="mb-5">
@@ -367,7 +426,319 @@ export default function ContentDnaPage() {
           </div>
         )}
       </Card>
+      </>}
     </>
+  );
+}
+
+/* ─── My Videos panel (own video transcription) ──────────────────── */
+
+function MyVideosPanel({
+  clientQ,
+  onAnalysisCreated,
+  onError,
+}: {
+  clientQ: string;
+  onAnalysisCreated: (id: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [progressMsg, setProgressMsg] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    if (uploading) return;
+    if (!file.type.startsWith("video/") && !file.type.startsWith("audio/")) {
+      onError("Pick an MP4, MOV, MP3, or WAV file.");
+      return;
+    }
+    setUploading(true);
+    setProgressMsg("Uploading file…");
+    try {
+      const result = await uploadAssetFile(file);
+      if (!result.ok || !result.assetId) {
+        onError(`Upload failed: ${result.error ?? "unknown"}`);
+        return;
+      }
+      setProgressMsg("Creating analysis…");
+      const res = await fetch(`/api/content-dna/by-upload${clientQ}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          assetId: result.assetId,
+          filename: file.name,
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        onError(`Couldn't analyze: ${err.error ?? res.status}`);
+        return;
+      }
+      const json = (await res.json()) as { id: string };
+      onAnalysisCreated(json.id);
+    } catch {
+      onError("Network error. Try again.");
+    } finally {
+      setUploading(false);
+      setProgressMsg(null);
+    }
+  }
+
+  return (
+    <Card className="mb-5">
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className="inline-flex items-center gap-1 text-[10.5px] uppercase font-semibold text-accent bg-accent-soft border border-accent-border px-1.5 py-0.5 rounded"
+          style={{ letterSpacing: "0.08em" }}
+        >
+          <UserIcon className="w-3 h-3" /> Your videos
+        </span>
+      </div>
+      <h2 className="text-[22px] sm:text-[24px] font-semibold tracking-[-0.015em] text-text leading-tight">
+        Transcribe your own content.
+      </h2>
+      <p className="text-[13px] sm:text-[13.5px] text-muted mt-1.5 leading-relaxed max-w-[640px]">
+        Pull the structure and hook out of videos you&apos;ve already shipped —
+        find what&apos;s working, then double down. Upload an MP4/MOV/MP3, or
+        paste a public link in Competitor Research with your own URL.
+      </p>
+
+      <label
+        className={cn(
+          "mt-5 block lift rounded-[12px] border-2 border-dashed border-border bg-surface-2 p-6 text-center card-base cursor-pointer transition-colors",
+          uploading && "opacity-60 cursor-wait",
+          "hover:border-accent/40",
+        )}
+      >
+        <input
+          type="file"
+          accept="video/*,audio/*"
+          disabled={uploading}
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleFile(f);
+            e.target.value = "";
+          }}
+        />
+        <div className="w-10 h-10 mx-auto rounded-md grid place-items-center bg-accent-soft border border-accent-border text-accent">
+          <Upload className="w-5 h-5" />
+        </div>
+        <div className="text-[14px] font-semibold text-text mt-2.5">
+          {uploading ? (progressMsg ?? "Uploading…") : "Drop a file or click to upload"}
+        </div>
+        <div className="text-[12px] text-muted mt-1 leading-snug">
+          MP4, MOV, MP3, WAV. Transcription + structure breakdown
+          {" "}
+          {process.env.NEXT_PUBLIC_AI_REAL === "1"
+            ? "runs in the background — we'll notify you when it's ready."
+            : "returns instantly in this preview environment."}
+        </div>
+      </label>
+    </Card>
+  );
+}
+
+/* ─── Transcribe-by-handle panel (competitor bulk analyze) ───────── */
+
+function TranscribeByHandlePanel({
+  clientQ,
+  onCreated,
+  onError,
+}: {
+  clientQ: string;
+  onCreated: () => void;
+  onError: (msg: string) => void;
+}) {
+  const [handle, setHandle] = useState("");
+  const [platform, setPlatform] = useState<"instagram" | "tiktok" | "youtube">(
+    "instagram",
+  );
+  const [count, setCount] = useState(3);
+  const [submitting, setSubmitting] = useState(false);
+
+  const cleanedHandle = handle.trim().replace(/^@/, "");
+  const valid = cleanedHandle.length > 0 && cleanedHandle.length <= 50;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!valid || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/content-dna/by-handle${clientQ}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ handle: cleanedHandle, platform, count }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        onError(`Couldn't analyze: ${err.error ?? res.status}`);
+        return;
+      }
+      void (await res.json());
+      setHandle("");
+      onCreated();
+    } catch {
+      onError("Network error. Try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Card className="mb-5">
+      <div className="flex items-center gap-2 mb-2">
+        <span
+          className="inline-flex items-center gap-1 text-[10.5px] uppercase font-semibold text-accent bg-accent-soft border border-accent-border px-1.5 py-0.5 rounded"
+          style={{ letterSpacing: "0.08em" }}
+        >
+          <UserIcon className="w-3 h-3" /> Bulk by handle
+        </span>
+      </div>
+      <h3 className="text-[16px] font-semibold tracking-[-0.005em] text-text">
+        Analyze a creator&apos;s recent videos in one shot.
+      </h3>
+      <p className="text-[12.5px] text-muted mt-1 leading-relaxed max-w-prose">
+        Paste a handle and pick how many of their most recent videos to break
+        down. We&apos;ll create one breakdown per video — sortable in History.
+      </p>
+
+      <form onSubmit={submit} className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[13px] pointer-events-none">@</span>
+          <input
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="hubermanlab"
+            maxLength={50}
+            className="w-full h-10 pl-7 pr-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+          />
+        </div>
+        <select
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value as typeof platform)}
+          className="h-10 px-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 cursor-pointer"
+        >
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+          <option value="youtube">YouTube</option>
+        </select>
+        <select
+          value={count}
+          onChange={(e) => setCount(Number(e.target.value))}
+          className="h-10 px-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 cursor-pointer"
+        >
+          {[1, 2, 3, 4, 5].map((n) => (
+            <option key={n} value={n}>
+              {n} video{n === 1 ? "" : "s"}
+            </option>
+          ))}
+        </select>
+        <Button type="submit" disabled={!valid || submitting} size="md">
+          <Wand2 className="w-3.5 h-3.5" />
+          {submitting ? "Analyzing…" : "Analyze"}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+/* ─── History panel (full searchable list) ───────────────────────── */
+
+function HistoryPanel({
+  analyses,
+  search,
+  setSearch,
+  sort,
+  setSort,
+  totalCount,
+  onOpen,
+}: {
+  analyses: ApiAnalysis[] | null;
+  search: string;
+  setSearch: (v: string) => void;
+  sort: SortKey;
+  setSort: (s: SortKey) => void;
+  totalCount: number;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <Card padded={false}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-b border-border">
+        <div>
+          <h3 className="text-[15px] font-semibold tracking-[-0.005em] text-text flex items-center gap-2">
+            <HistoryIcon className="w-4 h-4 text-muted" />
+            All breakdowns
+          </h3>
+          <p className="text-[12.5px] text-muted mt-0.5">
+            {totalCount === 0
+              ? "Nothing yet — start a breakdown from Competitor Research or My Videos."
+              : `${totalCount} ${totalCount === 1 ? "breakdown" : "breakdowns"} total.`}
+          </p>
+        </div>
+        {totalCount > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search title, creator, theme…"
+                className="w-full sm:w-[240px] h-8 pl-8 pr-2.5 rounded-[8px] bg-surface-2 border border-border text-[12.5px] text-text focus:outline-none focus:border-accent/40"
+              />
+            </div>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="h-8 px-2.5 rounded-[8px] bg-surface-2 border border-border text-[12.5px] text-text focus:outline-none focus:border-accent/40 cursor-pointer"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="title">A–Z</option>
+            </select>
+          </div>
+        )}
+      </div>
+      {analyses === null ? (
+        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[140px] rounded-[12px] bg-surface-2 border border-border animate-pulse"
+            />
+          ))}
+        </div>
+      ) : analyses.length === 0 && totalCount > 0 ? (
+        <div className="p-8 text-center">
+          <div className="text-[13px] text-text font-medium">
+            No breakdowns match your filters.
+          </div>
+          <button
+            onClick={() => setSearch("")}
+            className="text-[12px] text-accent hover:text-accent-2 font-medium mt-1.5 cursor-pointer"
+          >
+            Clear search
+          </button>
+        </div>
+      ) : analyses.length === 0 ? (
+        <div className="p-12 text-center">
+          <div className="text-[13.5px] text-text font-medium">
+            Nothing here yet.
+          </div>
+          <div className="text-[12px] text-muted mt-1 max-w-[420px] mx-auto">
+            Switch to Competitor Research or My Videos to start your first
+            breakdown.
+          </div>
+        </div>
+      ) : (
+        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {analyses.map((a) => (
+            <RecentTile key={a.id} analysis={a} onClick={() => onOpen(a.id)} />
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 

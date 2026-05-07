@@ -11,6 +11,11 @@ const PERSONA_BY_TYPE: Record<CreatorType, PersonaKey> = {
   agency: "agency",
   fitness: "fitness",
   realestate: "realestate",
+  /* Both daily-power-user roles share the agency persona for sequence
+     defaults — multi-client management voice fits closer than a creator
+     persona. They get their own dashboard copy / next-action below. */
+  content_manager: "agency",
+  editor: "agency",
   other: "coach",
 };
 
@@ -89,6 +94,10 @@ function welcomeFocusFor(profile: Profile): string {
       return "Let's plan listings + neighborhood content.";
     case "fitness":
       return "Let's plan transformations + programming.";
+    case "content_manager":
+      return "Here's the pipeline across your creators.";
+    case "editor":
+      return "Here's what's queued across your clients.";
     case "other":
       return "Here's how this week is going so far.";
   }
@@ -147,6 +156,18 @@ function primaryActionForType(type: CreatorType): NextAction {
         label: "Build a sequence",
         href: "/sequence-studio",
         hint: "Pick assets and ship the offer.",
+      };
+    case "content_manager":
+      return {
+        label: "Open Pipeline",
+        href: "/content",
+        hint: "See every piece in flight.",
+      };
+    case "editor":
+      return {
+        label: "Open Clients",
+        href: "/clients",
+        hint: "Switch into a client workspace.",
       };
     case "creator":
     case "realestate":

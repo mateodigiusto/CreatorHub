@@ -11,6 +11,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { resolveEffectiveUser, readerFor } from "@/lib/clients/effective-user";
 import { log } from "@/lib/log";
 import { buildStubScript } from "@/lib/content-dna/stubs";
 import type { StructureBeat } from "@/lib/content-dna/types";
@@ -48,6 +49,13 @@ export async function POST(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, userRes.user.id, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+  const reader = readerFor(supabase, eff.isClient);
+
   let body: Body;
   try {
     body = (await req.json()) as Body;
@@ -55,10 +63,11 @@ export async function POST(
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const { data: analysis } = await supabase
+  const { data: analysis } = await reader
     .from("content_analyses")
     .select("hook, structure, why_it_worked")
     .eq("id", id)
+    .eq("user_id", eff.userId)
     .returns<AnalysisRow[]>()
     .maybeSingle();
   if (!analysis) {
@@ -109,7 +118,7 @@ export async function POST(
 
   const insertRow = {
     analysis_id: id,
-    user_id: userRes.user.id,
+    user_id: eff.userId,
     angle: (body.angle ?? "").slice(0, 500) || null,
     audience: (body.audience ?? "").slice(0, 500) || null,
     target_platform: (body.targetPlatform ?? "").slice(0, 60) || null,
@@ -120,7 +129,7 @@ export async function POST(
     captions,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await reader
     .from("content_drafts")
     .insert(insertRow as never)
     .select("id, script, hooks, shots, captions")

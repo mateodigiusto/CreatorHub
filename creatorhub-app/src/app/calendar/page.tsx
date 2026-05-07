@@ -14,7 +14,7 @@ import { Post } from "@/lib/mock/types";
 import { cn } from "@/lib/cn";
 import { PlanContentDrawer } from "@/components/plan/PlanContentDrawer";
 
-type DayEvent = { title: string; platform: string; grad: string };
+type DayEvent = { title: string; platform: string; grad: string; isScript?: boolean };
 
 const PLACEHOLDER_GRADIENTS = [
   "linear-gradient(135deg,#1E293B,#3B82F6)",
@@ -60,12 +60,17 @@ const MONTH_NAMES = [
 ];
 
 export default function CalendarPage() {
-  const { connected, extraPosts } = useAppState();
+  const { connected, extraPosts, currentClient } = useAppState();
   const [view, setView] = useState<"week" | "month">("month");
   const [drawer, setDrawer] = useState<{ open: boolean; date?: Date }>({
     open: false,
   });
   const [dbSequences, setDbSequences] = useState<DbSequence[] | null>(null);
+  /* Set of sequence IDs that came from an approved script — drives the
+     "Script Ready" badge on day-cell event chips. */
+  const [scriptSequenceIds, setScriptSequenceIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const now = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState({
@@ -75,7 +80,10 @@ export default function CalendarPage() {
 
   const loadSequences = useCallback(async () => {
     try {
-      const r = await fetch("/api/sequences", { credentials: "include" });
+      const url = currentClient
+        ? `/api/sequences?relationship_id=${encodeURIComponent(currentClient.relationshipId)}`
+        : "/api/sequences";
+      const r = await fetch(url, { credentials: "include" });
       if (!r.ok) {
         setDbSequences([]);
         return;
@@ -85,12 +93,38 @@ export default function CalendarPage() {
     } catch {
       setDbSequences([]);
     }
+  }, [currentClient]);
+
+  /* Approved + used scripts that have linked_sequence_id set get
+     surfaced on the calendar as "Script Ready" chips. Two queries (one
+     per status) because the API only filters by single status at a time. */
+  const loadScriptLinks = useCallback(async () => {
+    try {
+      const [approvedRes, usedRes] = await Promise.all([
+        fetch("/api/scripts?status=approved", { credentials: "include" }),
+        fetch("/api/scripts?status=used", { credentials: "include" }),
+      ]);
+      const collect = async (r: Response) => {
+        if (!r.ok) return [] as Array<{ linked_sequence_id: string | null }>;
+        const json = (await r.json()) as {
+          scripts: Array<{ linked_sequence_id: string | null }>;
+        };
+        return json.scripts;
+      };
+      const all = [...(await collect(approvedRes)), ...(await collect(usedRes))];
+      const ids = new Set<string>();
+      for (const s of all) if (s.linked_sequence_id) ids.add(s.linked_sequence_id);
+      setScriptSequenceIds(ids);
+    } catch {
+      /* Silently degrade — calendar still works, chips just won't have the badge. */
+    }
   }, []);
 
   useEffect(() => {
     /* eslint-disable-next-line react-hooks/set-state-in-effect --- one-shot bootstrap */
     void loadSequences();
-  }, [loadSequences]);
+    void loadScriptLinks();
+  }, [loadSequences, loadScriptLinks]);
 
   const events = useMemo(() => {
     /* DB sequences first (newest), then localStorage extras, then demo posts. */
@@ -101,6 +135,7 @@ export default function CalendarPage() {
         platform: "Instagram",
         grad: pickGradient(s.id),
         iso: (s.published_at ?? s.scheduled_at) as string,
+        isScript: scriptSequenceIds.has(s.id),
       }));
     const localEvents = extraPosts
       .filter((p): p is Post & { scheduledAt: string } => Boolean(p.publishedAt || p.scheduledAt))
@@ -109,6 +144,7 @@ export default function CalendarPage() {
         platform: p.platform,
         grad: p.thumbnail,
         iso: (p.publishedAt ?? p.scheduledAt) as string,
+        isScript: false,
       }));
     const mockEvents = mockPosts
       .filter((p) => p.publishedAt || p.scheduledAt)
@@ -117,9 +153,10 @@ export default function CalendarPage() {
         platform: p.platform,
         grad: p.thumbnail,
         iso: (p.publishedAt ?? p.scheduledAt) as string,
+        isScript: false,
       }));
     return [...dbEvents, ...localEvents, ...mockEvents];
-  }, [dbSequences, extraPosts]);
+  }, [dbSequences, extraPosts, scriptSequenceIds]);
 
   const bucketed = useMemo(
     () => bucketEvents(events, cursor.year, cursor.month),
@@ -274,15 +311,34 @@ export default function CalendarPage() {
                   {dayEvents.map((ev, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-1.5 px-1.5 py-[3px] bg-surface border border-border rounded-md cursor-pointer card-base"
+                      className={cn(
+                        "flex items-center gap-1.5 px-1.5 py-[3px] rounded-md cursor-pointer card-base border",
+                        ev.isScript
+                          ? "bg-accent-soft border-accent/25"
+                          : "bg-surface border-border",
+                      )}
+                      title={ev.isScript ? "Script Ready — generated in /scripts" : undefined}
                     >
                       <div
                         className="w-1 h-3.5 rounded-[2px]"
                         style={{ background: ev.grad }}
                       />
-                      <span className="text-[11px] font-medium text-text whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span
+                        className={cn(
+                          "text-[11px] font-medium whitespace-nowrap overflow-hidden text-ellipsis flex-1",
+                          ev.isScript ? "text-accent" : "text-text",
+                        )}
+                      >
                         {ev.title}
                       </span>
+                      {ev.isScript && (
+                        <span
+                          className="text-[9px] font-bold uppercase px-1 rounded bg-accent text-white shrink-0"
+                          style={{ letterSpacing: "0.04em" }}
+                        >
+                          S
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

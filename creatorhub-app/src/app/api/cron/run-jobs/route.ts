@@ -378,6 +378,12 @@ async function runOneContentDnaJob() {
       }),
     });
 
+    /* Clamp content_score defensively — Claude usually obeys the 0–10
+       range but a stray 11 would trip the v21 CHECK constraint. */
+    const score = Number.isFinite(result.content_score)
+      ? Math.max(0, Math.min(10, Number(result.content_score)))
+      : null;
+
     const { error: updErr } = await admin
       .from("content_analyses")
       .update({
@@ -389,6 +395,13 @@ async function runOneContentDnaJob() {
         structure: result.structure,
         why_it_worked: result.why_it_worked,
         variations: result.variations,
+        /* v21 columns. */
+        hook_analysis: result.hook_analysis ?? null,
+        themes: Array.isArray(result.themes) ? result.themes.slice(0, 12) : [],
+        tone: result.tone ?? null,
+        cta: result.cta ?? null,
+        content_score: score,
+        steal_notes: result.steal_notes ?? null,
         status: "ready",
       } as never)
       .eq("id", analysis_id);

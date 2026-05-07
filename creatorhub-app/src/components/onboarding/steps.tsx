@@ -11,6 +11,8 @@ import {
   Sparkles,
   ArrowRight,
   Check,
+  UserCog,
+  Scissors,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -43,6 +45,8 @@ type StepProps = {
 
 const CREATOR_ICONS: Record<CreatorType, React.ReactNode> = {
   creator: <User className="w-4 h-4" />,
+  content_manager: <UserCog className="w-4 h-4" />,
+  editor: <Scissors className="w-4 h-4" />,
   agency: <Building2 className="w-4 h-4" />,
   infoproduct: <Briefcase className="w-4 h-4" />,
   realestate: <Home className="w-4 h-4" />,

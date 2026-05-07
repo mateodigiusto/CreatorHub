@@ -21,6 +21,8 @@ type Opt<T extends string> = { key: T; label: string; description?: string };
 
 export const creatorTypes: Opt<CreatorType>[] = [
   { key: "creator", label: "Personal brand", description: "Solo creator building an audience around you." },
+  { key: "content_manager", label: "Content manager / VA", description: "Running content day-to-day for one or more creators." },
+  { key: "editor", label: "Video editor", description: "Editing for clients and looking to grow your roster." },
   { key: "agency", label: "Social media agency", description: "Running content for multiple clients." },
   { key: "infoproduct", label: "Info product / coaching", description: "Selling courses, coaching, or knowledge products." },
   { key: "realestate", label: "Real estate", description: "Listings, neighborhoods, market insights." },

@@ -14,6 +14,7 @@ import {
   Folder,
   Link2,
   MessagesSquare,
+  BarChart3,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -26,16 +27,18 @@ import { StreakPanel } from "@/components/clients/StreakPanel";
 import { DocsPanel } from "@/components/clients/DocsPanel";
 import { LinksPanel } from "@/components/clients/LinksPanel";
 import { MessagesPanel } from "@/components/clients/MessagesPanel";
+import { ReportPanel } from "@/components/clients/ReportPanel";
 import type { RelationshipDetail } from "@/lib/clients/types";
 
-type Tab = "tasks" | "streak" | "docs" | "links" | "messages";
+type Tab = "tasks" | "streak" | "docs" | "links" | "messages" | "report";
 
-const TABS: { value: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: { value: Tab; label: string; icon: React.ComponentType<{ className?: string }>; managerOnly?: boolean }[] = [
   { value: "tasks", label: "Tasks", icon: CheckSquare },
   { value: "streak", label: "Streak", icon: Flame },
   { value: "docs", label: "Docs", icon: Folder },
   { value: "links", label: "Links", icon: Link2 },
   { value: "messages", label: "Messages", icon: MessagesSquare },
+  { value: "report", label: "Report", icon: BarChart3, managerOnly: true },
 ];
 
 export default function RelationshipHubPage({
@@ -176,7 +179,9 @@ export default function RelationshipHubPage({
             <Tabs<Tab>
               value={tab}
               onChange={setTab}
-              options={TABS.map((t) => ({ value: t.value, label: t.label }))}
+              options={TABS.filter(
+                (t) => !t.managerOnly || isManager,
+              ).map((t) => ({ value: t.value, label: t.label }))}
             />
           </div>
           <Card>
@@ -200,6 +205,8 @@ export default function RelationshipHubPage({
                     : (relationship.creatorId ?? "")
                 }
               />
+            ) : tab === "report" ? (
+              <ReportPanel relationshipId={relationship.id} />
             ) : (
               <PanelStub tab={tab} />
             )}
@@ -325,6 +332,11 @@ function PanelStub({ tab }: { tab: Tab }) {
       title: "Messages coming next",
       description:
         "Direct messaging tied to this relationship — no more cross-platform context loss.",
+    },
+    report: {
+      title: "Report",
+      description:
+        "Monthly recap of this client's scripts, sequences, posts, and tasks.",
     },
   };
   const l = labels[tab];

@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { ActingAsBanner } from "./ActingAsBanner";
 import { Aurora } from "./Aurora";
 import { MouseGlow } from "./MouseGlow";
 import { Toaster } from "@/components/ui/Toaster";
@@ -57,6 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
         <div className="flex-1 flex flex-col min-w-0">
           <Topbar onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <ActingAsBanner />
           <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px] w-full mx-auto">
             {children}
           </main>

@@ -9,6 +9,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { resolveEffectiveUser, readerFor } from "@/lib/clients/effective-user";
 
 type AnalysisRow = {
   id: string;
@@ -44,7 +45,7 @@ type DraftRow = {
 };
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -54,13 +55,21 @@ export async function GET(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { data: analysis } = await supabase
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, userRes.user.id, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+  const reader = readerFor(supabase, eff.isClient);
+
+  const { data: analysis } = await reader
     .from("content_analyses")
     .select(
       "id, user_id, source_url, source_platform, source_title, source_creator, source_thumbnail, " +
         "transcription, hook, structure, why_it_worked, variations, status, created_at, updated_at",
     )
     .eq("id", id)
+    .eq("user_id", eff.userId)
     .returns<AnalysisRow[]>()
     .maybeSingle();
 
@@ -68,16 +77,17 @@ export async function GET(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const { data: drafts } = await supabase
+  const { data: drafts } = await reader
     .from("content_drafts")
     .select(
       "id, analysis_id, angle, audience, target_platform, tone, script, hooks, shots, captions, created_at, updated_at",
     )
     .eq("analysis_id", id)
+    .eq("user_id", eff.userId)
     .order("created_at", { ascending: false })
     .returns<DraftRow[]>();
 
-  return NextResponse.json({ analysis, drafts: drafts ?? [] });
+  return NextResponse.json({ analysis, drafts: drafts ?? [], actingAsClient: eff.isClient });
 }
 
 type PatchBody = { sourceTitle?: string };
@@ -92,6 +102,13 @@ export async function PATCH(
   if (!userRes.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, userRes.user.id, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+  const reader = readerFor(supabase, eff.isClient);
 
   let body: PatchBody;
   try {
@@ -115,11 +132,12 @@ export async function PATCH(
     return NextResponse.json({ ok: true, updated: 0 });
   }
 
-  const { error } = await supabase
+  const { error } = await reader
     .from("content_analyses")
     /* `as never` — supabase-js 2.45 vs PostgrestVersion 14.5 narrowing. */
     .update(patch as never)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", eff.userId);
   if (error) {
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
@@ -127,7 +145,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -136,7 +154,19 @@ export async function DELETE(
   if (!userRes.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { error } = await supabase.from("content_analyses").delete().eq("id", id);
+
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, userRes.user.id, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+  const reader = readerFor(supabase, eff.isClient);
+
+  const { error } = await reader
+    .from("content_analyses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", eff.userId);
   if (error) {
     return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   }

@@ -7,6 +7,10 @@ export type UploadResult = {
   ok: boolean;
   tooLong?: boolean;
   error?: string;
+  /** assetId of the row created by /api/assets/upload-url. Set on success. */
+  assetId?: string;
+  /** Whether the uploaded file was a video (vs. an image). */
+  isVideo?: boolean;
 };
 
 async function readVideoDuration(file: File): Promise<number> {
@@ -83,5 +87,7 @@ export async function uploadAssetFile(file: File): Promise<UploadResult> {
   return {
     ok: true,
     tooLong: isVideo && (durationSeconds ?? 0) > MAX_VIDEO_SECONDS,
+    assetId: init.assetId,
+    isVideo,
   };
 }

@@ -5,6 +5,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { resolveEffectiveUser, readerFor } from "@/lib/clients/effective-user";
 
 type PatchBody = { script?: string };
 
@@ -18,6 +19,13 @@ export async function PATCH(
   if (!userRes.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, userRes.user.id, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+  const reader = readerFor(supabase, eff.isClient);
 
   let body: PatchBody;
   try {
@@ -38,12 +46,13 @@ export async function PATCH(
     return NextResponse.json({ ok: true, updated: 0 });
   }
 
-  const { error } = await supabase
+  const { error } = await reader
     .from("content_drafts")
     /* `as never` — supabase-js 2.45 vs PostgrestVersion 14.5 narrowing. */
     .update(patch as never)
     .eq("id", draftId)
-    .eq("analysis_id", id);
+    .eq("analysis_id", id)
+    .eq("user_id", eff.userId);
   if (error) {
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
@@ -51,7 +60,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string; draftId: string }> },
 ) {
   const { id, draftId } = await params;
@@ -60,11 +69,20 @@ export async function DELETE(
   if (!userRes.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { error } = await supabase
+
+  const relationshipId = req.nextUrl.searchParams.get("relationship_id");
+  const eff = await resolveEffectiveUser(supabase, userRes.user.id, relationshipId);
+  if (!eff.ok) {
+    return NextResponse.json({ error: eff.error }, { status: eff.status });
+  }
+  const reader = readerFor(supabase, eff.isClient);
+
+  const { error } = await reader
     .from("content_drafts")
     .delete()
     .eq("id", draftId)
-    .eq("analysis_id", id);
+    .eq("analysis_id", id)
+    .eq("user_id", eff.userId);
   if (error) {
     return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   }
