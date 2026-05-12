@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireClientAccess } from "@/lib/auth/require-client-access";
 import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
+import { sendClientWorkspaceInviteNotification } from "@/lib/email/agency-notify";
 import type {
   ClientAccessRole,
   ClientMembershipWithProfile,
@@ -139,6 +140,23 @@ export async function POST(req: NextRequest, { params }: Params) {
     log.error("client_members.add_failed", { slug, err: insertRes.error.message });
     return NextResponse.json({ error: "add_failed" }, { status: 500 });
   }
+
+  // Best-effort notification — no-op when RESEND_API_KEY/EMAIL_FROM unset.
+  const inviterProfileRes = await service
+    .from("profiles")
+    .select("display_name")
+    .eq("user_id", session.userId)
+    .maybeSingle();
+  const inviterRow = (inviterProfileRes.data ?? null) as { display_name: string | null } | null;
+  const inviterName = inviterRow?.display_name ?? session.email;
+  void sendClientWorkspaceInviteNotification({
+    to: targetUser.email,
+    inviterName,
+    organizationName: session.organization.name,
+    clientDisplayName: client.displayName,
+    token: "",
+    accessRole,
+  });
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

@@ -133,10 +133,12 @@ export function clientWorkspaceInviteEmail(args: {
   inviterName: string;
   organizationName: string;
   clientDisplayName: string;
+  /** Invite token for /invite/[token]; pass empty string to link straight to /workspace. */
   token: string;
   /** 'client_owner' | 'team_assigned' */
   accessRole: string;
 }): EmailTemplate {
+  const tokenless = args.token.length === 0;
   const subject = `${args.inviterName} added you to ${args.clientDisplayName} on CreatorHub`;
   const heading = `Welcome to ${args.clientDisplayName}`;
   const roleSentence =
@@ -146,8 +148,10 @@ export function clientWorkspaceInviteEmail(args: {
   const body =
     `<p style="margin:0 0 10px;"><strong>${esc(args.inviterName)}</strong> at <strong>${esc(args.organizationName)}</strong> added you to the <strong>${esc(args.clientDisplayName)}</strong> workspace.</p>` +
     `<p style="margin:0 0 10px;">${esc(roleSentence)}</p>` +
-    `<p style="margin:0;color:#94A3B8;font-size:13px;">After accepting, you'll land in your workspace at /workspace.</p>`;
-  const ctaHref = `${APP_URL}/invite/${encodeURIComponent(args.token)}`;
+    `<p style="margin:0;color:#94A3B8;font-size:13px;">${tokenless ? "Sign in and you'll land in your workspace." : "After accepting, you'll land in your workspace at /workspace."}</p>`;
+  const ctaHref = tokenless
+    ? `${APP_URL}/workspace`
+    : `${APP_URL}/invite/${encodeURIComponent(args.token)}`;
   return {
     subject,
     html: shell({
@@ -156,13 +160,13 @@ export function clientWorkspaceInviteEmail(args: {
       body,
       ctaLabel: "Open your workspace",
       ctaHref,
-      footerNote: "Invites expire after 7 days.",
+      footerNote: tokenless ? undefined : "Invites expire after 7 days.",
     }),
     text:
       `${args.inviterName} at ${args.organizationName} added you to the ${args.clientDisplayName} workspace on CreatorHub.\n` +
       `${roleSentence}\n\n` +
-      `Accept: ${ctaHref}\n\n` +
-      `Invites expire after 7 days.\n`,
+      `${tokenless ? "Open your workspace" : "Accept"}: ${ctaHref}\n` +
+      `${tokenless ? "" : "\nInvites expire after 7 days.\n"}`,
   };
 }
 
