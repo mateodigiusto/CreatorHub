@@ -28,6 +28,9 @@ type RelationshipRow = {
   accepted_at: string | null;
   ended_at: string | null;
   expires_at: string;
+  retainer_amount: string | null;
+  retainer_currency: string | null;
+  retainer_cadence: "monthly" | "quarterly" | "project" | null;
 };
 
 type CounterpartyRow = {
@@ -50,7 +53,7 @@ export async function GET(
   const { data: row } = await supabase
     .from("creator_relationships")
     .select(
-      "id, manager_id, creator_id, invited_email, status, created_at, accepted_at, ended_at, expires_at",
+      "id, manager_id, creator_id, invited_email, status, created_at, accepted_at, ended_at, expires_at, retainer_amount, retainer_currency, retainer_cadence",
     )
     .eq("id", id)
     .returns<RelationshipRow[]>()
@@ -90,6 +93,15 @@ export async function GET(
     managerId: row.manager_id,
     creatorId: row.creator_id,
     invitedEmail: row.invited_email,
+    /* Retainer fields are manager-only context — only surface them when
+       the caller is the manager. Creators don't need to see what their
+       editor invoices for. */
+    retainerAmount:
+      perspective === "manager" && row.retainer_amount !== null
+        ? Number(row.retainer_amount)
+        : null,
+    retainerCurrency: perspective === "manager" ? row.retainer_currency : null,
+    retainerCadence: perspective === "manager" ? row.retainer_cadence : null,
   };
 
   return NextResponse.json({ relationship: detail });

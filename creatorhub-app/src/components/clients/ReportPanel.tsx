@@ -7,6 +7,7 @@ import {
   Calendar,
   FileText,
   TrendingUp,
+  Download,
 } from "lucide-react";
 
 type Period = "monthly" | "weekly";
@@ -76,17 +77,32 @@ export function ReportPanel({ relationshipId }: { relationshipId: string }) {
             Activity rolled up across scripts, calendar, posts, and tasks.
           </div>
         </div>
-        <div className="inline-flex rounded-[10px] border border-border bg-surface-2 p-0.5">
-          <PeriodToggle
-            label="Last 7 days"
-            active={period === "weekly"}
-            onClick={() => setPeriod("weekly")}
-          />
-          <PeriodToggle
-            label="Last 30 days"
-            active={period === "monthly"}
-            onClick={() => setPeriod("monthly")}
-          />
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-[10px] border border-border bg-surface-2 p-0.5">
+            <PeriodToggle
+              label="Last 7 days"
+              active={period === "weekly"}
+              onClick={() => setPeriod("weekly")}
+            />
+            <PeriodToggle
+              label="Last 30 days"
+              active={period === "monthly"}
+              onClick={() => setPeriod("monthly")}
+            />
+          </div>
+          <button
+            onClick={() =>
+              window.open(
+                `/api/clients/${relationshipId}/report/export-pdf?period=${period}`,
+                "_blank",
+              )
+            }
+            disabled={!data}
+            title="Download a branded PDF of this recap"
+            className="h-8 px-3 inline-flex items-center gap-1.5 rounded-[10px] border border-border bg-surface text-[12px] font-medium text-text hover:border-accent/30 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" /> PDF
+          </button>
         </div>
       </div>
 

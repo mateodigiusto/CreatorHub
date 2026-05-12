@@ -28,6 +28,7 @@ import { DocsPanel } from "@/components/clients/DocsPanel";
 import { LinksPanel } from "@/components/clients/LinksPanel";
 import { MessagesPanel } from "@/components/clients/MessagesPanel";
 import { ReportPanel } from "@/components/clients/ReportPanel";
+import { RetainerCard } from "@/components/clients/RetainerCard";
 import type { RelationshipDetail } from "@/lib/clients/types";
 
 type Tab = "tasks" | "streak" | "docs" | "links" | "messages" | "report";
@@ -172,6 +173,16 @@ export default function RelationshipHubPage({
         busy={busy}
         onTransition={transition}
       />
+
+      {isActive && isManager && (
+        <RetainerCard
+          relationship={relationship}
+          onUpdated={(patch) =>
+            setRelationship((prev) => (prev ? { ...prev, ...patch } : prev))
+          }
+          onError={(msg) => showToast(msg)}
+        />
+      )}
 
       {isActive && (
         <>

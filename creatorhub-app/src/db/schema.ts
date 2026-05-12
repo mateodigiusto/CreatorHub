@@ -547,6 +547,12 @@ export const creatorRelationships = pgTable(
     invitedEmail: text("invited_email"),
     inviteToken: text("invite_token").unique(),
     status: relationshipStatusEnum("status").notNull().default("pending"),
+    /** v31: per-client retainer (manager-set, optional). */
+    retainerAmount: numeric("retainer_amount", { precision: 10, scale: 2 }),
+    /** ISO-4217 3-letter currency code, uppercase. */
+    retainerCurrency: text("retainer_currency"),
+    /** 'monthly' | 'quarterly' | 'project' — checked at the DB level. */
+    retainerCadence: text("retainer_cadence"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
     endedAt: timestamp("ended_at", { withTimezone: true }),

@@ -14,6 +14,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase/server";
 import { resolveEffectiveUser, readerFor } from "@/lib/clients/effective-user";
+import { audit } from "@/lib/audit";
 import { log } from "@/lib/log";
 import { pickStub, detectPlatform, canonicalizeUrl } from "@/lib/content-dna/stubs";
 import { checkAnalysisBudget } from "@/lib/content-dna/budget";
@@ -168,6 +169,16 @@ export async function POST(req: NextRequest) {
         .eq("id", data.id);
       return NextResponse.json({ error: "enqueue_failed" }, { status: 500 });
     }
+
+    /* Audit the AI-spend so the cost-guardrails dashboard can roll it up.
+       Stub-mode skips this — no real cost incurred. */
+    await audit(eff.userId, {
+      actor: "user",
+      action: "content_dna.analyzed",
+      targetType: "content_analysis",
+      targetId: data.id,
+      metadata: { mode: "url", platform },
+    });
 
     /* Fire-and-forget invocation of the cron endpoint so the user doesn't
        wait up to 60s for the next scheduled tick. We don't await it; if it

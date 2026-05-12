@@ -17,8 +17,13 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Tabs } from "@/components/ui/Tabs";
+import { CrossClientPipeline } from "@/components/clients/CrossClientPipeline";
+import { CrossClientTasks } from "@/components/clients/CrossClientTasks";
 import { cn } from "@/lib/cn";
 import type { RelationshipSummary } from "@/lib/clients/types";
+
+type ClientsTab = "list" | "pipeline" | "tasks";
 
 function statusTone(s: RelationshipSummary["status"]): {
   tone: "accent" | "green" | "neutral";
@@ -61,6 +66,7 @@ export default function ClientsPage() {
     RelationshipSummary[] | null
   >(null);
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<ClientsTab>("list");
 
   const load = useCallback(async () => {
     try {
@@ -155,6 +161,12 @@ export default function ClientsPage() {
     groups.managing.length === 0 &&
     groups.workingWith.length === 0;
 
+  /* Cross-client Pipeline + Tasks tabs are only meaningful for editors —
+     show them when the user has at least one active managed relationship. */
+  const hasActiveManaged = (groups?.managing ?? []).some(
+    (r) => r.status === "active",
+  );
+
   return (
     <>
       <PageHeader
@@ -169,7 +181,24 @@ export default function ClientsPage() {
         }
       />
 
-      {showSearch && (
+      {hasActiveManaged && (
+        <div className="mb-4">
+          <Tabs<ClientsTab>
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "list", label: "Clients" },
+              { value: "pipeline", label: "Pipeline" },
+              { value: "tasks", label: "Tasks" },
+            ]}
+          />
+        </div>
+      )}
+
+      {tab === "pipeline" && <CrossClientPipeline />}
+      {tab === "tasks" && <CrossClientTasks />}
+
+      {tab === "list" && showSearch && (
         <div className="relative max-w-[420px] mb-4">
           <Search className="w-3.5 h-3.5 text-muted absolute left-[11px] top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -182,13 +211,13 @@ export default function ClientsPage() {
         </div>
       )}
 
-      {noResults && (
+      {tab === "list" && noResults && (
         <div className="text-[13px] text-muted py-8 text-center">
           No relationships match &ldquo;{query.trim()}&rdquo;.
         </div>
       )}
 
-      {groups && groups.managing.length > 0 && (
+      {tab === "list" && groups && groups.managing.length > 0 && (
         <Card className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -209,7 +238,7 @@ export default function ClientsPage() {
         </Card>
       )}
 
-      {groups && groups.workingWith.length > 0 && (
+      {tab === "list" && groups && groups.workingWith.length > 0 && (
         <Card>
           <div className="flex items-center justify-between mb-3">
             <div>

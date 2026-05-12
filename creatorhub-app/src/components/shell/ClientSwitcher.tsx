@@ -71,7 +71,7 @@ export function ClientSwitcher() {
 
   if (!isEditor) return null;
 
-  const buttonLabel = currentClient ? currentClient.name : "My workspace";
+  const buttonLabel = currentClient ? currentClient.name : "Svi klijenti";
 
   function pickClient(r: RelationshipSummary) {
     setCurrentClient({
@@ -87,7 +87,7 @@ export function ClientSwitcher() {
   function exitClientMode() {
     setCurrentClient(null);
     setOpen(false);
-    showToast("Back to your workspace");
+    showToast("Switched to all-clients view");
   }
 
   return (
@@ -130,7 +130,7 @@ export function ClientSwitcher() {
                 : "text-text/80 hover:bg-surface-2 hover:text-text",
             )}
           >
-            <span className="font-medium">My workspace</span>
+            <span className="font-medium">Svi klijenti</span>
             {!currentClient && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
           </button>
 

@@ -36,10 +36,16 @@ export type RelationshipSummary = {
   expiresAt: string;
 };
 
+export type RetainerCadence = "monthly" | "quarterly" | "project";
+
 export type RelationshipDetail = RelationshipSummary & {
   managerId: string;
   creatorId: string | null;
   invitedEmail: string | null;
+  /** v31 retainer fields. All-or-nothing — either all three set or all null. */
+  retainerAmount: number | null;
+  retainerCurrency: string | null;
+  retainerCadence: RetainerCadence | null;
 };
 
 export type RelationshipTaskRow = {
