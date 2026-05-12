@@ -35,7 +35,7 @@ describe("migrations", () => {
     `;
     /* Bump this when adding a migration to supabase/migrations/. The CI
        step `npm run schema:version` prints the count for sanity. */
-    const EXPECTED = 33;
+    const EXPECTED = 36;
     expect(rows[0].v).toBe(EXPECTED);
   });
 
@@ -105,6 +105,17 @@ describe("migrations", () => {
       "org_role_t",
       "org_plan_t",
       "org_sub_status_t",
+      "client_status_t",
+      "client_access_role_t",
+      "content_status_t",
+      "content_type_t",
+      "bunny_video_status_t",
+      "visibility_t",
+      "asset_category_t",
+      "review_status_t",
+      "task_status_t",
+      "metric_source_t",
+      "folder_scope_t",
     ];
     for (const t of expected) {
       expect(got.has(t), `Missing enum ${t}`).toBe(true);
