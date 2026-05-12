@@ -3,13 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, Plus, Sun, Moon, Menu } from "lucide-react";
-import { NotificationsBell } from "@/components/ui/NotificationsBell";
 import { usePathname } from "next/navigation";
 import { useAppState } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { AuthMenu } from "./AuthMenu";
-import { ClientSwitcher } from "./ClientSwitcher";
 import { cn } from "@/lib/cn";
 
 const titles: Record<string, string> = {
@@ -81,8 +79,6 @@ export function Topbar({
         >
           <Menu className="w-5 h-5" />
         </button>
-        <ClientSwitcher />
-        <span className="hidden sm:inline text-[13px] text-muted">/</span>
         <span className="text-[14px] sm:text-[13px] font-medium text-text truncate">
           {title}
         </span>
@@ -152,8 +148,6 @@ export function Topbar({
         >
           {theme === "dark" ? <Sun className="w-[15px] h-[15px]" /> : <Moon className="w-[15px] h-[15px]" />}
         </IconButton>
-
-        <NotificationsBell />
 
         <AuthMenu />
 

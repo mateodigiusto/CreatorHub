@@ -58,33 +58,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   }
 
-  if (kind === "expire_invites") {
-    const result = await runExpireInvites();
-    return NextResponse.json(result);
-  }
-
   return NextResponse.json({ ok: true, skipped: kind });
-}
-
-/**
- * Flip pending creator-relationship invites past their `expires_at` to
- * status='expired'. Runs daily. Idempotent — re-running is a no-op once
- * everything's been swept.
- */
-async function runExpireInvites() {
-  type CountRow = { count: string };
-  const rows = (await dbInternal.execute(sql`
-    with d as (
-      update creator_relationships
-      set status = 'expired'
-      where status = 'pending' and expires_at < now()
-      returning 1
-    )
-    select count(*)::text as count from d
-  `)) as unknown as CountRow[];
-  const expired = Number(rows[0]?.count ?? 0);
-  if (expired > 0) log.info("cron.expire_invites.swept", { expired });
-  return { ok: true, expired };
 }
 
 /**
