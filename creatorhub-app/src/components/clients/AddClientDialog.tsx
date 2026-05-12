@@ -46,6 +46,7 @@ export function AddClientDialog({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset form on dialog open
       setDisplayName("");
       setSlug("");
       setSlugTouched(false);

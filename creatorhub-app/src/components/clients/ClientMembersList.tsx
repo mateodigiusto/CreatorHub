@@ -27,6 +27,7 @@ export function ClientMembersList({ slug }: { slug: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount with cancel flag
     setLoading(true);
     fetch(`/api/clients/${slug}/members`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))

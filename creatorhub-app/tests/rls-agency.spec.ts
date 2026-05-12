@@ -26,15 +26,14 @@ const B_ORG = "11111111-1111-1111-1111-11111111111b";
 const A_CLIENT = "22222222-2222-2222-2222-22222222222a";
 const B_CLIENT = "22222222-2222-2222-2222-22222222222b";
 
-async function asUser(uid: string) {
+// Helper retained for future per-user connection pooling; currently we set
+// claims via SET statements on the shared service-role connection.
+async function _asUser(_uid: string) {
   return postgres(process.env.DIRECT_URL!, {
     prepare: false,
     max: 1,
     connection: { search_path: "public" },
-    onparameter: (k, v) => {
-      // no-op; we set claims via SET statements per query batch
-    },
-  } as never);
+  });
 }
 
 beforeAll(async () => {

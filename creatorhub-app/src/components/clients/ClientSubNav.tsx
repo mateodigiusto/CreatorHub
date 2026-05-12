@@ -21,7 +21,18 @@ const ALL_TABS: Tab[] = [
 
 export function ClientSubNav({
   slug,
-  liveTabs = ["overview", "settings"],
+  liveTabs = [
+    "overview",
+    "brand-build",
+    "strategy",
+    "pipeline",
+    "calendar",
+    "metrics",
+    "assets",
+    "meetings",
+    "internal",
+    "settings",
+  ],
 }: {
   slug: string;
   /** Tabs that have a built page. Others are rendered as disabled placeholders. */

@@ -75,7 +75,6 @@ export function BrandBuildForm({ slug }: { slug: string }) {
       } catch (err) {
         setStatuses((s) => ({ ...s, [statusKey]: "error" }));
         showToast("Couldn't save — try again.");
-        // eslint-disable-next-line no-console
         console.error("brand_profile.patch_failed", err);
       }
     },
@@ -86,7 +85,7 @@ export function BrandBuildForm({ slug }: { slug: string }) {
     return (
       <Card className="py-10 px-6 text-center">
         <AlertCircle className="w-5 h-5 text-error mx-auto mb-2" />
-        <h3 className="text-[15px] font-semibold text-text">Couldn't load this profile</h3>
+        <h3 className="text-[15px] font-semibold text-text">Couldn&apos;t load this profile</h3>
         <p className="text-[13px] text-muted mt-1">Refresh the page or try again later.</p>
       </Card>
     );
@@ -178,6 +177,7 @@ function FieldRow({
 
   // Refresh local when the canonical row changes from elsewhere (e.g. AI apply).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync controlled input to incoming prop
     setLocal(value);
     initial.current = value;
   }, [value]);
@@ -228,6 +228,7 @@ function PillarsRow({
   const [pillars, setPillars] = useState<string[]>(value);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync local pillars to incoming prop
     setPillars(value);
   }, [value]);
 

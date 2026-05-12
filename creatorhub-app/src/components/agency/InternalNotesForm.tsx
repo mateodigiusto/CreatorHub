@@ -65,7 +65,6 @@ export function InternalNotesForm({ slug }: { slug: string }) {
       } catch (err) {
         setStatus("error");
         showToast("Couldn't save notes.");
-        // eslint-disable-next-line no-console
         console.error("internal_notes.save_failed", err);
       }
     },
@@ -97,7 +96,7 @@ export function InternalNotesForm({ slug }: { slug: string }) {
     return (
       <Card className="py-10 px-6 text-center">
         <AlertCircle className="w-5 h-5 text-error mx-auto mb-2" />
-        <h3 className="text-[15px] font-semibold text-text">Couldn't load notes</h3>
+        <h3 className="text-[15px] font-semibold text-text">Couldn&apos;t load notes</h3>
         <p className="text-[13px] text-muted mt-1">Refresh or try again later.</p>
       </Card>
     );

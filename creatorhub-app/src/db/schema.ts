@@ -15,7 +15,6 @@ import {
   uuid,
   text,
   timestamp,
-  date,
   boolean,
   integer,
   numeric,
@@ -23,7 +22,6 @@ import {
   customType,
   index,
   uniqueIndex,
-  primaryKey,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";

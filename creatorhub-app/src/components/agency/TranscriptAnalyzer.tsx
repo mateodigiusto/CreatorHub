@@ -85,7 +85,6 @@ export function TranscriptAnalyzer({
     } catch (err) {
       setErrorCode("network_error");
       setPhase("error");
-      // eslint-disable-next-line no-console
       console.error("analyze.fetch_failed", err);
     }
   };

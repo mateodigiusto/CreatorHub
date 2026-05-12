@@ -11,7 +11,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Trash2, AlertTriangle, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BunnyVideoPlayer } from "@/components/ui/VideoPlayer";
 import { VideoCommentThread } from "@/components/agency/assets/VideoCommentThread";
@@ -51,6 +50,7 @@ export function AssetVideoList({ slug, folderId }: Props) {
   }, [slug, folderId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
     void load();
   }, [load]);
 

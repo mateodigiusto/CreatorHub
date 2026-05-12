@@ -57,6 +57,7 @@ export function ContentCardDialog({
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync draft to incoming item prop
     setDraft({
       title: item.title,
       content_type: item.content_type,
@@ -325,6 +326,7 @@ function MetricInput({
   onCommit: (v: string) => void;
 }) {
   const [v, setV] = useState(String(defaultValue));
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync local string to numeric default prop
   useEffect(() => setV(String(defaultValue)), [defaultValue]);
   return (
     <label className="block">

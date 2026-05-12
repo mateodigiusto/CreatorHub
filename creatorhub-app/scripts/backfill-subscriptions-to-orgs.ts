@@ -89,7 +89,6 @@ function mapPlan(legacy: string): "starter" | "pro" {
 
 function logLine(level: "info" | "warn" | "error", msg: string, meta?: unknown): void {
   const payload = meta === undefined ? "" : ` ${JSON.stringify(meta)}`;
-  // eslint-disable-next-line no-console -- one-off backfill script, allowed
   console.log(`[${level}] ${msg}${payload}`);
 }
 

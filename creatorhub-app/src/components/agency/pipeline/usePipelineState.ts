@@ -36,6 +36,7 @@ export function usePipelineState(slug: string) {
   }, [slug]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount
     void load();
   }, [load]);
 

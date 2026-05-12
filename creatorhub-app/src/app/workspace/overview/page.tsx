@@ -117,7 +117,7 @@ export default async function WorkspaceOverviewPage() {
             >
               Strategy
             </Link>{" "}
-            tab once it's ready.
+            tab once it&apos;s ready.
           </p>
         </Card>
       )}
