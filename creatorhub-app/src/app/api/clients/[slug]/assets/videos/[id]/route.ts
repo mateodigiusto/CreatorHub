@@ -74,16 +74,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (!session) throw new HttpError(401, "unauthorized");
     const client = await requireClientAccess(slug);
     const supabase = await getSupabaseServer();
-    const { data: row, error } = await supabase
+    const res = await supabase
       .from("asset_videos")
       .select("*")
       .eq("id", id)
       .eq("client_id", client.id)
-      .single()
-      .returns<DbRow>();
-    if (error || !row) throw new HttpError(404, "not_found");
+      .single();
+    if (res.error) throw new HttpError(404, "not_found");
+    const row = res.data as unknown as DbRow;
+    if (!row) throw new HttpError(404, "not_found");
 
-    let current = row;
+    let current: DbRow = row;
     if (
       row.bunny_video_id &&
       row.bunny_video_status !== "ready" &&
