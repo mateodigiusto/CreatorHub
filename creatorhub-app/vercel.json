@@ -1,19 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/run-jobs?kind=cleanup",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/run-jobs?kind=content_dna_analyze",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/run-jobs?kind=expire_invites",
-      "schedule": "5 4 * * *"
-    }
-  ],
   "functions": {
     "src/app/api/cron/run-jobs/route.ts": {
       "maxDuration": 300
