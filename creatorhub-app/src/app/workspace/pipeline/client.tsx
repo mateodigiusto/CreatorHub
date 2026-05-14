@@ -17,6 +17,7 @@ import type { ClientAccessRole } from "@/lib/agency/_phase2_deps";
 import {
   canCreatePipelineCards,
   canMovePipelineCards,
+  canEditContent,
 } from "@/lib/agency/viewer";
 
 /**
@@ -106,6 +107,7 @@ export function WorkspacePipelineClient({
           onPatch={state.patch}
           onPatchMetrics={state.saveMetrics}
           onDelete={state.remove}
+          readOnly={!canEditContent(viewerRole)}
         />
       )}
     </div>

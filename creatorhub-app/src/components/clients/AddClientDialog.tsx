@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { X } from "lucide-react";
+import { X, CheckCircle2 } from "lucide-react";
+import { ClientInviteLinkInline } from "./ClientInviteLinkInline";
 
 const INPUT_CLS =
   "w-full h-10 px-3 rounded-[10px] bg-surface border border-border text-[13.5px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20";
@@ -36,6 +37,11 @@ export function AddClientDialog({
   const [tagline, setTagline] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [error, setError] = useState<string | null>(null);
+  /* Set once the client is created — flips the dialog to the "here's the
+     invite link" success step instead of navigating straight away. */
+  const [created, setCreated] = useState<{ slug: string; name: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     const d = dialogRef.current;
@@ -53,6 +59,7 @@ export function AddClientDialog({
       setTagline("");
       setInstagramHandle("");
       setError(null);
+      setCreated(null);
     }
   }, [open]);
 
@@ -101,11 +108,65 @@ export function AddClientDialog({
         return;
       }
 
-      const body = (await res.json()) as { client: { slug: string } };
-      onClose();
-      router.push(`/clients/${body.client.slug}/overview`);
+      const body = (await res.json()) as {
+        client: { slug: string; displayName: string };
+      };
+      /* Stay in the dialog — show the invite link so the agency can send it
+         immediately. The grid refreshes now; navigation happens on close. */
+      setCreated({ slug: body.client.slug, name: body.client.displayName });
       router.refresh();
     });
+  }
+
+  function finish(goToClient: boolean) {
+    const slug = created?.slug;
+    onClose();
+    if (goToClient && slug) router.push(`/clients/${slug}/overview`);
+  }
+
+  /* Success step — client created, show the invite link to send. */
+  if (created) {
+    return (
+      <dialog
+        ref={dialogRef}
+        className="bg-transparent p-0 backdrop:bg-text/40 backdrop:backdrop-blur-sm"
+        onClose={onClose}
+        onClick={(e) => {
+          if (e.target === dialogRef.current) finish(false);
+        }}
+      >
+        <div
+          className="bg-surface border border-border rounded-[14px] w-[min(460px,92vw)] p-6 shadow-[0_24px_60px_rgba(11,18,32,0.18)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-9 h-9 rounded-full bg-accent-soft border border-accent-border grid place-items-center shrink-0">
+              <CheckCircle2 className="w-4.5 h-4.5 text-accent" style={{ width: 18, height: 18 }} />
+            </div>
+            <div>
+              <h2 className="text-[17px] font-semibold tracking-[-0.005em] text-text">
+                {created.name} added
+              </h2>
+              <p className="text-[13px] text-muted mt-0.5">
+                Send this link to the creator so they can log into their
+                workspace.
+              </p>
+            </div>
+          </div>
+
+          <ClientInviteLinkInline slug={created.slug} />
+
+          <div className="flex items-center justify-end gap-2 mt-5">
+            <Button type="button" variant="ghost" onClick={() => finish(false)}>
+              Done
+            </Button>
+            <Button type="button" onClick={() => finish(true)}>
+              Go to client
+            </Button>
+          </div>
+        </div>
+      </dialog>
+    );
   }
 
   return (

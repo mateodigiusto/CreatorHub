@@ -16,11 +16,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isLogin = pathname === "/login";
   /* The client-facing workspace ships its own chrome (WorkspaceHeader +
      WorkspaceSubNav) — it must not render inside the agency Sidebar/Topbar.
-     /pending and /join are standalone client-track screens too. */
+     /pending and the /join* accept screens are standalone too. */
   const isClientTrack =
     pathname?.startsWith("/workspace") ||
     pathname === "/pending" ||
-    pathname?.startsWith("/join/");
+    pathname?.startsWith("/join/") ||
+    pathname?.startsWith("/join-org/");
   const isPublicStandalone =
     pathname === "/data-deletion-status" ||
     pathname === "/terms" ||

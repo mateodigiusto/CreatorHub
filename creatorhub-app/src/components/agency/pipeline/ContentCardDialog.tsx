@@ -30,6 +30,12 @@ type Props = {
     patch: Partial<Record<MetricField, number>>,
   ) => Promise<void> | void;
   onDelete: (id: string) => Promise<void> | void;
+  /**
+   * Client-side viewers get a read-only card — every field is locked and
+   * the Delete action is hidden. RLS blocks the writes anyway; this just
+   * stops the UI from offering controls that would fail.
+   */
+  readOnly?: boolean;
 };
 
 /**
@@ -42,6 +48,7 @@ export function ContentCardDialog({
   onPatch,
   onPatchMetrics,
   onDelete,
+  readOnly = false,
 }: Props) {
   const [tab, setTab] = useState<Tab>("overview");
   const [draft, setDraft] = useState({
@@ -108,6 +115,7 @@ export function ContentCardDialog({
           <div className="flex-1">
             <input
               value={draft.title}
+              readOnly={readOnly}
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
               onBlur={(e) => blur("title", e.target.value)}
               className="w-full text-[18px] font-semibold tracking-[-0.005em] text-text bg-transparent border-0 outline-none placeholder:text-muted"
@@ -147,12 +155,13 @@ export function ContentCardDialog({
               <Field label="Content type">
                 <select
                   value={draft.content_type}
+                  disabled={readOnly}
                   onChange={(e) => {
                     const v = e.target.value as ContentType;
                     setDraft((d) => ({ ...d, content_type: v }));
                     blur("content_type", v);
                   }}
-                  className="w-full h-9 px-3 text-[13.5px] bg-surface border border-border rounded-[8px] outline-none focus:border-accent/40"
+                  className="w-full h-9 px-3 text-[13.5px] bg-surface border border-border rounded-[8px] outline-none focus:border-accent/40 disabled:opacity-60"
                 >
                   {CONTENT_TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -166,6 +175,7 @@ export function ContentCardDialog({
                 <input
                   type="date"
                   value={draft.planned_post_date}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     setDraft((d) => ({
                       ...d,
@@ -185,6 +195,7 @@ export function ContentCardDialog({
                   <input
                     key={h}
                     value={draft[h]}
+                    readOnly={readOnly}
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, [h]: e.target.value }))
                     }
@@ -206,12 +217,13 @@ export function ContentCardDialog({
                         key={m}
                         label={METRIC_LABEL[m]}
                         defaultValue={item.metrics?.[m] ?? 0}
+                        readOnly={readOnly}
                         onCommit={(v) => metricBlur(m, v)}
                       />
                     ))}
                   </div>
                 </div>
-              ) : (
+              ) : readOnly ? null : (
                 <button
                   onClick={() => void onPatchMetrics(item.id, { views: 0 })}
                   className="text-[12.5px] text-accent hover:underline"
@@ -227,6 +239,7 @@ export function ContentCardDialog({
               <Field label="Script">
                 <textarea
                   value={draft.script}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, script: e.target.value }))
                   }
@@ -239,6 +252,7 @@ export function ContentCardDialog({
               <Field label="Caption">
                 <textarea
                   value={draft.caption}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, caption: e.target.value }))
                   }
@@ -251,6 +265,7 @@ export function ContentCardDialog({
               <Field label="Visual notes">
                 <textarea
                   value={draft.visual_notes}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, visual_notes: e.target.value }))
                   }
@@ -278,18 +293,22 @@ export function ContentCardDialog({
         </div>
 
         <div className="flex items-center justify-between gap-2 p-4 border-t border-border">
-          <button
-            onClick={() => {
-              if (confirm("Delete this content item?")) {
-                void onDelete(item.id);
-                onClose();
-              }
-            }}
-            className="inline-flex items-center gap-1.5 text-[12.5px] text-muted hover:text-[var(--error)] transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete
-          </button>
+          {readOnly ? (
+            <span className="text-[12px] text-muted">Read-only</span>
+          ) : (
+            <button
+              onClick={() => {
+                if (confirm("Delete this content item?")) {
+                  void onDelete(item.id);
+                  onClose();
+                }
+              }}
+              className="inline-flex items-center gap-1.5 text-[12.5px] text-muted hover:text-[var(--error)] transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </button>
+          )}
           <Button variant="secondary" size="sm" onClick={onClose}>
             Done
           </Button>
@@ -320,10 +339,12 @@ function MetricInput({
   label,
   defaultValue,
   onCommit,
+  readOnly = false,
 }: {
   label: string;
   defaultValue: number;
   onCommit: (v: string) => void;
+  readOnly?: boolean;
 }) {
   const [v, setV] = useState(String(defaultValue));
   // eslint-disable-next-line react-hooks/set-state-in-effect -- sync local string to numeric default prop
@@ -337,6 +358,7 @@ function MetricInput({
         type="number"
         min={0}
         value={v}
+        readOnly={readOnly}
         onChange={(e) => setV(e.target.value)}
         onBlur={(e) => onCommit(e.target.value)}
         className="w-full h-8 px-2 text-[12.5px] bg-surface border border-border rounded-[6px] outline-none focus:border-accent/40 tabular-nums"

@@ -21,45 +21,60 @@ export function isClientViewer(
   return role === "client_owner" || role === "team_assigned";
 }
 
+/*
+ * Capability model — kept deliberately in lockstep with the RLS policies
+ * from migrations 0034/0035. Client-side viewers (`client_owner` /
+ * `team_assigned`) are **view + comment only**: every write policy on
+ * `content_items`, `brand_profiles`, `asset_videos`, `asset_links` is
+ * `is_org_staff`-only, and `content_comments` is the single exception
+ * (clients may write non-internal comments). These helpers exist so the
+ * UI never renders a control that RLS would just reject — they are NOT
+ * the security boundary; RLS is.
+ */
+
 /**
- * Can this viewer see comments / notes flagged `is_internal=true`?
- * Mirrors the RLS policy on `content_comments`; rendered here so the UI
- * can hide the toggle in the comment composer.
+ * Can this viewer see — and post — comments flagged `is_internal=true`?
+ * Internal comments are staff-only on both read and write
+ * (`content_comments` RLS gates clients to `is_internal = false`).
  */
 export function canSeeInternal(role: ViewerRole): boolean {
   return role === "agency_staff";
 }
 
-/**
- * Can this viewer edit the brand profile / strategy?
- * `client_owner` edits their own; `team_assigned` is read-only on brand
- * fields. Agency staff always edit.
- */
+/** Can this viewer edit the brand profile / strategy? Staff only. */
 export function canEditBrand(role: ViewerRole): boolean {
-  return role === "agency_staff" || role === "client_owner";
+  return role === "agency_staff";
 }
 
-/**
- * Can this viewer move pipeline cards across columns?
- * Agency staff: yes. `client_owner`: no (review only). `team_assigned`:
- * yes but only on assigned cards — the assigned-card check is enforced
- * server-side, not here.
- */
+/** Can this viewer move pipeline cards across columns? Staff only. */
 export function canMovePipelineCards(role: ViewerRole): boolean {
-  return role === "agency_staff" || role === "team_assigned";
+  return role === "agency_staff";
 }
 
-/** Can this viewer create new pipeline cards? */
+/** Can this viewer create new pipeline cards? Staff only. */
 export function canCreatePipelineCards(role: ViewerRole): boolean {
-  return role === "agency_staff" || role === "team_assigned";
+  return role === "agency_staff";
 }
 
-/** Can this viewer mark an asset video `approved`? */
+/** Can this viewer edit or delete a pipeline card's content? Staff only. */
+export function canEditContent(role: ViewerRole): boolean {
+  return role === "agency_staff";
+}
+
+/** Can this viewer mark an asset video `approved`? Staff only. */
 export function canApproveVideo(role: ViewerRole): boolean {
-  return role === "agency_staff" || role === "client_owner";
+  return role === "agency_staff";
 }
 
-/** Can this viewer upload to the asset library? */
+/** Can this viewer upload to the asset library? Staff only. */
 export function canUploadAssets(role: ViewerRole): boolean {
   return role === "agency_staff";
+}
+
+/**
+ * Can this viewer post a (non-internal) comment? Everyone with workspace
+ * access can — this is the one write a client-side viewer gets.
+ */
+export function canComment(_role: ViewerRole): boolean {
+  return true;
 }

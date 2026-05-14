@@ -71,11 +71,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    /* A join link routes through here as `?next=/join/<token>`. The redeemer
-       has no membership yet, so track-routing would send them to /onboarding
-       — but they need to land on /join to redeem the invite. Honor any
-       /join/* next verbatim before track-routing kicks in. */
-    const isJoinNext = next.startsWith("/join/");
+    /* A join link routes through here as `?next=/join/<token>` (client
+       invite) or `?next=/join-org/<token>` (staff invite). The redeemer has
+       no membership yet, so track-routing would send them to /onboarding —
+       but they need to land on the join screen to redeem. Honor any
+       /join* next verbatim before track-routing kicks in. */
+    const isJoinNext =
+      next.startsWith("/join/") || next.startsWith("/join-org/");
     if (isJoinNext) {
       return NextResponse.redirect(new URL(next, url.origin));
     }

@@ -97,12 +97,16 @@ const baseSystem: NavItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-/** Agencies get an Inbox (client join requests + activity). Solo accounts
- *  have no clients, so no inbox. creatorType==='agency' is the reliable
- *  agency signal — the account-type onboarding step stamps it. */
+/** Agencies get an Inbox (client join requests + activity) and a Team page
+ *  (agency staff). Solo accounts have neither. creatorType==='agency' is the
+ *  reliable agency signal — the account-type onboarding step stamps it. */
 function systemForRole(creatorType: CreatorType | undefined): NavItem[] {
   if (creatorType === "agency") {
-    return [{ href: "/inbox", label: "Inbox", icon: Inbox }, ...baseSystem];
+    return [
+      { href: "/inbox", label: "Inbox", icon: Inbox },
+      { href: "/settings/team", label: "Team", icon: Users },
+      ...baseSystem,
+    ];
   }
   return baseSystem;
 }
