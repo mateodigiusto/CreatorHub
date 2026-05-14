@@ -1380,6 +1380,8 @@ export type Database = {
           name: string
           created_by: string | null
           plan: Database["public"]["Enums"]["org_plan_t"]
+          kind: Database["public"]["Enums"]["org_kind_t"]
+          client_approval_required: boolean
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: Database["public"]["Enums"]["org_sub_status_t"]
@@ -1394,6 +1396,8 @@ export type Database = {
           name: string
           created_by?: string | null
           plan?: Database["public"]["Enums"]["org_plan_t"]
+          kind?: Database["public"]["Enums"]["org_kind_t"]
+          client_approval_required?: boolean
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: Database["public"]["Enums"]["org_sub_status_t"]
@@ -1408,6 +1412,8 @@ export type Database = {
           name?: string
           created_by?: string | null
           plan?: Database["public"]["Enums"]["org_plan_t"]
+          kind?: Database["public"]["Enums"]["org_kind_t"]
+          client_approval_required?: boolean
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: Database["public"]["Enums"]["org_sub_status_t"]
@@ -1557,6 +1563,9 @@ export type Database = {
           client_id: string
           profile_id: string
           access_role: Database["public"]["Enums"]["client_access_role_t"]
+          status: Database["public"]["Enums"]["client_member_status_t"]
+          approved_by: string | null
+          approved_at: string | null
           invited_by: string | null
           created_at: string
         }
@@ -1566,6 +1575,9 @@ export type Database = {
           client_id: string
           profile_id: string
           access_role: Database["public"]["Enums"]["client_access_role_t"]
+          status?: Database["public"]["Enums"]["client_member_status_t"]
+          approved_by?: string | null
+          approved_at?: string | null
           invited_by?: string | null
           created_at?: string
         }
@@ -1575,7 +1587,79 @@ export type Database = {
           client_id?: string
           profile_id?: string
           access_role?: Database["public"]["Enums"]["client_access_role_t"]
+          status?: Database["public"]["Enums"]["client_member_status_t"]
+          approved_by?: string | null
+          approved_at?: string | null
           invited_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      client_invites: {
+        Row: {
+          id: string
+          organization_id: string
+          client_id: string
+          access_role: Database["public"]["Enums"]["client_access_role_t"]
+          token: string
+          expires_at: string | null
+          revoked_at: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          client_id: string
+          access_role?: Database["public"]["Enums"]["client_access_role_t"]
+          token: string
+          expires_at?: string | null
+          revoked_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          client_id?: string
+          access_role?: Database["public"]["Enums"]["client_access_role_t"]
+          token?: string
+          expires_at?: string | null
+          revoked_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      inbox_events: {
+        Row: {
+          id: string
+          organization_id: string
+          kind: Database["public"]["Enums"]["inbox_event_kind_t"]
+          client_id: string | null
+          actor_id: string | null
+          body: string
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          kind: Database["public"]["Enums"]["inbox_event_kind_t"]
+          client_id?: string | null
+          actor_id?: string | null
+          body: string
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          kind?: Database["public"]["Enums"]["inbox_event_kind_t"]
+          client_id?: string | null
+          actor_id?: string | null
+          body?: string
+          read_at?: string | null
           created_at?: string
         }
         Relationships: []
@@ -2178,8 +2262,11 @@ export type Database = {
       org_role_t: "user" | "editor" | "director"
       org_plan_t: "free" | "starter" | "pro" | "scale"
       org_sub_status_t: "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "incomplete_expired" | "paused"
+      org_kind_t: "agency" | "solo"
       client_status_t: "active" | "paused" | "archived"
       client_access_role_t: "client_owner" | "team_assigned"
+      client_member_status_t: "pending" | "active" | "denied"
+      inbox_event_kind_t: "client_join_request" | "client_joined" | "client_denied"
       content_status_t: "idea" | "script" | "film" | "edit" | "post"
       content_type_t: "reel" | "story" | "carousel" | "short" | "long_form" | "image" | "other"
       bunny_video_status_t: "uploading" | "processing" | "ready" | "failed"
