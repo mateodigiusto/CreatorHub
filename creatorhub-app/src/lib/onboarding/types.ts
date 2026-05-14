@@ -188,7 +188,21 @@ export type Profile = {
   emailNotifications?: boolean;
 };
 
-/* In-progress draft — every field optional except the version stamp. */
+/* ─── Role-aware onboarding (account-type fork) ──────────────────────── */
+
+/** The first onboarding fork: an agency (manages clients) vs a solo account. */
+export type AccountType = "agency" | "solo";
+
+export type AgencyTeamSize = "just-me" | "small" | "growing" | "large";
+export type AgencyClientCount = "starting" | "handful" | "established" | "scaled";
+
+/* In-progress draft — every field optional except the version stamp.
+   Also carries the agency-branch fields, which never land on `Profile`
+   (they go to the `organizations` row instead). */
 export type ProfileDraft = Partial<Omit<Profile, "version" | "completedAt">> & {
   audience?: Partial<Profile["audience"]>;
+  accountType?: AccountType;
+  agencyName?: string;
+  agencyTeamSize?: AgencyTeamSize;
+  agencyClientCount?: AgencyClientCount;
 };

@@ -19,6 +19,7 @@ import { cache } from "react";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export type OrgRole = "user" | "editor" | "director";
+export type OrgKind = "agency" | "solo";
 export type Plan = "free" | "starter" | "pro" | "scale";
 export type SubscriptionStatus =
   | "trialing"
@@ -33,7 +34,12 @@ export type SubscriptionStatus =
 export type AgencySession = {
   userId: string;
   email: string;
-  organization: { id: string; slug: string; name: string };
+  /**
+   * `kind` distinguishes a real agency (manages clients) from a solo
+   * account (an org of one, agency UI hidden). Both have an org membership;
+   * the kind decides which surface they see.
+   */
+  organization: { id: string; slug: string; name: string; kind: OrgKind };
   orgRole: OrgRole;
   isAdmin: boolean;
   plan: Plan;
@@ -47,6 +53,7 @@ type MembershipRow = {
     id: string;
     slug: string;
     name: string;
+    kind: OrgKind;
     plan: Plan;
     subscription_status: SubscriptionStatus;
   } | null;
@@ -62,7 +69,7 @@ export const getSession = cache(async (): Promise<AgencySession | null> => {
   const { data, error } = await supabase
     .from("organization_memberships")
     .select(
-      "role, is_admin, organization:organizations ( id, slug, name, plan, subscription_status )",
+      "role, is_admin, organization:organizations ( id, slug, name, kind, plan, subscription_status )",
     )
     .eq("profile_id", user.id)
     .order("created_at", { ascending: true })
@@ -78,6 +85,7 @@ export const getSession = cache(async (): Promise<AgencySession | null> => {
       id: data.organization.id,
       slug: data.organization.slug,
       name: data.organization.name,
+      kind: data.organization.kind,
     },
     orgRole: data.role,
     isAdmin: data.is_admin,

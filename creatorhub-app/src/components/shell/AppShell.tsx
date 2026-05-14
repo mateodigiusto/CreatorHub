@@ -14,11 +14,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isOnboarding = pathname?.startsWith("/onboarding");
   const isLogin = pathname === "/login";
+  /* The client-facing workspace ships its own chrome (WorkspaceHeader +
+     WorkspaceSubNav) — it must not render inside the agency Sidebar/Topbar.
+     /pending and /join are standalone client-track screens too. */
+  const isClientTrack =
+    pathname?.startsWith("/workspace") ||
+    pathname === "/pending" ||
+    pathname?.startsWith("/join/");
   const isPublicStandalone =
     pathname === "/data-deletion-status" ||
     pathname === "/terms" ||
     pathname === "/privacy";
-  const isFullViewport = isOnboarding || isLogin || isPublicStandalone;
+  const isFullViewport =
+    isOnboarding || isLogin || isClientTrack || isPublicStandalone;
 
   /* Close mobile drawer on route change. */
   useEffect(() => {

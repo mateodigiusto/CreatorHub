@@ -32,10 +32,13 @@ export type WorkspaceViewer = {
   accessRole: ClientAccessRole;
 };
 
+type MembershipStatus = "pending" | "active" | "denied";
+
 type RawMembership = {
   id: string;
   client_id: string;
   access_role: ClientAccessRole;
+  status: MembershipStatus;
   clients: {
     id: string;
     organization_id: string;
@@ -82,6 +85,7 @@ export async function requireWorkspaceAccess(
       `id,
        client_id,
        access_role,
+       status,
        clients (
          id,
          organization_id,
@@ -100,9 +104,15 @@ export async function requireWorkspaceAccess(
   if (error) notFound();
 
   const memberships = (rows ?? []) as unknown as RawMembership[];
-  const accessible = memberships.filter((m) => m.clients !== null);
+  const withClient = memberships.filter((m) => m.clients !== null);
+  const accessible = withClient.filter((m) => m.status === "active");
 
-  if (accessible.length === 0) notFound();
+  if (accessible.length === 0) {
+    /* They hold a membership but it isn't active yet — send them to the
+       waiting screen rather than 404-ing them out of the app. */
+    if (withClient.some((m) => m.status === "pending")) redirect("/pending");
+    notFound();
+  }
 
   const cookieStore = await cookies();
   const cookieSlug = cookieStore.get(WORKSPACE_COOKIE)?.value;
@@ -143,6 +153,7 @@ export async function listWorkspaceClients(): Promise<
     .select(
       `id,
        access_role,
+       status,
        clients (
          id,
          organization_id,
@@ -160,7 +171,7 @@ export async function listWorkspaceClients(): Promise<
 
   const memberships = (rows ?? []) as unknown as RawMembership[];
   return memberships
-    .filter((m) => m.clients !== null)
+    .filter((m) => m.clients !== null && m.status === "active")
     .map((m) => ({
       client: rowToClient(m.clients!),
       accessRole: m.access_role,

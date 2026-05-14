@@ -1,13 +1,16 @@
 /**
- * Gate for any route or page that requires an authenticated user with an
- * organization membership. Use at the top of admin pages and `/api/clients/**`
- * route handlers.
+ * Gates for routes that require an organization membership.
  *
- *   const session = await requireOrg();
- *   //   ^? AgencySession (never null)
+ *   const session = await requireOrg();      // any org (agency OR solo)
+ *   const session = await requireAgency();   // org with kind='agency' only
  *
- * Unauthenticated → /login.
- * Authenticated but no org membership → /onboarding/create-org.
+ * `requireOrg` — unauthenticated → /login; authed but no org membership →
+ * /onboarding/create-org. Used by surfaces both agency staff and solo
+ * accounts can see (e.g. billing).
+ *
+ * `requireAgency` — same, plus: a solo account (kind='solo') is bounced to
+ * /dashboard. Used by the client-management surface (`/clients/**`,
+ * `/api/clients/**`) which a solo account has no business seeing.
  */
 
 import { redirect } from "next/navigation";
@@ -22,4 +25,10 @@ export async function requireOrg(): Promise<AgencySession> {
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login");
   redirect("/onboarding/create-org");
+}
+
+export async function requireAgency(): Promise<AgencySession> {
+  const session = await requireOrg();
+  if (session.organization.kind === "solo") redirect("/dashboard");
+  return session;
 }

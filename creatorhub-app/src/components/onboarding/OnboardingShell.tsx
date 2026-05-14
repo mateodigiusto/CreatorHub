@@ -15,6 +15,7 @@ export function OnboardingShell({
   nextLabel = "Next",
   hideFooter,
   hideBack,
+  hideSkip,
   onBack,
   onNext,
   onSkip,
@@ -28,6 +29,7 @@ export function OnboardingShell({
   nextLabel?: string;
   hideFooter?: boolean;
   hideBack?: boolean;
+  hideSkip?: boolean;
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
@@ -91,12 +93,14 @@ export function OnboardingShell({
               <ChevronLeft className="w-3.5 h-3.5" /> Back
             </Button>
             <div className="flex items-center gap-3">
-              <button
-                onClick={onSkip}
-                className="text-[12px] text-muted hover:text-text underline-offset-2 hover:underline cursor-pointer"
-              >
-                Skip setup
-              </button>
+              {!hideSkip && (
+                <button
+                  onClick={onSkip}
+                  className="text-[12px] text-muted hover:text-text underline-offset-2 hover:underline cursor-pointer"
+                >
+                  Skip setup
+                </button>
+              )}
               <Button onClick={onNext} disabled={!canNext}>
                 {nextLabel} <ChevronRight className="w-3.5 h-3.5" />
               </Button>

@@ -143,4 +143,15 @@ create policy inbox_events_update on public.inbox_events
 create policy inbox_events_delete on public.inbox_events
   for delete using (is_org_staff(organization_id));
 
+-- ─── Stale-trigger cleanup (regression fix) ─────────────────────────────
+--
+-- Migration 0032 dropped `creator_relationships` but left the
+-- `promote_invites_on_user_insert` trigger on `public.users` — its function
+-- `promote_pending_invites()` still runs `update creator_relationships`.
+-- Since the `on_auth_user_created` trigger inserts into `public.users` on
+-- every signup, that dangling reference broke ALL new-user creation. Drop
+-- the orphaned trigger + function.
+drop trigger if exists promote_invites_on_user_insert on public.users;
+drop function if exists public.promote_pending_invites();
+
 insert into schema_migrations (version) values (38);

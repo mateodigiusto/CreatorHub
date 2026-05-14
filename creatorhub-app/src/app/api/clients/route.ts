@@ -9,7 +9,7 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { requireOrg } from "@/lib/auth/require-org";
+import { requireAgency } from "@/lib/auth/require-org";
 import { assertPlanAllows, clientQuota, PlanLimitError } from "@/lib/billing/limits";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
@@ -44,7 +44,7 @@ function rowToClient(r: {
 }
 
 export async function GET() {
-  const session = await requireOrg();
+  const session = await requireAgency();
   const supabase = await getSupabaseServer();
   const result = await supabase
     .from("clients")
@@ -66,7 +66,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireOrg();
+  const session = await requireAgency();
   const body = (await req.json().catch(() => null)) as {
     displayName?: string;
     slug?: string;

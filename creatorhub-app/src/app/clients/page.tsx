@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Users2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { requireOrg } from "@/lib/auth/require-org";
+import { requireAgency } from "@/lib/auth/require-org";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { clientQuota } from "@/lib/billing/limits";
 import { ClientGrid } from "@/components/clients/ClientGrid";
@@ -18,7 +18,7 @@ import type { Client, ClientStatus } from "@/lib/agency/types";
 export const dynamic = "force-dynamic";
 
 export default async function ClientsPage() {
-  const session = await requireOrg();
+  const session = await requireAgency();
   const supabase = await getSupabaseServer();
   const res = await supabase
     .from("clients")

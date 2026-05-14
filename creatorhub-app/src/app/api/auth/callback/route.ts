@@ -12,12 +12,15 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { resolveUserContext, destinationFor } from "@/lib/auth/user-context";
 import { log } from "@/lib/log";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? "/dashboard";
+  /* Explicit deep-link target, if the magic link / OAuth carried one. When
+     absent we route by account track instead of defaulting to /dashboard. */
+  const next = url.searchParams.get("next") ?? "";
   const error = url.searchParams.get("error");
   const errorCode = url.searchParams.get("error_code");
   const errorDescription = url.searchParams.get("error_description");
@@ -68,24 +71,32 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    /* First-time-vs-returning gate. Profile rows only get a `completed_at`
-       when the wizard finishes — so a missing row OR a null timestamp both
-       mean "send them to onboarding." Forces onboarding even if the magic
-       link had `?next=/somewhere` — finishing the wizard takes priority. */
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("completed_at")
-      .eq("user_id", userId)
-      .returns<Array<{ completed_at: string | null }>>()
-      .maybeSingle();
+    /* A join link routes through here as `?next=/join/<token>`. The redeemer
+       has no membership yet, so track-routing would send them to /onboarding
+       — but they need to land on /join to redeem the invite. Honor any
+       /join/* next verbatim before track-routing kicks in. */
+    const isJoinNext = next.startsWith("/join/");
+    if (isJoinNext) {
+      return NextResponse.redirect(new URL(next, url.origin));
+    }
 
-    if (!profile?.completed_at) {
+    /* Route by account track. needs-onboarding wins over any `?next`
+       (finishing setup takes priority); everyone else honors a safe `next`
+       deep-link, falling back to their track's home. */
+    const ctx = await resolveUserContext();
+    if (ctx.type === "needs-onboarding") {
       return NextResponse.redirect(new URL("/onboarding", url.origin));
     }
+    const safeNext =
+      next.startsWith("/") && !next.startsWith("//")
+        ? next
+        : destinationFor(ctx);
+    return NextResponse.redirect(new URL(safeNext, url.origin));
   }
 
-  /* `next` is a same-origin redirect target; reject anything else to
-     prevent open-redirect abuse. */
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  /* No userId on the exchanged session — degenerate case; bounce home and
+     let the root gate sort it out. */
+  const safeNext =
+    next.startsWith("/") && !next.startsWith("//") ? next : "/";
   return NextResponse.redirect(new URL(safeNext, url.origin));
 }

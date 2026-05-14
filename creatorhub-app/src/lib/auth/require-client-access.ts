@@ -11,7 +11,7 @@
 
 import { notFound } from "next/navigation";
 import type { Client, ClientStatus } from "@/lib/agency/types";
-import { requireOrg } from "@/lib/agency/_phase1_deps";
+import { requireAgency } from "@/lib/agency/_phase1_deps";
 import type { AgencySession } from "@/lib/agency/_phase1_deps";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
@@ -21,7 +21,7 @@ export type RequireClientAccessResult = {
 };
 
 export async function requireClientAccess(slug: string): Promise<RequireClientAccessResult> {
-  const session = await requireOrg();
+  const session = await requireAgency();
   const supabase = await getSupabaseServer();
 
   type Row = {

@@ -19,6 +19,7 @@ import {
   IdCard,
   Compass,
   Send,
+  Inbox,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -91,10 +92,20 @@ function toolsForRole(creatorType: CreatorType | undefined): NavItem[] {
   return baseTools;
 }
 
-const system: NavItem[] = [
+const baseSystem: NavItem[] = [
   { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
+
+/** Agencies get an Inbox (client join requests + activity). Solo accounts
+ *  have no clients, so no inbox. creatorType==='agency' is the reliable
+ *  agency signal — the account-type onboarding step stamps it. */
+function systemForRole(creatorType: CreatorType | undefined): NavItem[] {
+  if (creatorType === "agency") {
+    return [{ href: "/inbox", label: "Inbox", icon: Inbox }, ...baseSystem];
+  }
+  return baseSystem;
+}
 
 type Tokens = {
   gradTop: string;
@@ -203,6 +214,7 @@ export function Sidebar({
     : "Pro plan · 2 seats";
   const workspace = workspaceForRole(profile?.creatorType);
   const tools = toolsForRole(profile?.creatorType);
+  const system = systemForRole(profile?.creatorType);
 
   return (
     <>

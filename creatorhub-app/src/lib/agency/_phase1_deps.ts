@@ -18,5 +18,5 @@ export {
   type Plan,
   type SubscriptionStatus,
 } from "@/lib/auth/session";
-export { requireOrg } from "@/lib/auth/require-org";
+export { requireOrg, requireAgency } from "@/lib/auth/require-org";
 export { requireOrgRole, requireOrgAdmin } from "@/lib/auth/require-org-role";
