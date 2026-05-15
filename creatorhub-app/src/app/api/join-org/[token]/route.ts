@@ -77,6 +77,22 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "already_in_org" }, { status: 409 });
   }
 
+  /* A teammate who signed up just to accept this invite has no `profiles`
+     row yet — the membership insert would succeed (FK is to `users`) but
+     the sidebar's agency-only nav (Inbox / Team) keys off
+     `profile.creator_type === 'agency'`, so they'd see a broken nav.
+     Upsert a minimal agency profile so the sidebar lights up immediately. */
+  await service.from("profiles").upsert(
+    {
+      user_id: user.id,
+      creator_type: "agency",
+      niche: "agency",
+      primary_goal: "audience",
+      schema_version: 2,
+    } as never,
+    { onConflict: "user_id", ignoreDuplicates: true },
+  );
+
   const ins = await service.from("organization_memberships").insert({
     organization_id: invite.organization_id,
     profile_id: user.id,

@@ -98,6 +98,24 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const status: "pending" | "active" = approvalRequired ? "pending" : "active";
   const nowIso = new Date().toISOString();
 
+  /* `client_memberships.profile_id` FKs to `profiles(user_id)`. A brand-new
+     user accepting a join link signed up just moments ago — the
+     `on_auth_user_created` trigger creates their `users` row but NOT a
+     `profiles` row, so the membership insert would fail on the FK.
+     Upsert a minimal profile first; they can fill it in via the workspace
+     later. The `creator_type` / `niche` placeholders are required NOT-NULL
+     columns with no default. */
+  await service.from("profiles").upsert(
+    {
+      user_id: user.id,
+      creator_type: "creator",
+      niche: "general",
+      primary_goal: "audience",
+      schema_version: 2,
+    } as never,
+    { onConflict: "user_id", ignoreDuplicates: true },
+  );
+
   /* Upsert the membership. organization_id is also enforced by the
      sync_client_membership_org trigger, but we set it explicitly. */
   const membershipFields = {
