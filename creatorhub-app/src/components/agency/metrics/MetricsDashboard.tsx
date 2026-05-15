@@ -83,7 +83,6 @@ export function MetricsDashboard({ items, onOpen }: Props) {
       <EmptyState
         title="No content yet"
         description="Add items to the pipeline to start tracking metrics."
-        showSampleDataCta={false}
       />
     );
   }

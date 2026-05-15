@@ -233,7 +233,6 @@ export default function ScriptsPage() {
           icon={<Wand2 className="w-6 h-6" />}
           title="No scripts yet."
           description="Generate your first script — it pulls context from your onboarding profile and any transcripts in /content-dna."
-          showSampleDataCta={false}
           primaryAction={{
             label: "Generate script",
             onClick: generateOne,

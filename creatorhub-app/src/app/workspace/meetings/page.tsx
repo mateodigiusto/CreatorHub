@@ -60,7 +60,6 @@ export default async function WorkspaceMeetingsPage() {
         <EmptyState
           title="No meeting notes yet"
           description="When your team marks meeting notes client-visible, they'll show up here."
-          showSampleDataCta={false}
         />
       ) : (
         <div className="space-y-3">

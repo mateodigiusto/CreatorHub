@@ -68,14 +68,13 @@ const FAQS: Array<{ q: string; a: React.ReactNode }> = [
     q: "How do client invites work?",
     a: (
       <>
-        Invite a creator from{" "}
-        <Link className="text-accent" href="/clients/new">
-          /clients/new
+        Open{" "}
+        <Link className="text-accent" href="/clients">
+          /clients
         </Link>{" "}
-        by email. If they already have a CreatorHub account the relationship
-        flips to <strong>active</strong> immediately. If not, Supabase Auth
-        sends them a magic-link invite — when they sign up with that email,
-        the relationship auto-activates.
+        and hit <strong>Add client</strong>. After the client is created you
+        get a reusable join link (and a QR code) you can send to the creator
+        — they sign in, request access, and you approve them from the Inbox.
       </>
     ),
   },

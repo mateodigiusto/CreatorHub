@@ -39,7 +39,6 @@ export default function CalendarPage({
         <EmptyState
           title="No scheduled content"
           description="Set a planned post date on a pipeline item to see it here."
-          showSampleDataCta={false}
         />
       ) : (
         <MonthCalendar items={scheduledItems} onOpen={setOpenId} />

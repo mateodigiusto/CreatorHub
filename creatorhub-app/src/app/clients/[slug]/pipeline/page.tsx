@@ -72,7 +72,6 @@ export default function PipelinePage({
             label: "Add idea",
             onClick: () => state.createInColumn("idea"),
           }}
-          showSampleDataCta={false}
         />
       ) : (
         <KanbanBoard

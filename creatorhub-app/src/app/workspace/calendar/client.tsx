@@ -34,7 +34,6 @@ export function WorkspaceCalendarClient({ slug }: { slug: string }) {
         <EmptyState
           title="Nothing scheduled yet"
           description="Once content has a planned post date, it will show up here."
-          showSampleDataCta={false}
         />
       ) : (
         <MonthCalendar items={scheduled} onOpen={setOpenId} />

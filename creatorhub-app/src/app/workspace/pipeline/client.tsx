@@ -88,7 +88,6 @@ export function WorkspacePipelineClient({
                 }
               : undefined
           }
-          showSampleDataCta={false}
         />
       ) : (
         <KanbanBoard

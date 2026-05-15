@@ -76,7 +76,6 @@ export function AssetLinkList({ slug, folderId }: Props) {
           title="No links yet"
           description="Paste a Drive folder, Notion page, or Loom recording."
           primaryAction={{ label: "Add link", onClick: () => setAdding(true) }}
-          showSampleDataCta={false}
         />
       ) : (
         <ul className="divide-y divide-border -mx-1">

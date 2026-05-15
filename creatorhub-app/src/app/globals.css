@@ -185,6 +185,20 @@ body::before {
   color: var(--text);
 }
 
+/* ─── Native dialog — viewport-centered ─────────────────────────────── */
+/* The UA stylesheet for <dialog> opened via showModal() is inconsistent across
+ * browsers — Safari and older Chrome render top-aligned. Force a fixed,
+ * viewport-centered position so every modal in the app reads symmetrically. */
+dialog[open] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+}
+
 /* Subtle scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }

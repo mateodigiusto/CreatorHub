@@ -209,13 +209,11 @@ export function Sidebar({
   onMobileClose?: () => void;
 } = {}) {
   const pathname = usePathname();
-  const { connected, theme, profile } = useAppState();
+  const { theme, profile } = useAppState();
   const t = theme === "dark" ? darkTokens : lightTokens;
   const userName = displayNameFor(profile);
   const userInitials = avatarInitialsFor(profile);
-  const userSubtitle = profile
-    ? creatorTypeLabel(profile)
-    : "Pro plan · 2 seats";
+  const userSubtitle = profile ? creatorTypeLabel(profile) : "Free plan";
   const workspace = workspaceForRole(profile?.creatorType);
   const tools = toolsForRole(profile?.creatorType);
   const system = systemForRole(profile?.creatorType);
@@ -307,16 +305,7 @@ export function Sidebar({
           </span>
         </Link>
 
-        <SidebarLabel color={t.labelColor}>
-          Workspace
-          {connected && (
-            <Live
-              color={t.liveColor}
-              dot={t.liveDot}
-              shadow={t.liveDotShadow}
-            />
-          )}
-        </SidebarLabel>
+        <SidebarLabel color={t.labelColor}>Workspace</SidebarLabel>
         <SidebarList items={workspace} active={pathname} tokens={t} />
 
         <SidebarLabel color={t.labelColor}>Tools</SidebarLabel>
@@ -377,29 +366,6 @@ function SidebarLabel({
     >
       {children}
     </div>
-  );
-}
-
-function Live({
-  color,
-  dot,
-  shadow,
-}: {
-  color: string;
-  dot: string;
-  shadow: string;
-}) {
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[10px] normal-case"
-      style={{ color, letterSpacing: 0 }}
-    >
-      <span
-        className="inline-block w-[5px] h-[5px] rounded-full"
-        style={{ background: dot, boxShadow: shadow }}
-      />
-      Live
-    </span>
   );
 }
 

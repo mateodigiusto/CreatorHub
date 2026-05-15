@@ -72,7 +72,6 @@ export function MeetingsList({ slug }: Props) {
             label: "Add meeting",
             onClick: () => setAdding(true),
           }}
-          showSampleDataCta={false}
         />
       ) : (
         meetings.map((m) =>

@@ -90,7 +90,6 @@ export default async function WorkspaceAssetsPage() {
         <EmptyState
           title="Nothing shared yet"
           description="When your team marks an asset client-visible, it'll appear here."
-          showSampleDataCta={false}
         />
       ) : (
         <div className="space-y-6">
