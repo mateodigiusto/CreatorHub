@@ -15,7 +15,6 @@ import {
   uuid,
   text,
   timestamp,
-  date,
   boolean,
   integer,
   numeric,
@@ -23,7 +22,6 @@ import {
   customType,
   index,
   uniqueIndex,
-  primaryKey,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -525,147 +523,84 @@ export const contentDrafts = pgTable(
   ],
 );
 
-/* ─── Creator Hub: relationships, tasks, streaks, docs, links, messages ── */
+/* ─── Agency multi-tenancy (v33): organizations + memberships + invites ── */
 
-export const relationshipStatusEnum = pgEnum("relationship_status_t", [
-  "pending", "active", "declined", "ended", "expired",
+export const orgRoleEnum = pgEnum("org_role_t", ["user", "editor", "director"]);
+export const orgPlanEnum = pgEnum("org_plan_t", [
+  "free", "starter", "pro", "scale",
 ]);
-export const taskRecurrenceEnum = pgEnum("task_recurrence_t", ["none", "daily"]);
-export const taskStatusEnum = pgEnum("task_status_t", [
-  "pending", "in_progress", "done",
-]);
-export const notificationKindEnum = pgEnum("notification_kind_t", [
-  "invite", "message", "task_assigned", "task_due", "streak_at_risk",
+export const orgSubStatusEnum = pgEnum("org_sub_status_t", [
+  "trialing", "active", "past_due", "canceled", "unpaid",
+  "incomplete", "incomplete_expired", "paused",
 ]);
 
-export const creatorRelationships = pgTable(
-  "creator_relationships",
+export const organizations = pgTable(
+  "organizations",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    managerId: uuid("manager_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }),
-    invitedEmail: text("invited_email"),
-    inviteToken: text("invite_token").unique(),
-    status: relationshipStatusEnum("status").notNull().default("pending"),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    plan: orgPlanEnum("plan").notNull().default("free"),
+    stripeCustomerId: text("stripe_customer_id").unique(),
+    stripeSubscriptionId: text("stripe_subscription_id").unique(),
+    subscriptionStatus: orgSubStatusEnum("subscription_status").notNull().default("trialing"),
+    trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  () => [
+    check("organizations_slug_format", sql`slug ~ '^[a-z0-9-]+$'`),
+  ],
+);
+
+export const organizationMemberships = pgTable(
+  "organization_memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    profileId: uuid("profile_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: orgRoleEnum("role").notNull().default("user"),
+    /** Orthogonal admin flag. Gates invites, billing, client delete. */
+    isAdmin: boolean("is_admin").notNull().default(false),
+    invitedBy: uuid("invited_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("organization_memberships_org_profile_uniq").on(t.organizationId, t.profileId),
+    index("org_members_profile_idx").on(t.profileId),
+    index("org_members_org_idx").on(t.organizationId),
+  ],
+);
+
+export const organizationInvites = pgTable(
+  "organization_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: orgRoleEnum("role").notNull().default("user"),
+    isAdmin: boolean("is_admin").notNull().default(false),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
-    endedAt: timestamp("ended_at", { withTimezone: true }),
-    expiresAt: timestamp("expires_at", { withTimezone: true })
-      .notNull()
-      .default(sql`(now() + interval '14 days')`),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    index("creator_relationships_manager_idx").on(t.managerId, t.status),
-    index("creator_relationships_creator_idx").on(t.creatorId, t.status),
-    index("creator_relationships_pending_email_idx").on(t.invitedEmail),
-    check(
-      "creator_relationships_target_check",
-      sql`creator_id is not null or invited_email is not null`,
-    ),
-  ],
-);
-
-export const relationshipTasks = pgTable(
-  "relationship_tasks",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
-    createdBy: uuid("created_by").notNull().references(() => users.id),
-    assignedTo: uuid("assigned_to").notNull().references(() => users.id),
-    title: text("title").notNull(),
-    notes: text("notes"),
-    creatorNote: text("creator_note"),
-    recurrence: taskRecurrenceEnum("recurrence").notNull().default("none"),
-    deadline: timestamp("deadline", { withTimezone: true }),
-    status: taskStatusEnum("status").notNull().default("pending"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    endedAt: timestamp("ended_at", { withTimezone: true }),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    index("relationship_tasks_rel_idx").on(t.relationshipId, t.recurrence, t.endedAt),
-    index("relationship_tasks_assigned_idx").on(t.assignedTo, t.status),
-  ],
-);
-
-export const relationshipTaskCompletions = pgTable(
-  "relationship_task_completions",
-  {
-    taskId: uuid("task_id").notNull().references(() => relationshipTasks.id, { onDelete: "cascade" }),
-    day: date("day").notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.taskId, t.day] }),
-    index("relationship_task_completions_day_idx").on(t.day, t.taskId),
-  ],
-);
-
-export const relationshipDocuments = pgTable(
-  "relationship_documents",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
-    assetId: uuid("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
-    sharedBy: uuid("shared_by").notNull().references(() => users.id),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex("relationship_documents_rel_asset_uniq").on(t.relationshipId, t.assetId),
-    index("relationship_documents_rel_idx").on(t.relationshipId, sql`created_at desc`),
+    index("org_invites_org_idx").on(t.organizationId),
   ],
 );
 
-export const relationshipLinks = pgTable(
-  "relationship_links",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
-    addedBy: uuid("added_by").notNull().references(() => users.id),
-    url: text("url").notNull(),
-    title: text("title"),
-    description: text("description"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    index("relationship_links_rel_idx").on(t.relationshipId, sql`created_at desc`),
-  ],
-);
-
-export const relationshipMessages = pgTable(
-  "relationship_messages",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    relationshipId: uuid("relationship_id").notNull().references(() => creatorRelationships.id, { onDelete: "cascade" }),
-    senderId: uuid("sender_id").notNull().references(() => users.id),
-    body: text("body").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    readAt: timestamp("read_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("relationship_messages_rel_idx").on(t.relationshipId, sql`created_at desc`),
-    index("relationship_messages_unread_idx").on(t.relationshipId),
-  ],
-);
-
-export const notifications = pgTable(
-  "notifications",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    recipientId: uuid("recipient_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    kind: notificationKindEnum("kind").notNull(),
-    targetType: text("target_type"),
-    targetId: text("target_id"),
-    body: text("body"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    readAt: timestamp("read_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("notifications_unread_idx").on(t.recipientId, sql`created_at desc`),
-  ],
-);
+/** Stripe webhook idempotency. Service-role only. */
+export const stripeEvents = pgTable("stripe_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  payload: jsonb("payload").notNull(),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /* ─── PDF expansion: AI Script Generator (v22 + v23) ─────────────── */
 
@@ -910,14 +845,14 @@ export type Job = typeof jobs.$inferSelect;
 export type NewJob = typeof jobs.$inferInsert;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type NewAuditEntry = typeof auditLog.$inferInsert;
-export type CreatorRelationship = typeof creatorRelationships.$inferSelect;
-export type NewCreatorRelationship = typeof creatorRelationships.$inferInsert;
-export type RelationshipTask = typeof relationshipTasks.$inferSelect;
-export type NewRelationshipTask = typeof relationshipTasks.$inferInsert;
-export type RelationshipMessage = typeof relationshipMessages.$inferSelect;
-export type NewRelationshipMessage = typeof relationshipMessages.$inferInsert;
-export type Notification = typeof notifications.$inferSelect;
-export type NewNotification = typeof notifications.$inferInsert;
+export type Organization = typeof organizations.$inferSelect;
+export type NewOrganization = typeof organizations.$inferInsert;
+export type OrganizationMembership = typeof organizationMemberships.$inferSelect;
+export type NewOrganizationMembership = typeof organizationMemberships.$inferInsert;
+export type OrganizationInvite = typeof organizationInvites.$inferSelect;
+export type NewOrganizationInvite = typeof organizationInvites.$inferInsert;
+export type StripeEvent = typeof stripeEvents.$inferSelect;
+export type NewStripeEvent = typeof stripeEvents.$inferInsert;
 /* PDF expansion (v21-v27). */
 export type ContentAnalysis = typeof contentAnalyses.$inferSelect;
 export type NewContentAnalysis = typeof contentAnalyses.$inferInsert;

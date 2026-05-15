@@ -1,10 +1,16 @@
 "use client";
 
 import { ReactNode } from "react";
+import Link from "next/link";
 import { Card } from "./Card";
 import { Button } from "./Button";
 import { Plug } from "lucide-react";
-import { useAppState } from "@/lib/store";
+
+type Action = {
+  label: string;
+  onClick?: () => void;
+  href?: string;
+};
 
 export function EmptyState({
   title,
@@ -12,26 +18,13 @@ export function EmptyState({
   icon,
   primaryAction,
   secondaryAction,
-  showSampleDataCta = true,
 }: {
   title: string;
   description: string;
   icon?: ReactNode;
-  primaryAction?: { label: string; onClick?: () => void };
-  secondaryAction?: { label: string; onClick?: () => void };
-  showSampleDataCta?: boolean;
+  primaryAction?: Action;
+  secondaryAction?: Action;
 }) {
-  const { setConnected } = useAppState();
-
-  const secondary =
-    secondaryAction ??
-    (showSampleDataCta
-      ? {
-          label: "Continue with sample data",
-          onClick: () => setConnected(true),
-        }
-      : undefined);
-
   return (
     <Card className="py-16 px-8 flex flex-col items-center text-center relative overflow-hidden">
       <div
@@ -69,21 +62,36 @@ export function EmptyState({
           {description}
         </p>
 
-        {(primaryAction || secondary) && (
+        {(primaryAction || secondaryAction) && (
           <div className="flex items-center gap-2 mt-6">
-            {primaryAction && (
-              <Button onClick={primaryAction.onClick}>
-                {primaryAction.label}
-              </Button>
-            )}
-            {secondary && (
-              <Button variant="ghost" onClick={secondary.onClick}>
-                {secondary.label}
-              </Button>
+            {primaryAction && <ActionButton action={primaryAction} />}
+            {secondaryAction && (
+              <ActionButton action={secondaryAction} variant="ghost" />
             )}
           </div>
         )}
       </div>
     </Card>
+  );
+}
+
+function ActionButton({
+  action,
+  variant,
+}: {
+  action: Action;
+  variant?: "ghost";
+}) {
+  if (action.href) {
+    return (
+      <Link href={action.href}>
+        <Button variant={variant}>{action.label}</Button>
+      </Link>
+    );
+  }
+  return (
+    <Button variant={variant} onClick={action.onClick}>
+      {action.label}
+    </Button>
   );
 }

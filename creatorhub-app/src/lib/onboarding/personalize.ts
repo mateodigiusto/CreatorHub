@@ -3,7 +3,11 @@
 
 import type { Profile, CreatorType, Goal } from "./types";
 import { creatorTypes, niches, brandTones, sellingTypes } from "./options";
-import type { PersonaKey } from "@/lib/mock/story";
+
+/** Stable persona-key strings used by Sequence Studio defaults.
+ *  Decoupled from the old mock library so personalization survives once the
+ *  legacy creator pages are gone. */
+export type PersonaKey = "coach" | "agency" | "fitness" | "realestate";
 
 const PERSONA_BY_TYPE: Record<CreatorType, PersonaKey> = {
   creator: "coach",
@@ -26,7 +30,7 @@ export function personaForProfile(profile: Profile | null): PersonaKey {
 
 export function displayNameFor(profile: Profile | null): string {
   if (profile?.displayName?.trim()) return profile.displayName.trim();
-  if (!profile) return "Ella Moreno";
+  if (!profile) return "Creator";
   /* Fall back to the creator-type label. */
   return creatorTypes.find((c) => c.key === profile.creatorType)?.label ?? "Creator";
 }
@@ -41,7 +45,7 @@ export function avatarInitialsFor(profile: Profile | null): string {
 
 export function handleFor(profile: Profile | null): string {
   if (profile?.handle?.trim()) return profile.handle.trim().replace(/^@/, "");
-  if (!profile) return "ella.moreno";
+  if (!profile) return "creator";
   const name = displayNameFor(profile);
   return name
     .toLowerCase()
@@ -52,7 +56,7 @@ export function handleFor(profile: Profile | null): string {
 }
 
 export function creatorTypeLabel(profile: Profile | null): string {
-  if (!profile) return "Pro plan · 2 seats";
+  if (!profile) return "Free plan";
   return creatorTypes.find((c) => c.key === profile.creatorType)?.label ?? "Creator";
 }
 
@@ -70,7 +74,7 @@ export function goalLabel(goal: Goal | undefined): string {
 export function welcomeCopy(profile: Profile | null): { greeting: string; sub: string } {
   if (!profile) {
     return {
-      greeting: "Welcome back, Ella",
+      greeting: "Welcome back",
       sub: "Here's how this week is going so far.",
     };
   }

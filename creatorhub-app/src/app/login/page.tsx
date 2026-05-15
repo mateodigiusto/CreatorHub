@@ -30,6 +30,17 @@ function LoginContent() {
   const errorCode = params.get("error");
   const errorMessage = errorCode ? ERROR_COPY[errorCode] ?? "Sign-in failed. Try again." : null;
 
+  /* Carry a same-origin `?next` deep-link through the auth round-trip — the
+     callback honors it (and gives /join/* paths priority over track-routing
+     so an invited client lands back on the join screen). */
+  const nextParam = params.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : null;
+  const callbackUrl = (origin: string) =>
+    `${origin}/api/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ""}`;
+
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -45,7 +56,7 @@ function LoginContent() {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          emailRedirectTo: callbackUrl(window.location.origin),
           /* Sign in: refuse if no account exists. Sign up: create one if not. */
           shouldCreateUser: mode === "signup",
         },
@@ -81,7 +92,7 @@ function LoginContent() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: callbackUrl(window.location.origin),
       },
     });
   }

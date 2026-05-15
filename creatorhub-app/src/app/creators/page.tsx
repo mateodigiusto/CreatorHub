@@ -225,7 +225,6 @@ export default function CreatorsDirectoryPage() {
         <EmptyState
           title="No creators match your filters."
           description="Adjust the filters above, or clear the search to browse the full directory."
-          showSampleDataCta={false}
           primaryAction={{
             label: "Clear filters",
             onClick: () => {

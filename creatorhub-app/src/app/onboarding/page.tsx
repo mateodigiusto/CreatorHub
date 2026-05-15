@@ -6,6 +6,9 @@ import { useAppState } from "@/lib/store";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 import {
   StepWelcome,
+  StepAccountType,
+  StepAgencyName,
+  StepAgencyTeam,
   StepCreatorType,
   StepNiche,
   StepOffer,
@@ -30,55 +33,77 @@ import {
   writeOnboardingDraft,
 } from "@/lib/onboarding/persistence";
 
-const TOTAL_STEPS = 10; // 0–9
+/* ─── Step flow ──────────────────────────────────────────────────────
+   Onboarding forks at "account-type" into an agency branch and a solo
+   branch. Each branch is a fixed key array; conditional steps (the solo
+   "offer" step) are skipped by advance() rather than removed from the
+   array, so step indices never shift under the user. */
 
-const MOTIVATIONAL: Record<number, string | undefined> = {
-  4: "Halfway there",
-  7: "Almost done",
-};
+type StepKey =
+  | "welcome"
+  | "account-type"
+  | "agency-name"
+  | "agency-team"
+  | "creator-type"
+  | "niche"
+  | "offer"
+  | "formats"
+  | "audience"
+  | "tone"
+  | "problem"
+  | "plan"
+  | "ready";
 
-/* "Skip setup" defaults — any creatorType the user hasn't picked yet defaults
-   to creator + uses a sensible Standard plan with no trial stamped. */
-const SKIP_DEFAULTS: Profile = {
-  version: 2,
-  completedAt: new Date().toISOString(),
-  creatorType: "creator",
-  niche: "coaching",
-  primaryGoal: "audience",
-  secondaryGoals: [],
-  platforms: ["instagram"],
-  contentFormats: ["reels", "carousels"],
-  frequency: "1-3",
-  planningWorkflow: ["notes"],
-  biggestProblem: "what-to-post",
-  audience: { who: "", wants: "", problem: "" },
-  selling: ["services"],
-  ctaStyle: "dm-keyword",
-  brandTones: ["direct", "premium"],
-  sequenceUses: ["story-sequences"],
-  wantsNichePresets: true,
-  assetTypes: ["photos", "short-videos"],
-  reportsNeeds: ["personal-weekly"],
-  team: "solo",
-  startMode: "demo",
-};
+const HEAD: StepKey[] = ["welcome", "account-type"];
+const AGENCY_FLOW: StepKey[] = [
+  ...HEAD,
+  "agency-name",
+  "agency-team",
+  "plan",
+  "ready",
+];
+const SOLO_FLOW: StepKey[] = [
+  ...HEAD,
+  "creator-type",
+  "niche",
+  "offer",
+  "formats",
+  "audience",
+  "tone",
+  "problem",
+  "plan",
+  "ready",
+];
 
-/* Q3 (Offer) is conditional — only shown for creator types that actually
-   sell to clients/customers as their primary motion. Personal Brand and
-   Fitness skip straight to "What do you create?" */
+/* The solo "offer" step only applies to creator types that sell a named
+   offer as their primary motion. */
 function showsOfferStep(type: CreatorType | undefined): boolean {
-  return type === "agency" || type === "infoproduct" || type === "realestate";
+  return type === "infoproduct" || type === "realestate";
 }
 
-function nextStep(current: number, draft: ProfileDraft): number {
-  let n = current + 1;
-  if (n === 3 && !showsOfferStep(draft.creatorType)) n = 4;
-  return Math.min(n, TOTAL_STEPS - 1);
+function activeFlow(draft: ProfileDraft): StepKey[] {
+  if (draft.accountType === "agency") return AGENCY_FLOW;
+  if (draft.accountType === "solo") return SOLO_FLOW;
+  return HEAD;
 }
-function prevStep(current: number, draft: ProfileDraft): number {
-  let n = current - 1;
-  if (n === 3 && !showsOfferStep(draft.creatorType)) n = 2;
-  return Math.max(n, 0);
+
+/* Move dir (+1 / -1) through the flow, skipping the conditional offer step. */
+function advance(
+  flow: StepKey[],
+  index: number,
+  draft: ProfileDraft,
+  dir: 1 | -1,
+): number {
+  let n = index + dir;
+  while (
+    n > 0 &&
+    n < flow.length - 1 &&
+    flow[n] === "offer" &&
+    !showsOfferStep(draft.creatorType)
+  ) {
+    n += dir;
+  }
+  return Math.max(0, Math.min(n, flow.length - 1));
 }
 
 export default function OnboardingPage() {
@@ -94,49 +119,53 @@ function OnboardingPageInner() {
   const params = useSearchParams();
   const { setProfile, profile: existingProfile } = useAppState();
 
-  /* Returning from Stripe Checkout — finalize profile + jump to Ready step.
-     The webhook writes subscriptions row in the background; the UI is
-     optimistic but accurate (Stripe wouldn't redirect unless the session
-     succeeded). */
   const stripeStatus = params.get("stripe");
 
-  /* Resume mid-flow: if there's a saved draft from a previous session,
-     pick up where the user left off. Stripe-redirect short-circuits this
-     because the success/cancel intent overrides any stored step. */
+  /* Resume mid-flow from a saved draft. Stripe-redirect intent overrides
+     any stored step. */
   const resumed = useMemo(() => {
     if (typeof window === "undefined") return null;
     if (existingProfile && existingProfile.version === 2) return null;
     return readOnboardingDraft();
   }, [existingProfile]);
 
-  const initialStep =
-    stripeStatus === "success"
-      ? 9
-      : stripeStatus === "cancel"
-        ? 8
-        : (resumed?.step ?? 0);
-
-  const [step, setStep] = useState(initialStep);
   const [draft, setDraft] = useState<ProfileDraft>(
     existingProfile && existingProfile.version === 2
       ? { ...existingProfile }
-      : resumed?.draft ??
-        { secondaryGoals: [], platforms: ["instagram"], wantsNichePresets: true },
+      : (resumed?.draft ?? {
+          secondaryGoals: [],
+          platforms: ["instagram"],
+          wantsNichePresets: true,
+        }),
   );
-  const [submittingPlan, setSubmittingPlan] = useState(false);
 
-  /* Persist the in-progress draft on every step or field change so a
-     reload doesn't lose the user's work. Cleared by writeProfile() once
-     they finish and persistProfile lands. */
+  /* Initial step: Stripe round-trip jumps to the relevant step of the
+     resumed flow; otherwise resume where the draft left off. */
+  const initialStep = useMemo(() => {
+    const flow = activeFlow(resumed?.draft ?? draft);
+    if (stripeStatus === "success") return flow.length - 1; // ready
+    if (stripeStatus === "cancel") return flow.indexOf("plan");
+    return resumed?.step ?? 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [step, setStep] = useState(initialStep);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const flow = activeFlow(draft);
+  const key = flow[Math.min(step, flow.length - 1)];
+
+  /* Persist the in-progress draft on every change so a reload resumes. */
   useEffect(() => {
     if (existingProfile && existingProfile.version === 2) return;
     writeOnboardingDraft({ step, draft, savedAt: Date.now() });
   }, [step, draft, existingProfile]);
 
-  /* When the user lands on /onboarding?stripe=success, finalize the profile
-     once on mount. Step 9 already shows the success screen. */
+  /* Stripe-success re-entry — make sure the org + profile landed. */
   useEffect(() => {
     if (stripeStatus !== "success") return;
+    void createOrg();
     const p = buildProfile();
     setProfile(p);
     void persistProfile(p);
@@ -148,35 +177,15 @@ function OnboardingPageInner() {
   }
 
   function back() {
-    setStep((s) => prevStep(s, draft));
+    setStep((s) => advance(activeFlow(draft), s, draft, -1));
   }
   function next() {
-    setStep((s) => nextStep(s, draft));
-  }
-
-  /* Persist to DB when the user has an authenticated session. Demo /
-     unauthenticated visitors keep working off localStorage only — the
-     POST is best-effort and silently no-ops on 401. */
-  async function persistProfile(profile: Profile) {
-    try {
-      await fetch("/api/profile/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
-    } catch {
-      /* Network error — user already has localStorage copy, will retry next visit. */
-    }
-  }
-
-  function skip() {
-    setProfile(SKIP_DEFAULTS);
-    void persistProfile(SKIP_DEFAULTS);
-    router.replace("/dashboard");
+    setStep((s) => advance(activeFlow(draft), s, draft, 1));
   }
 
   function buildProfile(): Profile {
-    const trialPlan = draft.trial?.plan ?? (draft.creatorType === "agency" ? "pro" : "standard");
+    const isAgency = draft.accountType === "agency";
+    const trialPlan = draft.trial?.plan ?? (isAgency ? "pro" : "standard");
     const trialCycle = draft.trial?.cycle ?? "annual";
     const startedAt = new Date();
     const expiresAt = new Date(startedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -184,11 +193,10 @@ function OnboardingPageInner() {
     return {
       version: 2,
       completedAt: startedAt.toISOString(),
-      displayName: draft.displayName,
+      displayName: draft.displayName ?? draft.agencyName,
       handle: draft.handle,
-      creatorType: draft.creatorType ?? "creator",
-      niche: draft.niche ?? "coaching",
-      /* Legacy fields v1 still types as required — fill with sensible defaults. */
+      creatorType: draft.creatorType ?? (isAgency ? "agency" : "creator"),
+      niche: draft.niche ?? (isAgency ? "agency" : "coaching"),
       primaryGoal: "audience",
       secondaryGoals: [],
       platforms: ["instagram"],
@@ -220,34 +228,54 @@ function OnboardingPageInner() {
     };
   }
 
-  /* Per-step gate: can the user click Next? */
-  const canNext = useMemo(() => {
-    switch (step) {
-      case 0: return true;
-      case 1: return !!draft.creatorType;
-      case 2: return !!draft.niche?.trim();
-      case 3: return true; /* Offer is fully optional */
-      case 4: return (draft.contentFormats ?? []).length > 0;
-      case 5: return true; /* Audience is optional */
-      case 6: return (draft.brandTones ?? []).length > 0;
-      case 7: return !!draft.biggestProblem;
-      case 8: return !!draft.trial?.plan && !!draft.trial?.cycle;
-      case 9: return true;
-      default: return true;
+  /* Create the founding organization. 409 (already_has_org) is success —
+     the wizard may POST twice across a Stripe round-trip. */
+  async function createOrg(): Promise<boolean> {
+    const accountType = draft.accountType ?? "solo";
+    const orgName =
+      accountType === "agency"
+        ? draft.agencyName?.trim() || "My Agency"
+        : draft.displayName?.trim() || draft.niche?.trim() || "My Workspace";
+    try {
+      const res = await fetch("/api/organizations", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: orgName, kind: accountType }),
+      });
+      return res.ok || res.status === 409;
+    } catch {
+      return false;
     }
-  }, [step, draft]);
+  }
 
-  const nextLabel =
-    step === 0 ? "Get started" :
-    step === 8 ? (submittingPlan ? "Redirecting…" : "Start 7-day free trial") :
-    "Next";
+  /* Persist the profile to the DB. Best-effort — a 401 (no session) leaves
+     the localStorage copy as the source of truth. */
+  async function persistProfile(profile: Profile) {
+    try {
+      await fetch("/api/profile/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+    } catch {
+      /* network error — localStorage copy persists, retried next visit */
+    }
+  }
 
-  /* On Step 8 → try Stripe Checkout. If unconfigured (503), fall back to
-     the UI-only mock (write profile + go to step 9). */
-  async function startTrialOrMock() {
-    const plan = draft.trial?.plan ?? (draft.creatorType === "agency" ? "pro" : "standard");
+  /* Plan-step submit: create the org, write the profile, then Stripe (or
+     the mock fallback when Stripe isn't configured). */
+  async function finishSetup() {
+    setSubmitting(true);
+    setError(null);
+
+    const orgOk = await createOrg();
+    const p = buildProfile();
+    setProfile(p);
+    void persistProfile(p);
+
+    const plan = draft.trial?.plan ?? (draft.accountType === "agency" ? "pro" : "standard");
     const cycle = draft.trial?.cycle ?? "annual";
-    setSubmittingPlan(true);
     try {
       const res = await fetch("/api/stripe/checkout-session", {
         method: "POST",
@@ -260,57 +288,151 @@ function OnboardingPageInner() {
         window.location.href = json.url;
         return;
       }
-      /* 503 stripe_not_configured / 401 unauthorized → mock fallback. */
+      /* 503 stripe_not_configured / 401 → mock fallback below. */
     } catch {
-      /* Network error → mock fallback. */
+      /* network error → mock fallback below */
     }
+
+    setSubmitting(false);
+    if (!orgOk) {
+      setError("Couldn't finish setup — check your connection and try again.");
+      return;
+    }
+    next(); // → ready
+  }
+
+  /* "Skip setup" — only offered once a track is chosen; fills gaps with
+     defaults, creates the org, routes to the track home. */
+  async function skip() {
+    setSubmitting(true);
+    const orgOk = await createOrg();
     const p = buildProfile();
     setProfile(p);
     void persistProfile(p);
-    setSubmittingPlan(false);
-    next();
+    setSubmitting(false);
+    if (!orgOk) {
+      setError("Couldn't finish setup — check your connection and try again.");
+      return;
+    }
+    router.replace(draft.accountType === "agency" ? "/clients" : "/dashboard");
   }
 
-  const isReady = step === 9;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const profileForReady = useMemo(() => (isReady ? buildProfile() : null), [isReady]);
-  const focusLabel = profileForReady
-    ? labelForType(profileForReady.creatorType)
-    : "your work";
+  /* Per-step gate. */
+  const canNext = useMemo(() => {
+    switch (key) {
+      case "welcome":
+        return true;
+      case "account-type":
+        return !!draft.accountType;
+      case "agency-name":
+        return !!draft.agencyName?.trim();
+      case "agency-team":
+        return true;
+      case "creator-type":
+        return !!draft.creatorType;
+      case "niche":
+        return !!draft.niche?.trim();
+      case "offer":
+        return true;
+      case "formats":
+        return (draft.contentFormats ?? []).length > 0;
+      case "audience":
+        return true;
+      case "tone":
+        return (draft.brandTones ?? []).length > 0;
+      case "problem":
+        return !!draft.biggestProblem;
+      case "plan":
+        return !!draft.trial?.plan && !!draft.trial?.cycle && !submitting;
+      case "ready":
+        return true;
+      default:
+        return true;
+    }
+  }, [key, draft, submitting]);
+
+  const nextLabel =
+    key === "welcome"
+      ? "Get started"
+      : key === "plan"
+        ? submitting
+          ? "Setting up…"
+          : "Start 7-day free trial"
+        : "Next";
+
+  const homeHref = draft.accountType === "agency" ? "/clients" : "/dashboard";
+
+  const profileForReady = useMemo(
+    () => (key === "ready" ? buildProfile() : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key],
+  );
+
+  /* Progress copy keyed off how far through the flow we are. */
+  const motivational =
+    flow.length > 4 && step === Math.floor(flow.length / 2)
+      ? "Halfway there"
+      : step === flow.length - 2
+        ? "Almost done"
+        : undefined;
 
   return (
     <OnboardingShell
       step={step}
-      total={TOTAL_STEPS}
-      motivational={MOTIVATIONAL[step]}
-      canBack={step > 0 && step < 9}
+      total={flow.length}
+      motivational={motivational}
+      canBack={step > 0 && key !== "ready"}
       canNext={canNext}
       nextLabel={nextLabel}
-      hideFooter={step === 0 || step === 9}
+      hideFooter={key === "welcome" || key === "ready"}
+      hideSkip={key === "account-type"}
       onBack={back}
       onNext={() => {
-        if (step === 8) {
-          void startTrialOrMock();
+        if (key === "plan") {
+          void finishSetup();
           return;
         }
         next();
       }}
-      onSkip={skip}
+      onSkip={() => void skip()}
     >
-      {step === 0 && <StepWelcome onStart={next} />}
-      {step === 1 && <StepCreatorType draft={draft} update={update} />}
-      {step === 2 && <StepNiche draft={draft} update={update} />}
-      {step === 3 && <StepOffer draft={draft} update={update} />}
-      {step === 4 && <StepContentFormats draft={draft} update={update} />}
-      {step === 5 && <StepAudience draft={draft} update={update} />}
-      {step === 6 && <StepBrandTone draft={draft} update={update} />}
-      {step === 7 && <StepBiggestProblem draft={draft} update={update} />}
-      {step === 8 && <StepPlan draft={draft} update={update} />}
-      {step === 9 && profileForReady && (
+      {key === "welcome" && <StepWelcome onStart={next} />}
+      {key === "account-type" && (
+        <StepAccountType draft={draft} update={update} />
+      )}
+      {key === "agency-name" && (
+        <StepAgencyName draft={draft} update={update} />
+      )}
+      {key === "agency-team" && (
+        <StepAgencyTeam draft={draft} update={update} />
+      )}
+      {key === "creator-type" && (
+        <StepCreatorType draft={draft} update={update} exclude={["agency"]} />
+      )}
+      {key === "niche" && <StepNiche draft={draft} update={update} />}
+      {key === "offer" && <StepOffer draft={draft} update={update} />}
+      {key === "formats" && (
+        <StepContentFormats draft={draft} update={update} />
+      )}
+      {key === "audience" && <StepAudience draft={draft} update={update} />}
+      {key === "tone" && <StepBrandTone draft={draft} update={update} />}
+      {key === "problem" && (
+        <StepBiggestProblem draft={draft} update={update} />
+      )}
+      {key === "plan" && (
+        <>
+          <StepPlan draft={draft} update={update} />
+          {error && (
+            <p className="text-[12.5px] text-error text-center mt-4">{error}</p>
+          )}
+        </>
+      )}
+      {key === "ready" && profileForReady && (
         <StepReady
           displayName={displayNameFor(profileForReady)}
-          focusLabel={focusLabel}
+          focusLabel={labelForType(profileForReady.creatorType)}
           quickActions={quickActionsFor(profileForReady)}
+          homeHref={homeHref}
           onPick={(href) => router.replace(href)}
         />
       )}
@@ -320,13 +442,21 @@ function OnboardingPageInner() {
 
 function labelForType(type: CreatorType): string {
   switch (type) {
-    case "creator":         return "your personal brand";
-    case "agency":          return "running clients";
-    case "infoproduct":     return "your offer";
-    case "realestate":      return "listings + neighborhood";
-    case "fitness":         return "training + transformation";
-    case "content_manager": return "your creators' accounts";
-    case "editor":          return "your client roster";
-    case "other":           return "your work";
+    case "creator":
+      return "your personal brand";
+    case "agency":
+      return "running clients";
+    case "infoproduct":
+      return "your offer";
+    case "realestate":
+      return "listings + neighborhood";
+    case "fitness":
+      return "training + transformation";
+    case "content_manager":
+      return "your creators' accounts";
+    case "editor":
+      return "your client roster";
+    case "other":
+      return "your work";
   }
 }

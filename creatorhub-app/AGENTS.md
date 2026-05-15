@@ -14,7 +14,7 @@ CreatorHub is mid-pivot from a frontend-only demo to a real product. **Phase 1 (
 - **Drizzle ORM** for DB schema, `postgres-js` driver with `prepare: false` (pgbouncer transaction-mode pooling).
 - **Supabase** Postgres + Auth + Storage + Vault + RLS. Cloud-only — no local Docker stack.
 - **Sentry** wired via `instrumentation.ts`.
-- **Cloudflare Stream** for video transcoding + delivery (Phase 1 part 2).
+- **Bunny.net Stream** for video transcoding + delivery (Phase 5+, agency assets via `src/lib/bunny/*`). Legacy `src/lib/stream.ts` Cloudflare wrapper is retained for a future paid-tier upgrade path but is not on the hot path.
 - **Vitest** for RLS regression + migration round-trip tests.
 - **lucide-react** icons. **No brand icons** in this library — use generic substitutes (`Camera`, `PlaySquare`, `Video`, `Hash`).
 - **No chart library** — `AreaChart`, `MiniSpark`, `BarRow` are hand-rolled SVG.
@@ -50,7 +50,7 @@ Multi-stage actions (publishing to Instagram, transcoding) write **one audit row
 
 ## Video — strict rules
 
-`<VideoPlayer>` (`src/components/ui/VideoPlayer.tsx`) is the **only sanctioned way to render video.** Encodes the cost-control rules from the plan: poster-only by default, click-to-play, `preload="none"`, no `autoPlay` API exposed. ESLint (`creatorhub/no-bare-video`) blocks bare `<video>`, Cloudflare Stream `<iframe>`, and `<stream-player>` outside this component.
+`<VideoPlayer>` (legacy Supabase Storage signed URLs) and `<BunnyVideoPlayer>` (Phase 5+ Bunny.net Stream) in `src/components/ui/VideoPlayer.tsx` are the **only sanctioned ways to render video.** Encodes the cost-control rules from the plan: poster-only by default, click-to-play, `preload="none"`, no `autoPlay` API exposed. ESLint (`creatorhub/no-bare-video`) blocks bare `<video>`, any `<iframe>` pointing at `cloudflarestream.com` or a Bunny Stream embed URL, and `<stream-player>` outside these components.
 
 Existing legacy demo code uses bare `<video>` for blob-URL previews; those are gated by inline `// eslint-disable-next-line creatorhub/no-bare-video --- demo blob-URL preview` comments and migrate to `<VideoPlayer>` when DB-backed assets land in Phase 1 part 2.
 

@@ -2,10 +2,7 @@
 
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { useAppState } from "@/lib/store";
-import { StatusDot } from "@/components/ui/StatusDot";
 import {
   PlaySquare,
   Camera,
@@ -72,30 +69,17 @@ const otherIntegrations: Platform[] = [
 ];
 
 export default function IntegrationsPage() {
-  const { connected, setConnected } = useAppState();
-
   return (
     <>
       <PageHeader
         title="Integrations"
         description="Connect your platforms to power Dashboard, Analytics, Ideas, Calendar, and Reports."
-        actions={
-          connected ? (
-            <Button variant="outline" onClick={() => setConnected(false)}>
-              Disconnect all
-            </Button>
-          ) : (
-            <Button onClick={() => setConnected(true)}>Connect platforms</Button>
-          )
-        }
       />
 
       <Card className="mb-5">
         <CardHeader
           title="Platforms"
-          description={
-            connected ? "4 platforms connected" : "No platforms connected"
-          }
+          description="None connected. Instagram OAuth ships once Meta App Review completes."
         />
         <ul className="grid grid-cols-2 gap-2.5 list-none p-0 m-0">
           {corePlatforms.map((p) => {
@@ -113,14 +97,7 @@ export default function IntegrationsPage() {
                     <div className="text-[14px] font-semibold text-text">
                       {p.name}
                     </div>
-                    {connected ? (
-                      <Badge tone="green" className="inline-flex items-center gap-1.5">
-                        <StatusDot tone="accent" size={6} />
-                        Connected
-                      </Badge>
-                    ) : (
-                      <Badge tone="amber">Off</Badge>
-                    )}
+                    <Badge tone="neutral">Coming soon</Badge>
                   </div>
                   <div className="text-[12.5px] text-muted mt-0.5">
                     {p.description}
@@ -143,7 +120,7 @@ export default function IntegrationsPage() {
             return (
               <li
                 key={i.key}
-                className="flex items-center gap-4 p-3 -mx-1 rounded-[10px] border border-transparent hover:border-accent/15 hover:bg-accent/[0.025] transition-colors cursor-pointer"
+                className="flex items-center gap-4 p-3 -mx-1 rounded-[10px] border border-transparent"
               >
                 <div className="w-10 h-10 rounded-[10px] bg-surface-2 text-text grid place-items-center shrink-0">
                   <Icon className="w-4 h-4" />

@@ -35,6 +35,12 @@ function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PAGES.has(pathname)) return true;
   if (pathname.startsWith("/api/")) return true;
   if (pathname.startsWith("/onboarding/")) return true;
+  /* Join screens must be reachable while signed out — the page itself
+     handles auth, redirecting to /login?next=<join-url> so the invitee
+     lands back here after signing in. Gating them in middleware would
+     strip the `next` param and break the invite flow. */
+  if (pathname.startsWith("/join/")) return true;
+  if (pathname.startsWith("/join-org/")) return true;
   return false;
 }
 

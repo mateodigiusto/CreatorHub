@@ -14,6 +14,18 @@ const eslintConfig = defineConfig([
       "creatorhub/escape-hatch-justified": "error",
       "creatorhub/no-third-party-in-with-audit": "error",
       "creatorhub/no-bare-video": "error",
+      /* Honor the codebase's `_unused` convention for intentionally unused
+         args and locals (used in stubs, signature placeholders, and
+         destructured-but-ignored values). */
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
     },
   },
   /* Tests get a wider runway — they need to import dbInternal for fixtures. */

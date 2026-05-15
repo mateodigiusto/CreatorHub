@@ -25,6 +25,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
+import { audit } from "@/lib/audit";
 import {
   completeJson,
   isAnthropicConfigured,
@@ -147,6 +148,18 @@ export async function POST(req: NextRequest) {
     }
   } else {
     result = stubOutreach(creatorContext, method, analyses.length);
+  }
+
+  /* Audit the call so the cost-guardrails dashboard can roll it up.
+     Stub generations are excluded — they don't cost anything. */
+  if (provider === "claude") {
+    await audit(userId, {
+      actor: "user",
+      action: "outreach.generated",
+      targetType: "creator_directory",
+      targetId: creator.id,
+      metadata: { method, transcripts: analyses.length },
+    });
   }
 
   return NextResponse.json({

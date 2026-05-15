@@ -10,6 +10,7 @@ import {
   Trash2,
   Save,
   X,
+  Download,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -171,9 +172,20 @@ export default function PortfolioEditorPage() {
             {!dirty && (
               <>
                 {draft.is_public && (
-                  <Button variant="outline" size="sm" onClick={() => router.push(publicUrl)}>
-                    <Eye className="w-3.5 h-3.5" /> View live
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        window.open(`/api/portfolio/${draft.slug}/export-pdf`, "_blank")
+                      }
+                    >
+                      <Download className="w-3.5 h-3.5" /> PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => router.push(publicUrl)}>
+                      <Eye className="w-3.5 h-3.5" /> View live
+                    </Button>
+                  </>
                 )}
                 <Button size="sm" onClick={togglePublish} disabled={publishing}>
                   <Globe className="w-3.5 h-3.5" />

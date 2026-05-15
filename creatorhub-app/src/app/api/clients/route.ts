@@ -1,231 +1,127 @@
 /**
- * GET  /api/clients   — list the user's relationships (manager + creator views).
- * POST /api/clients   — invite a creator by email.
+ * POST /api/clients — create a creator client inside the caller's org.
+ * GET  /api/clients — list the org's clients (sorted by display_name).
  *
- * RLS auto-scopes the GET so we don't need explicit user_id filters; the
- * `creator_relationships_self_select` policy handles it. POST is gated by
- * the route itself + `creator_relationships_manager_insert` policy.
+ * Plan limits gate creation via assertPlanAllows("add_client") which
+ * checks countActiveClients vs PLANS[org.plan].maxClients. Returns 402
+ * with a typed message when at the cap so the UI can surface the upgrade
+ * CTA.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase/server";
+import { requireAgency } from "@/lib/auth/require-org";
+import { assertPlanAllows, clientQuota, PlanLimitError } from "@/lib/billing/limits";
+import { getSupabaseServer } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
-import {
-  findUserByEmail,
-  generateInviteToken,
-  sendAuthInvite,
-} from "@/lib/clients/invite";
-import { notify } from "@/lib/notifications";
-import { newInviteEmail } from "@/lib/email/templates";
-import type { RelationshipSummary } from "@/lib/clients/types";
+import type { Client, ClientStatus } from "@/lib/agency/types";
 
-type RelationshipRow = {
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+function rowToClient(r: {
   id: string;
-  manager_id: string;
-  creator_id: string | null;
-  invited_email: string | null;
-  status: RelationshipSummary["status"];
+  organization_id: string;
+  slug: string;
+  display_name: string;
+  tagline: string | null;
+  status: ClientStatus;
+  instagram_handle: string | null;
+  created_by: string | null;
   created_at: string;
-  accepted_at: string | null;
-  ended_at: string | null;
-  expires_at: string;
-};
-
-type CounterpartyRow = {
-  id: string;
-  email: string;
-  display_name: string | null;
-};
-
-export async function GET() {
-  const supabase = await getSupabaseServer();
-  const { data: userRes } = await supabase.auth.getUser();
-  if (!userRes.user) {
-    return NextResponse.json({ relationships: [] }, { status: 200 });
-  }
-  const userId = userRes.user.id;
-
-  const { data: rows } = await supabase
-    .from("creator_relationships")
-    .select(
-      "id, manager_id, creator_id, invited_email, status, created_at, accepted_at, ended_at, expires_at",
-    )
-    .order("created_at", { ascending: false })
-    .returns<RelationshipRow[]>();
-
-  if (!rows || rows.length === 0) {
-    return NextResponse.json({ relationships: [] });
-  }
-
-  /* Resolve counterparty display info. RLS lets us see the relationship
-     row but not arbitrary other-user rows — use the service-role client
-     to fetch just the email + display_name for the UUIDs we already
-     legitimately know about. */
-  const counterpartyIds = Array.from(
-    new Set(
-      rows
-        .map((r) => (r.manager_id === userId ? r.creator_id : r.manager_id))
-        .filter((x): x is string => x !== null),
-    ),
-  );
-
-  let counterparties: Record<string, CounterpartyRow> = {};
-  if (counterpartyIds.length > 0) {
-    const admin = getSupabaseServiceRole();
-    const { data: cpRows } = await admin
-      .from("users")
-      .select("id, email, display_name")
-      .in("id", counterpartyIds)
-      .returns<CounterpartyRow[]>();
-    counterparties = Object.fromEntries((cpRows ?? []).map((c) => [c.id, c]));
-  }
-
-  const relationships: RelationshipSummary[] = rows.map((r) => {
-    const perspective = r.manager_id === userId ? "manager" : "creator";
-    const counterpartyId =
-      perspective === "manager" ? r.creator_id : r.manager_id;
-    const cp = counterpartyId ? counterparties[counterpartyId] : null;
-    return {
-      id: r.id,
-      perspective,
-      status: r.status,
-      counterpartyName: cp?.display_name ?? null,
-      counterpartyEmail: cp?.email ?? r.invited_email,
-      createdAt: r.created_at,
-      acceptedAt: r.accepted_at,
-      endedAt: r.ended_at,
-      expiresAt: r.expires_at,
-    };
-  });
-
-  return NextResponse.json({ relationships });
+  updated_at: string;
+}): Client {
+  return {
+    id: r.id,
+    organizationId: r.organization_id,
+    slug: r.slug,
+    displayName: r.display_name,
+    tagline: r.tagline,
+    status: r.status,
+    instagramHandle: r.instagram_handle,
+    createdBy: r.created_by,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
 }
 
-type PostBody = { email?: string };
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export async function GET() {
+  const session = await requireAgency();
+  const supabase = await getSupabaseServer();
+  const result = await supabase
+    .from("clients")
+    .select(
+      "id, organization_id, slug, display_name, tagline, status, instagram_handle, created_by, created_at, updated_at",
+    )
+    .eq("organization_id", session.organization.id)
+    .order("display_name", { ascending: true });
+  if (result.error) {
+    log.error("clients.list_failed", { err: result.error.message });
+    return NextResponse.json({ error: "list_failed" }, { status: 500 });
+  }
+  const rows = (result.data ?? []) as unknown as Parameters<typeof rowToClient>[0][];
+  const quota = await clientQuota(session.plan, session.organization.id);
+  return NextResponse.json({
+    clients: rows.map(rowToClient),
+    quota,
+  });
+}
 
 export async function POST(req: NextRequest) {
-  const supabase = await getSupabaseServer();
-  const { data: userRes } = await supabase.auth.getUser();
-  if (!userRes.user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await requireAgency();
+  const body = (await req.json().catch(() => null)) as {
+    displayName?: string;
+    slug?: string;
+    tagline?: string | null;
+    instagramHandle?: string | null;
+  } | null;
+
+  const displayName = body?.displayName?.trim() ?? "";
+  const slug = body?.slug?.trim() ?? "";
+  if (!displayName || displayName.length > 120) {
+    return NextResponse.json({ error: "invalid_displayName" }, { status: 400 });
+  }
+  if (!SLUG_RE.test(slug) || slug.length > 60) {
+    return NextResponse.json({ error: "invalid_slug" }, { status: 400 });
   }
 
-  let body: PostBody;
   try {
-    body = (await req.json()) as PostBody;
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-
-  const email = (body.email ?? "").trim().toLowerCase();
-  if (!email || !EMAIL_RE.test(email) || email.length > 200) {
-    return NextResponse.json({ error: "invalid_email" }, { status: 400 });
-  }
-  if (email === userRes.user.email?.toLowerCase()) {
-    return NextResponse.json({ error: "self_invite" }, { status: 400 });
-  }
-
-  /* Cheap rate-limit guard: max 5 pending invites per manager. Stops a
-     compromised account from spamming the auth invite endpoint. */
-  const { count: pendingCount } = await supabase
-    .from("creator_relationships")
-    .select("*", { count: "exact", head: true })
-    .eq("manager_id", userRes.user.id)
-    .eq("status", "pending");
-  if ((pendingCount ?? 0) >= 5) {
-    return NextResponse.json({ error: "too_many_pending" }, { status: 429 });
-  }
-
-  /* Check whether the invitee already has a CreatorHub account. If yes,
-     create the relationship as `active` directly and push a notification —
-     no email send needed (and Supabase's invite would fail anyway). */
-  const existingUserId = await findUserByEmail(email);
-
-  if (existingUserId) {
-    /* Dedupe: don't allow two relationships between the same pair. */
-    const { data: existingRel } = await supabase
-      .from("creator_relationships")
-      .select("id, status")
-      .eq("manager_id", userRes.user.id)
-      .eq("creator_id", existingUserId)
-      .order("created_at", { ascending: false })
-      .returns<Array<{ id: string; status: string }>>()
-      .limit(1)
-      .maybeSingle();
-
-    if (existingRel && ["pending", "active"].includes(existingRel.status)) {
-      return NextResponse.json({ id: existingRel.id, ok: true, deduped: true });
-    }
-
-    const { data, error } = await supabase
-      .from("creator_relationships")
-      .insert({
-        manager_id: userRes.user.id,
-        creator_id: existingUserId,
-        invited_email: email,
-        invite_token: generateInviteToken(),
-        status: "active",
-        accepted_at: new Date().toISOString(),
-      } as never)
-      .select("id")
-      .returns<Array<{ id: string }>>()
-      .single();
-    if (error || !data) {
-      log.error("clients.invite_existing_failed", error ?? new Error("no row"));
-      return NextResponse.json({ error: "insert_failed" }, { status: 500 });
-    }
-
-    const managerName = userRes.user.email?.split("@")[0] ?? "Someone";
-    await notify({
-      recipientId: existingUserId,
-      kind: "invite",
-      body: `${userRes.user.email ?? "Someone"} added you as a managed creator`,
-      targetType: "relationship",
-      targetId: data.id,
-      email: newInviteEmail({
-        recipientName: email.split("@")[0],
-        managerName,
-        relationshipId: data.id,
-      }),
+    await assertPlanAllows(session.plan, {
+      kind: "add_client",
+      organizationId: session.organization.id,
     });
-
-    return NextResponse.json({
-      id: data.id,
-      ok: true,
-      kind: "instant",
-    });
+  } catch (err) {
+    if (err instanceof PlanLimitError) {
+      return NextResponse.json(
+        { error: err.code, message: err.message, upgradeTo: err.upgradeTo },
+        { status: 402 },
+      );
+    }
+    throw err;
   }
 
-  /* New email: insert pending row + send Supabase auth invite. The
-     `promote_pending_invites` trigger flips this to `active` once the
-     invitee signs up via the magic link. */
-  const inviteToken = generateInviteToken();
-  const { data, error } = await supabase
-    .from("creator_relationships")
+  const supabase = await getSupabaseServer();
+  const result = await supabase
+    .from("clients")
     .insert({
-      manager_id: userRes.user.id,
-      invited_email: email,
-      invite_token: inviteToken,
-      status: "pending",
+      organization_id: session.organization.id,
+      slug,
+      display_name: displayName,
+      tagline: body?.tagline ?? null,
+      instagram_handle: body?.instagramHandle ?? null,
+      created_by: session.userId,
     } as never)
-    .select("id")
-    .returns<Array<{ id: string }>>()
+    .select(
+      "id, organization_id, slug, display_name, tagline, status, instagram_handle, created_by, created_at, updated_at",
+    )
     .single();
-  if (error || !data) {
-    log.error("clients.invite_pending_failed", error ?? new Error("no row"));
-    return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+
+  if (result.error) {
+    if (/duplicate key|unique/i.test(result.error.message)) {
+      return NextResponse.json({ error: "slug_taken" }, { status: 409 });
+    }
+    log.error("clients.create_failed", { err: result.error.message });
+    return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
+  const data = result.data as unknown as Parameters<typeof rowToClient>[0];
 
-  const origin = req.nextUrl.origin;
-  const redirectTo = `${origin}/clients/${data.id}`;
-  const emailSent = await sendAuthInvite(email, redirectTo);
-
-  return NextResponse.json({
-    id: data.id,
-    ok: true,
-    kind: "pending",
-    emailSent,
-  });
+  return NextResponse.json({ client: rowToClient(data) }, { status: 201 });
 }

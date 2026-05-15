@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   User,
+  Users,
   Briefcase,
   Building2,
   Dumbbell,
@@ -36,6 +37,8 @@ import type {
   BrandTone,
   TrialPlan,
   TrialCycle,
+  AgencyTeamSize,
+  AgencyClientCount,
 } from "@/lib/onboarding/types";
 
 type StepProps = {
@@ -90,9 +93,136 @@ export function StepWelcome({ onStart }: { onStart: () => void }) {
   );
 }
 
-/* ─── 1. What are you building ───────────────────────────────────── */
+/* ─── 1. Account type — the agency / solo fork ───────────────────── */
 
-export function StepCreatorType({ draft, update }: StepProps) {
+export function StepAccountType({ draft, update }: StepProps) {
+  return (
+    <>
+      <HelpText
+        eyebrow="Let's get you set up"
+        title="How will you use CreatorHub?"
+        description="This decides your whole workspace — you can't really get this wrong, and an admin can change it later."
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[680px] mx-auto">
+        <PickCard
+          active={draft.accountType === "agency"}
+          /* Agency picks also stamp creatorType=agency so plan defaults +
+             personalization downstream behave without a separate step. */
+          onClick={() => update({ accountType: "agency", creatorType: "agency" })}
+          title="Agency or team"
+          description="You manage content for clients. Staff accounts, a client pipeline, and per-client workspaces."
+          icon={<Building2 className="w-4 h-4" />}
+        />
+        <PickCard
+          active={draft.accountType === "solo"}
+          onClick={() => update({ accountType: "solo" })}
+          title="Just my own account"
+          description="You run your own content — personal brand, a business account, or one creator you manage."
+          icon={<User className="w-4 h-4" />}
+        />
+      </div>
+    </>
+  );
+}
+
+/* ─── Agency branch — name ───────────────────────────────────────── */
+
+export function StepAgencyName({ draft, update }: StepProps) {
+  return (
+    <>
+      <HelpText
+        eyebrow="Your agency"
+        title="What's your agency or team called?"
+        description="Shows up across the workspace and on client-facing reports. You can rename it any time in Settings."
+      />
+      <div className="max-w-[460px] mx-auto">
+        <label className="text-[12.5px] font-semibold text-text block mb-1.5">
+          Agency / team name
+        </label>
+        <input
+          value={draft.agencyName ?? ""}
+          onChange={(e) => update({ agencyName: e.target.value })}
+          placeholder="e.g. Northbound Media, The Content Lab…"
+          autoFocus
+          className="w-full h-11 px-3.5 rounded-[10px] bg-surface border border-border text-[14px] text-text focus:outline-none focus:border-accent/40 focus:ring-2 focus:ring-accent/20"
+        />
+      </div>
+    </>
+  );
+}
+
+/* ─── Agency branch — team + client scale ────────────────────────── */
+
+const TEAM_SIZES: Array<{ key: AgencyTeamSize; label: string; description: string }> = [
+  { key: "just-me", label: "Just me", description: "Solo operator, for now" },
+  { key: "small", label: "2–5 people", description: "A small core team" },
+  { key: "growing", label: "6–15 people", description: "A growing agency" },
+  { key: "large", label: "16+ people", description: "An established shop" },
+];
+
+const CLIENT_COUNTS: Array<{ key: AgencyClientCount; label: string; description: string }> = [
+  { key: "starting", label: "Just starting", description: "0–2 clients" },
+  { key: "handful", label: "A handful", description: "3–10 clients" },
+  { key: "established", label: "Established", description: "11–25 clients" },
+  { key: "scaled", label: "Scaled", description: "25+ clients" },
+];
+
+export function StepAgencyTeam({ draft, update }: StepProps) {
+  return (
+    <>
+      <HelpText
+        eyebrow="Scale"
+        title="How big is your operation?"
+        description="Just helps us tune defaults — nothing here is locked in."
+      />
+      <div className="max-w-[680px] mx-auto space-y-6">
+        <div>
+          <div className="text-[12.5px] font-semibold text-text mb-2 flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-muted" /> Team size
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {TEAM_SIZES.map((t) => (
+              <PickCard
+                key={t.key}
+                size="sm"
+                active={draft.agencyTeamSize === t.key}
+                onClick={() => update({ agencyTeamSize: t.key })}
+                title={t.label}
+                description={t.description}
+              />
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="text-[12.5px] font-semibold text-text mb-2 flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-muted" /> Clients you manage
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {CLIENT_COUNTS.map((c) => (
+              <PickCard
+                key={c.key}
+                size="sm"
+                active={draft.agencyClientCount === c.key}
+                onClick={() => update({ agencyClientCount: c.key })}
+                title={c.label}
+                description={c.description}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Solo branch — what are you building ────────────────────────── */
+
+export function StepCreatorType({
+  draft,
+  update,
+  exclude = [],
+}: StepProps & { exclude?: CreatorType[] }) {
+  const options = creatorTypes.filter((c) => !exclude.includes(c.key));
   return (
     <>
       <HelpText
@@ -101,7 +231,7 @@ export function StepCreatorType({ draft, update }: StepProps) {
         description="Pick the one closest to your work. Drives the personas + sample data we set up."
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {creatorTypes.map((c) => (
+        {options.map((c) => (
           <PickCard
             key={c.key}
             active={draft.creatorType === c.key}
@@ -476,11 +606,14 @@ export function StepReady({
   displayName,
   focusLabel,
   quickActions,
+  homeHref = "/dashboard",
   onPick,
 }: {
   displayName: string;
   focusLabel: string;
   quickActions: { label: string; href: string; hint: string }[];
+  /** Where the "explore freely" link goes — /clients for agencies. */
+  homeHref?: string;
   onPick: (href: string) => void;
 }) {
   return (
@@ -540,10 +673,11 @@ export function StepReady({
 
       <div className="mt-6">
         <button
-          onClick={() => onPick("/dashboard")}
+          onClick={() => onPick(homeHref)}
           className="text-[12.5px] text-muted hover:text-text underline-offset-2 hover:underline cursor-pointer"
         >
-          I&rsquo;ll explore freely → Open Dashboard
+          I&rsquo;ll explore freely →{" "}
+          {homeHref === "/clients" ? "Open Clients" : "Open Dashboard"}
         </button>
       </div>
     </div>

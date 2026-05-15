@@ -24,7 +24,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { Tabs } from "@/components/ui/Tabs";
 import { useAppState } from "@/lib/store";
 import { useClientQuery } from "@/lib/clients/use-client-query";
@@ -59,7 +58,7 @@ const SAMPLE_URLS = [
 
 export default function ContentDnaPage() {
   const router = useRouter();
-  const { connected, showToast } = useAppState();
+  const { showToast } = useAppState();
   const clientQ = useClientQuery();
   const [tab, setTab] = useState<TabKey>("competitor");
   const [url, setUrl] = useState("");
@@ -159,22 +158,6 @@ export default function ContentDnaPage() {
       setSubmitError("Network error. Check your connection and try again.");
       setSubmitting(false);
     }
-  }
-
-  if (!connected) {
-    return (
-      <>
-        <PageHeader
-          title="Content DNA"
-          description="Reverse-engineer the structure of any viral video. Then build your own."
-        />
-        <EmptyState
-          title="Connect a platform first."
-          description="Content DNA pairs your library and reports with structural analyses of the videos you want to learn from."
-          primaryAction={{ label: "Connect a platform" }}
-        />
-      </>
-    );
   }
 
   return (

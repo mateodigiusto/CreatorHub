@@ -159,7 +159,7 @@ export type ScriptPdfData = {
   createdAt: string;
 };
 
-export function ScriptPdf({ script }: { script: ScriptPdfData }) {
+function ScriptPage({ script }: { script: ScriptPdfData }) {
   const created = new Date(script.createdAt);
   const dateLabel = created.toLocaleDateString("en-US", {
     month: "short",
@@ -168,70 +168,91 @@ export function ScriptPdf({ script }: { script: ScriptPdfData }) {
   });
 
   return (
+    <Page size="LETTER" style={styles.page}>
+      <Text style={styles.brand}>CreatorHub · Script</Text>
+      <Text style={styles.title}>{script.title ?? "Untitled script"}</Text>
+
+      <View style={styles.metaRow}>
+        <Text style={styles.badge}>
+          {FORMAT_LABELS[script.format] ?? script.format}
+        </Text>
+        <Text style={styles.badgeNeutral}>{script.platform}</Text>
+        <Text style={styles.badgeNeutral}>{script.status}</Text>
+        <Text style={styles.badgeNeutral}>{dateLabel}</Text>
+      </View>
+
+      {script.hook && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Hook · 0–3s</Text>
+          <Text style={styles.hookBody}>{script.hook}</Text>
+        </View>
+      )}
+
+      {script.setup && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Setup</Text>
+          <Text style={styles.sectionBody}>{script.setup}</Text>
+        </View>
+      )}
+
+      {script.keyPoints.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Key points</Text>
+          {script.keyPoints.map((kp, i) => (
+            <View key={i} style={styles.keyPoint}>
+              <Text style={styles.keyPointTitle}>{kp.title}</Text>
+              <Text style={styles.keyPointBody}>{kp.body}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {script.cta && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Call to action</Text>
+          <Text style={styles.sectionBody}>{script.cta}</Text>
+        </View>
+      )}
+
+      {script.bRollNotes && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>B-roll notes</Text>
+          <View style={styles.bRoll}>
+            <Text>{script.bRollNotes}</Text>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.footer} fixed>
+        <Text>CreatorHub</Text>
+        <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+      </View>
+    </Page>
+  );
+}
+
+export function ScriptPdf({ script }: { script: ScriptPdfData }) {
+  return (
     <Document
       title={script.title ?? "CreatorHub script"}
       author="CreatorHub"
     >
-      <Page size="LETTER" style={styles.page}>
-        <Text style={styles.brand}>CreatorHub · Script</Text>
-        <Text style={styles.title}>{script.title ?? "Untitled script"}</Text>
+      <ScriptPage script={script} />
+    </Document>
+  );
+}
 
-        <View style={styles.metaRow}>
-          <Text style={styles.badge}>
-            {FORMAT_LABELS[script.format] ?? script.format}
-          </Text>
-          <Text style={styles.badgeNeutral}>{script.platform}</Text>
-          <Text style={styles.badgeNeutral}>{script.status}</Text>
-          <Text style={styles.badgeNeutral}>{dateLabel}</Text>
-        </View>
-
-        {script.hook && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Hook · 0–3s</Text>
-            <Text style={styles.hookBody}>{script.hook}</Text>
-          </View>
-        )}
-
-        {script.setup && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Setup</Text>
-            <Text style={styles.sectionBody}>{script.setup}</Text>
-          </View>
-        )}
-
-        {script.keyPoints.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Key points</Text>
-            {script.keyPoints.map((kp, i) => (
-              <View key={i} style={styles.keyPoint}>
-                <Text style={styles.keyPointTitle}>{kp.title}</Text>
-                <Text style={styles.keyPointBody}>{kp.body}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {script.cta && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Call to action</Text>
-            <Text style={styles.sectionBody}>{script.cta}</Text>
-          </View>
-        )}
-
-        {script.bRollNotes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>B-roll notes</Text>
-            <View style={styles.bRoll}>
-              <Text>{script.bRollNotes}</Text>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.footer} fixed>
-          <Text>CreatorHub</Text>
-          <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
-        </View>
-      </Page>
+/** Multi-script PDF — one Page per script, in the order supplied.
+ *  Used by GET /api/scripts/export-batch. */
+export function ScriptBatchPdf({ scripts }: { scripts: ScriptPdfData[] }) {
+  const title = scripts.length === 1
+    ? scripts[0].title ?? "CreatorHub script"
+    : `CreatorHub · ${scripts.length} scripts`;
+  return (
+    <Document title={title} author="CreatorHub">
+      {scripts.map((s, i) => (
+        <ScriptPage key={i} script={s} />
+      ))}
     </Document>
   );
 }

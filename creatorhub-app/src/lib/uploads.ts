@@ -1,7 +1,11 @@
 "use client";
 
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
-import { MAX_VIDEO_SECONDS } from "@/lib/mock/story";
+
+/** Sequence Studio uses short clips only. Anything longer flags the upload
+ *  so we can surface a warning. Kept here (not as a per-page constant) so
+ *  any future client-side validation reads the same number. */
+const MAX_VIDEO_SECONDS = 15;
 
 export type UploadResult = {
   ok: boolean;

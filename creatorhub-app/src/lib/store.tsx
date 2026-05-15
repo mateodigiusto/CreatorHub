@@ -8,8 +8,6 @@ import {
   ReactNode,
   useCallback,
 } from "react";
-import { Post } from "@/lib/mock/types";
-import { Asset } from "@/lib/mock/story";
 import type { Profile } from "@/lib/onboarding/types";
 import {
   readProfile,
@@ -33,15 +31,9 @@ export type CurrentClient = {
 };
 
 type AppState = {
-  connected: boolean;
-  setConnected: (v: boolean) => void;
   theme: Theme;
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
-  extraPosts: Post[];
-  appendContentItem: (post: Post) => void;
-  extraAssets: Asset[];
-  appendAsset: (asset: Asset) => void;
   profile: Profile | null;
   setProfile: (p: Profile) => void;
   clearProfile: () => void;
@@ -67,10 +59,7 @@ function readInitialTheme(): Theme {
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [connected, setConnected] = useState(true);
   const [theme, setThemeState] = useState<Theme>("light");
-  const [extraPosts, setExtraPosts] = useState<Post[]>([]);
-  const [extraAssets, setExtraAssets] = useState<Asset[]>([]);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
     null
@@ -100,7 +89,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   /* Authoritative profile lives in Postgres for signed-in users. Fetch
      once on mount; if the server has a profile we overwrite the local
      copy (cross-device consistency). 401 / no profile → keep localStorage
-     so demo / unauthenticated visitors still get personalization. */
+     so unauthenticated visitors still get personalization. */
   useEffect(() => {
     let cancelled = false;
     fetch("/api/profile", { credentials: "include" })
@@ -134,14 +123,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
-
-  const appendContentItem = useCallback((post: Post) => {
-    setExtraPosts((prev) => [post, ...prev]);
-  }, []);
-
-  const appendAsset = useCallback((asset: Asset) => {
-    setExtraAssets((prev) => [asset, ...prev]);
-  }, []);
 
   const setProfile = useCallback((p: Profile) => {
     setProfileState(p);
@@ -178,15 +159,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider
       value={{
-        connected,
-        setConnected,
         theme,
         setTheme,
         toggleTheme,
-        extraPosts,
-        appendContentItem,
-        extraAssets,
-        appendAsset,
         profile,
         setProfile,
         clearProfile,

@@ -176,7 +176,6 @@ export default function OutreachPage() {
         <EmptyState
           title="No targets yet."
           description="Browse the creator directory and save someone you'd like to pitch as an editor."
-          showSampleDataCta={false}
           primaryAction={{
             label: "Browse directory",
             onClick: () => router.push("/creators"),

@@ -10,7 +10,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
-import { ExternalLink, Mail, Globe, Sparkles } from "lucide-react";
+import { ExternalLink, Mail, Globe, Sparkles, Download } from "lucide-react";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Platform } from "@/lib/onboarding/types";
 
@@ -157,6 +157,14 @@ export default async function PublicPortfolioPage({ params }: RouteContext) {
                   <Globe className="w-3.5 h-3.5" /> {k}
                 </a>
               ))}
+              <a
+                href={`/api/portfolio/${portfolio.slug}/export-pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface border border-border text-text text-[13px] font-medium hover:border-accent/30 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" /> Download PDF
+              </a>
             </div>
           )}
         </div>
