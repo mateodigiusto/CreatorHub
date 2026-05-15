@@ -8,6 +8,8 @@ type WorkspaceContextValue = {
   accessRole: ClientAccessRole;
   /** Same as accessRole, exposed under the ViewerRole vocabulary. */
   viewerRole: ClientAccessRole;
+  /** Agency director previewing the client's portal. */
+  preview: boolean;
 };
 
 const Ctx = createContext<WorkspaceContextValue | null>(null);
@@ -15,15 +17,17 @@ const Ctx = createContext<WorkspaceContextValue | null>(null);
 export function WorkspaceProvider({
   client,
   accessRole,
+  preview = false,
   children,
 }: {
   client: Client;
   accessRole: ClientAccessRole;
+  preview?: boolean;
   children: ReactNode;
 }) {
   return (
     <Ctx.Provider
-      value={{ client, accessRole, viewerRole: accessRole }}
+      value={{ client, accessRole, viewerRole: accessRole, preview }}
     >
       {children}
     </Ctx.Provider>

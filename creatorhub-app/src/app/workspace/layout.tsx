@@ -18,6 +18,7 @@ import {
 import { WorkspaceProvider } from "@/components/agency/workspace/WorkspaceContext";
 import { WorkspaceHeader } from "@/components/agency/workspace/WorkspaceHeader";
 import { WorkspaceSubNav } from "@/components/agency/workspace/WorkspaceSubNav";
+import { WorkspacePreviewBanner } from "@/components/agency/workspace/WorkspacePreviewBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +28,18 @@ export default async function WorkspaceLayout({
   children: ReactNode;
 }) {
   const viewer = await requireWorkspaceAccess();
-  const all = await listWorkspaceClients();
+  const all = viewer.preview ? [] : await listWorkspaceClients();
 
   return (
     <WorkspaceProvider
       client={viewer.client}
       accessRole={viewer.accessRole}
+      preview={viewer.preview}
     >
       <div className="flex min-h-screen flex-col bg-bg">
+        {viewer.preview && (
+          <WorkspacePreviewBanner clientName={viewer.client.displayName} />
+        )}
         <WorkspaceHeader hasMultiple={all.length > 1} />
         <WorkspaceSubNav />
         <main className="flex-1">{children}</main>

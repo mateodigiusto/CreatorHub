@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { ArrowUpRight, AtSign, UserPlus } from "lucide-react";
+import { ArrowUpRight, AtSign, Eye, UserPlus } from "lucide-react";
 import type { Client } from "@/lib/agency/types";
 import { InviteClientDialog } from "./InviteClientDialog";
 
@@ -14,7 +14,13 @@ const statusTone: Record<Client["status"], "green" | "amber" | "neutral"> = {
   archived: "neutral",
 };
 
-export function ClientGrid({ clients }: { clients: Client[] }) {
+export function ClientGrid({
+  clients,
+  canPreview = false,
+}: {
+  clients: Client[];
+  canPreview?: boolean;
+}) {
   const [inviting, setInviting] = useState<Client | null>(null);
 
   if (clients.length === 0) return null;
@@ -55,15 +61,29 @@ export function ClientGrid({ clients }: { clients: Client[] }) {
                   </Badge>
                 )}
               </div>
-              {/* Above the card-link overlay so it stays clickable. */}
-              <button
-                type="button"
-                onClick={() => setInviting(c)}
-                className="relative z-[1] inline-flex items-center gap-1 h-7 px-2 rounded-[8px] border border-border bg-surface-2 text-[11.5px] font-medium text-muted hover:text-text hover:border-accent-border transition-colors"
-              >
-                <UserPlus className="w-3 h-3" />
-                Invite
-              </button>
+              {/* Above the card-link overlay so they stay clickable. */}
+              <div className="relative z-[1] flex items-center gap-1.5">
+                {canPreview && (
+                  <form method="POST" action={`/api/clients/${c.slug}/preview`}>
+                    <button
+                      type="submit"
+                      title="View as client"
+                      className="inline-flex items-center gap-1 h-7 px-2 rounded-[8px] border border-border bg-surface-2 text-[11.5px] font-medium text-muted hover:text-text hover:border-accent-border transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3 h-3" />
+                      View
+                    </button>
+                  </form>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setInviting(c)}
+                  className="inline-flex items-center gap-1 h-7 px-2 rounded-[8px] border border-border bg-surface-2 text-[11.5px] font-medium text-muted hover:text-text hover:border-accent-border transition-colors"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  Invite
+                </button>
+              </div>
             </div>
           </Card>
         ))}

@@ -36,6 +36,10 @@ export function canDeleteClient(session: AgencySession): boolean {
   return session.isAdmin;
 }
 
+export function canPreviewAsClient(session: AgencySession): boolean {
+  return session.organization.kind === "agency" && session.orgRole === "director";
+}
+
 export function canManageOrgMembers(session: AgencySession): boolean {
   return session.isAdmin;
 }

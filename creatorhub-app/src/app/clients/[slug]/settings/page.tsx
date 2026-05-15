@@ -7,11 +7,12 @@
  */
 
 import { requireClientAccess } from "@/lib/auth/require-client-access";
-import { canDeleteClient } from "@/lib/agency/permissions";
+import { canDeleteClient, canPreviewAsClient } from "@/lib/agency/permissions";
 import { ClientSettingsForm } from "@/components/clients/ClientSettingsForm";
 import { ClientJoinLink } from "@/components/clients/ClientJoinLink";
 import { ClientMembersList } from "@/components/clients/ClientMembersList";
 import { ClientDangerZone } from "@/components/clients/ClientDangerZone";
+import { ClientPreviewCard } from "@/components/clients/ClientPreviewCard";
 
 export default async function ClientSettingsPage({
   params,
@@ -23,6 +24,9 @@ export default async function ClientSettingsPage({
 
   return (
     <div className="grid gap-6 max-w-3xl">
+      {canPreviewAsClient(session) && (
+        <ClientPreviewCard slug={client.slug} />
+      )}
       <ClientSettingsForm client={client} />
       <ClientJoinLink slug={client.slug} />
       <ClientMembersList slug={client.slug} />

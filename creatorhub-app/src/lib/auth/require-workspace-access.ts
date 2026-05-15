@@ -21,15 +21,23 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type { Client, ClientAccessRole, ClientStatus } from "@/lib/agency/types";
+import { getSession } from "@/lib/auth/session";
+import { canPreviewAsClient } from "@/lib/agency/permissions";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export const WORKSPACE_COOKIE = "creatorhub-workspace-slug";
+/** Set by /api/clients/[slug]/preview when an agency director enters
+ *  a client's portal without a real `client_memberships` row. */
+export const WORKSPACE_PREVIEW_COOKIE = "creatorhub-workspace-preview";
 
 export type WorkspaceViewer = {
   userId: string;
   email: string | null;
   client: Client;
   accessRole: ClientAccessRole;
+  /** True when the viewer is an agency director previewing the client's
+   *  portal — no `client_memberships` row, gated by org director role. */
+  preview: boolean;
 };
 
 type MembershipStatus = "pending" | "active" | "denied";
@@ -79,6 +87,37 @@ export async function requireWorkspaceAccess(
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login?next=/workspace/overview");
 
+  const cookieStoreEarly = await cookies();
+  const previewSlug = cookieStoreEarly.get(WORKSPACE_PREVIEW_COOKIE)?.value;
+
+  /* Agency-director preview path. Bypasses `client_memberships` — the
+     director's org-staff session is the authority. Verified end-to-end:
+     1) preview cookie holds a slug; 2) caller has an active org session;
+     3) that org is the one that owns the client. */
+  if (previewSlug && (!slug || slug === previewSlug)) {
+    const session = await getSession();
+    if (session && canPreviewAsClient(session)) {
+      const res = await supabase
+        .from("clients")
+        .select(
+          "id, organization_id, slug, display_name, tagline, status, instagram_handle, created_by, created_at, updated_at",
+        )
+        .eq("organization_id", session.organization.id)
+        .eq("slug", previewSlug)
+        .maybeSingle();
+      if (res.data) {
+        const row = res.data as unknown as NonNullable<RawMembership["clients"]>;
+        return {
+          userId: auth.user.id,
+          email: auth.user.email ?? null,
+          client: rowToClient(row),
+          accessRole: "client_owner",
+          preview: true,
+        };
+      }
+    }
+  }
+
   const { data: rows, error } = await supabase
     .from("client_memberships")
     .select(
@@ -114,8 +153,7 @@ export async function requireWorkspaceAccess(
     notFound();
   }
 
-  const cookieStore = await cookies();
-  const cookieSlug = cookieStore.get(WORKSPACE_COOKIE)?.value;
+  const cookieSlug = cookieStoreEarly.get(WORKSPACE_COOKIE)?.value;
 
   const pickSlug = slug ?? cookieSlug ?? null;
 
@@ -134,6 +172,7 @@ export async function requireWorkspaceAccess(
     email: auth.user.email ?? null,
     client: rowToClient(clientRow),
     accessRole: chosen.access_role,
+    preview: false,
   };
 }
 

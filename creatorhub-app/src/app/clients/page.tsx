@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { requireAgency } from "@/lib/auth/require-org";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { clientQuota } from "@/lib/billing/limits";
+import { canPreviewAsClient } from "@/lib/agency/permissions";
 import { ClientGrid } from "@/components/clients/ClientGrid";
 import { AddClientButton } from "@/components/clients/AddClientButton";
 import type { Client, ClientStatus } from "@/lib/agency/types";
@@ -82,10 +83,9 @@ export default async function ClientsPage() {
           icon={<Users2 className="w-6 h-6" />}
           title="No clients yet"
           description="Add your first creator to start planning content, sharing assets, and tracking results."
-          showSampleDataCta={false}
         />
       ) : (
-        <ClientGrid clients={clients} />
+        <ClientGrid clients={clients} canPreview={canPreviewAsClient(session)} />
       )}
 
       {quota.atLimit ? (
