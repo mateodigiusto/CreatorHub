@@ -67,6 +67,13 @@ const USER_OWNED_TABLES: Array<{
       slug: `rls-${userId.slice(0, 8)}`,
     }),
   },
+  {
+    table: "ideas",
+    insertSql: (userId) => ({
+      user_id: userId,
+      hook: "RLS test hook",
+    }),
+  },
   /* TODO: extend coverage to v18 relationship tables (creator_relationships,
      relationship_*, notifications) + Phase 1 tables (assets, sequences,
      posts, integrations, content_analyses, content_drafts). Each FK

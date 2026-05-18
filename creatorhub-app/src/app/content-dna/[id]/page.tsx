@@ -142,6 +142,44 @@ export default function ContentDnaAnalysisPage() {
   );
 
   const [generatingScript, setGeneratingScript] = useState(false);
+  const [savingHook, setSavingHook] = useState(false);
+  /* Once a hook is saved, swap the button copy to "In Idea Bank" so the
+     user knows it landed. Cleared if they navigate away and come back. */
+  const [hookSaved, setHookSaved] = useState(false);
+
+  /* "Add hook to Idea Bank" — captures the analyzed hook as a saved idea
+     so the user can revisit it from /ideas later. 24h dedupe on the
+     server keeps double-clicks from creating duplicates. */
+  async function handleSaveHookToIdeas() {
+    if (savingHook || !analysis?.hook) return;
+    setSavingHook(true);
+    try {
+      const r = await fetch(`/api/ideas${clientQ.q}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          hook: analysis.hook,
+          sourceAnalysisId: analysis.id,
+          sourceUrl: analysis.source_url,
+          score: analysis.content_score,
+          saved: true,
+        }),
+      });
+      if (!r.ok) {
+        const err = (await r.json().catch(() => ({}))) as { error?: string };
+        showToast(`Couldn't save: ${err.error ?? r.status}`);
+        return;
+      }
+      const json = (await r.json()) as { deduped?: boolean };
+      setHookSaved(true);
+      showToast(json.deduped ? "Already in Idea Bank." : "Added to Idea Bank.");
+    } catch {
+      showToast("Network error. Try again.");
+    } finally {
+      setSavingHook(false);
+    }
+  }
 
   /* "Generate Script From This" — POST to /api/scripts/generate with
      sourceAnalysisId so the script generator inherits the hook + themes
@@ -474,7 +512,14 @@ export default function ContentDnaAnalysisPage() {
         />
       </div>
 
-      {step === "import" && <ImportStep analysis={analysis} />}
+      {step === "import" && (
+        <ImportStep
+          analysis={analysis}
+          onSaveHook={handleSaveHookToIdeas}
+          hookSaved={hookSaved}
+          savingHook={savingHook}
+        />
+      )}
       {step === "rebuild" && (
         <RebuildStep
           analysis={analysis}
@@ -522,7 +567,17 @@ export default function ContentDnaAnalysisPage() {
 
 /* ─── Step 1: Import ─────────────────────────────────────────────── */
 
-function ImportStep({ analysis }: { analysis: AnalysisRow }) {
+function ImportStep({
+  analysis,
+  onSaveHook,
+  hookSaved,
+  savingHook,
+}: {
+  analysis: AnalysisRow;
+  onSaveHook: () => void;
+  hookSaved: boolean;
+  savingHook: boolean;
+}) {
   return (
     <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -530,6 +585,28 @@ function ImportStep({ analysis }: { analysis: AnalysisRow }) {
         <CardHeader
           title="The hook"
           description="The first 6–8 seconds the original used to earn the watch."
+          action={
+            analysis.hook ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSaveHook}
+                disabled={savingHook || hookSaved}
+                title={
+                  hookSaved
+                    ? "Already in your Idea Bank"
+                    : "Save this hook to /ideas for later"
+                }
+              >
+                <Lightbulb className="w-3.5 h-3.5" />
+                {hookSaved
+                  ? "In Idea Bank"
+                  : savingHook
+                    ? "Saving…"
+                    : "Add to Idea Bank"}
+              </Button>
+            ) : null
+          }
         />
         <div className="rounded-[12px] border border-accent/30 bg-accent-soft p-4">
           <div className="text-[15px] font-semibold text-text leading-snug">

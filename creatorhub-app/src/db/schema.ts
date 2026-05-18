@@ -523,6 +523,50 @@ export const contentDrafts = pgTable(
   ],
 );
 
+/* ─── ideas (v39) ────────────────────────────────────────────────── */
+
+export const ideas = pgTable(
+  "ideas",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    hook: text("hook").notNull(),
+    angle: text("angle"),
+    sourceAnalysisId: uuid("source_analysis_id").references(() => contentAnalyses.id, {
+      onDelete: "set null",
+    }),
+    /** Snapshot of the source URL at save time — survives transcript deletion. */
+    sourceUrl: text("source_url"),
+    estimatedReach: text("estimated_reach"),
+    score: numeric("score", { precision: 3, scale: 1 }),
+    saved: boolean("saved").notNull().default(false),
+    used: boolean("used").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("ideas_user_created_desc").on(t.userId, sql`created_at desc`),
+    index("ideas_user_saved")
+      .on(t.userId, sql`created_at desc`)
+      .where(sql`saved = true`),
+    index("ideas_source_analysis")
+      .on(t.sourceAnalysisId)
+      .where(sql`source_analysis_id is not null`),
+    check(
+      "ideas_hook_length_check",
+      sql`length(hook) > 0 and length(hook) <= 500`,
+    ),
+    check(
+      "ideas_angle_length_check",
+      sql`angle is null or length(angle) <= 2000`,
+    ),
+    check(
+      "ideas_score_range_check",
+      sql`score is null or (score >= 0 and score <= 10)`,
+    ),
+  ],
+);
+
 /* ─── Agency multi-tenancy (v33): organizations + memberships + invites ── */
 
 export const orgRoleEnum = pgEnum("org_role_t", ["user", "editor", "director"]);
@@ -868,3 +912,6 @@ export type EditorCreatorTarget = typeof editorCreatorTargets.$inferSelect;
 export type NewEditorCreatorTarget = typeof editorCreatorTargets.$inferInsert;
 export type CreatorOutreachLogEntry = typeof creatorOutreachLog.$inferSelect;
 export type NewCreatorOutreachLogEntry = typeof creatorOutreachLog.$inferInsert;
+/* Idea bank (v39). */
+export type Idea = typeof ideas.$inferSelect;
+export type NewIdea = typeof ideas.$inferInsert;

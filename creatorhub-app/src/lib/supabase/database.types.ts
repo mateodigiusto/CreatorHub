@@ -637,6 +637,66 @@ export type Database = {
           },
         ]
       }
+      ideas: {
+        Row: {
+          angle: string | null
+          created_at: string
+          estimated_reach: string | null
+          hook: string
+          id: string
+          saved: boolean
+          score: number | null
+          source_analysis_id: string | null
+          source_url: string | null
+          updated_at: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          angle?: string | null
+          created_at?: string
+          estimated_reach?: string | null
+          hook: string
+          id?: string
+          saved?: boolean
+          score?: number | null
+          source_analysis_id?: string | null
+          source_url?: string | null
+          updated_at?: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          angle?: string | null
+          created_at?: string
+          estimated_reach?: string | null
+          hook?: string
+          id?: string
+          saved?: boolean
+          score?: number | null
+          source_analysis_id?: string | null
+          source_url?: string | null
+          updated_at?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ideas_source_analysis_id_fkey"
+            columns: ["source_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "content_analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ideas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           access_token_ciphertext: string
