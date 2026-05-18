@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { TabEmptyState } from "@/components/agency/TabEmptyState";
+import { CalendarSkeleton } from "@/components/agency/Skeleton";
 import { MonthCalendar } from "@/components/agency/calendar/MonthCalendar";
 import { ContentCardDialog } from "@/components/agency/pipeline/ContentCardDialog";
 import { usePipelineState } from "@/components/agency/pipeline/usePipelineState";
@@ -25,14 +25,12 @@ export function WorkspaceCalendarClient({ slug }: { slug: string }) {
       />
 
       {state.loading ? (
-        <div className="flex items-center justify-center py-20 text-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
+        <CalendarSkeleton />
       ) : state.error ? (
         <p className="text-[13px] text-[var(--error)]">{state.error}</p>
       ) : scheduled.length === 0 ? (
-        <EmptyState
-          title="Nothing scheduled yet"
+        <TabEmptyState
+          title="Nothing scheduled"
           description="Once content has a planned post date, it will show up here."
         />
       ) : (

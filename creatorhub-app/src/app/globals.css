@@ -291,3 +291,7 @@ dialog[open] {
   body::before { display: none; }
   .dot-pulse { animation: none; }
 }
+
+/* Hide scrollbars on horizontally-scrolling tab strips (mobile sub-nav). */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }

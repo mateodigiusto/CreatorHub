@@ -42,7 +42,7 @@ export function ClientSubNav({
   const activeKey = pathname?.split("/")[3] ?? "overview";
 
   return (
-    <nav className="border-b border-border -mx-6 px-6 mb-6 overflow-x-auto">
+    <nav className="border-b border-border -mx-6 px-6 mb-6 overflow-x-auto no-scrollbar">
       <ul className="flex items-center gap-1 min-w-max">
         {ALL_TABS.map((tab) => {
           const isActive = activeKey === tab.key;

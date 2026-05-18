@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { TabEmptyState } from "@/components/agency/TabEmptyState";
+import { PipelineSkeleton } from "@/components/agency/Skeleton";
 import { KanbanBoard } from "@/components/agency/pipeline/KanbanBoard";
 import { ContentCardDialog } from "@/components/agency/pipeline/ContentCardDialog";
 import { usePipelineState } from "@/components/agency/pipeline/usePipelineState";
@@ -13,7 +14,7 @@ import {
   type ContentItemWithMetrics,
   type ContentStatus,
 } from "@/lib/agency/content";
-import type { ClientAccessRole } from "@/lib/agency/_phase2_deps";
+import type { ClientAccessRole } from "@/lib/agency/types";
 import {
   canCreatePipelineCards,
   canMovePipelineCards,
@@ -67,23 +68,21 @@ export function WorkspacePipelineClient({
       />
 
       {state.loading ? (
-        <div className="flex items-center justify-center py-20 text-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
+        <PipelineSkeleton />
       ) : state.error ? (
         <p className="text-[13px] text-[var(--error)]">{state.error}</p>
       ) : state.items.length === 0 ? (
-        <EmptyState
+        <TabEmptyState
           title="No content yet"
           description={
             canCreate
-              ? "Add your first idea to start the workflow."
+              ? "Add your first idea to start moving it through the funnel."
               : "Your team is still planning. Check back soon."
           }
           primaryAction={
             canCreate
               ? {
-                  label: "Add idea",
+                  label: "New content item",
                   onClick: () => state.createInColumn("idea"),
                 }
               : undefined

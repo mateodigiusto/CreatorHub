@@ -1,10 +1,11 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { TabEmptyState } from "@/components/agency/TabEmptyState";
+import { PipelineSkeleton } from "@/components/agency/Skeleton";
 import { KanbanBoard } from "@/components/agency/pipeline/KanbanBoard";
 import { ContentCardDialog } from "@/components/agency/pipeline/ContentCardDialog";
 import { usePipelineState } from "@/components/agency/pipeline/usePipelineState";
@@ -59,17 +60,15 @@ export default function PipelinePage({
       />
 
       {state.loading ? (
-        <div className="flex items-center justify-center py-20 text-muted">
-          <Loader2 className="w-5 h-5 animate-spin" />
-        </div>
+        <PipelineSkeleton />
       ) : state.error ? (
         <p className="text-[13px] text-[var(--error)]">{state.error}</p>
       ) : state.items.length === 0 ? (
-        <EmptyState
-          title="Pipeline is empty"
-          description="Add your first content idea to start the workflow."
+        <TabEmptyState
+          title="No content yet"
+          description="Add your first idea to start moving it through the funnel."
           primaryAction={{
-            label: "Add idea",
+            label: "New content item",
             onClick: () => state.createInColumn("idea"),
           }}
         />

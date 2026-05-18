@@ -8,6 +8,7 @@ import {
   type ContentStatus,
   type MetricField,
 } from "@/lib/agency/content";
+import { useOptimisticErrorReporter } from "@/lib/agency/use-optimistic-toast";
 
 /**
  * Owns the in-memory ordered map of content items for a client's pipeline.
@@ -18,6 +19,7 @@ export function usePipelineState(slug: string) {
   const [items, setItems] = useState<ContentItemWithMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const reportError = useOptimisticErrorReporter();
 
   const load = useCallback(async () => {
     setError(null);
@@ -42,16 +44,23 @@ export function usePipelineState(slug: string) {
 
   const createInColumn = useCallback(
     async (status: ContentStatus) => {
-      const res = await fetch(`/api/clients/${slug}/content`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, title: "Untitled" }),
-      });
-      if (!res.ok) return;
-      const { item } = (await res.json()) as { item: ContentItemWithMetrics };
-      setItems((prev) => [...prev, { ...item, metrics: null }]);
+      try {
+        const res = await fetch(`/api/clients/${slug}/content`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status, title: "Untitled" }),
+        });
+        if (!res.ok) {
+          await reportError(res);
+          return;
+        }
+        const { item } = (await res.json()) as { item: ContentItemWithMetrics };
+        setItems((prev) => [...prev, { ...item, metrics: null }]);
+      } catch (e) {
+        await reportError(e);
+      }
     },
-    [slug],
+    [slug, reportError],
   );
 
   const remove = useCallback(
@@ -61,12 +70,20 @@ export function usePipelineState(slug: string) {
         before = prev;
         return prev.filter((i) => i.id !== id);
       });
-      const res = await fetch(`/api/clients/${slug}/content/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) setItems(before);
+      try {
+        const res = await fetch(`/api/clients/${slug}/content/${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          setItems(before);
+          await reportError(res);
+        }
+      } catch (e) {
+        setItems(before);
+        await reportError(e);
+      }
     },
-    [slug],
+    [slug, reportError],
   );
 
   const patch = useCallback(
@@ -76,14 +93,22 @@ export function usePipelineState(slug: string) {
         before = prev;
         return prev.map((i) => (i.id === id ? { ...i, ...fields } : i));
       });
-      const res = await fetch(`/api/clients/${slug}/content/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) setItems(before);
+      try {
+        const res = await fetch(`/api/clients/${slug}/content/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fields),
+        });
+        if (!res.ok) {
+          setItems(before);
+          await reportError(res);
+        }
+      } catch (e) {
+        setItems(before);
+        await reportError(e);
+      }
     },
-    [slug],
+    [slug, reportError],
   );
 
   const moveCard = useCallback(
@@ -108,12 +133,16 @@ export function usePipelineState(slug: string) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: toStatus, position: newPosition }),
         });
-        if (!res.ok) setItems(before);
-      } catch {
+        if (!res.ok) {
+          setItems(before);
+          await reportError(res);
+        }
+      } catch (e) {
         setItems(before);
+        await reportError(e);
       }
     },
-    [slug],
+    [slug, reportError],
   );
 
   const saveMetrics = useCallback(

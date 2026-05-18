@@ -1,9 +1,9 @@
 "use client";
 
 import { use, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { TabEmptyState } from "@/components/agency/TabEmptyState";
+import { CalendarSkeleton } from "@/components/agency/Skeleton";
 import { MonthCalendar } from "@/components/agency/calendar/MonthCalendar";
 import { ContentCardDialog } from "@/components/agency/pipeline/ContentCardDialog";
 import { usePipelineState } from "@/components/agency/pipeline/usePipelineState";
@@ -30,15 +30,17 @@ export default function CalendarPage({
       />
 
       {state.loading ? (
-        <div className="flex items-center justify-center py-20 text-muted">
-          <Loader2 className="w-5 h-5 animate-spin" />
-        </div>
+        <CalendarSkeleton />
       ) : state.error ? (
         <p className="text-[13px] text-[var(--error)]">{state.error}</p>
       ) : scheduledItems.length === 0 ? (
-        <EmptyState
-          title="No scheduled content"
+        <TabEmptyState
+          title="Nothing scheduled"
           description="Set a planned post date on a pipeline item to see it here."
+          primaryAction={{
+            label: "Open pipeline",
+            href: `/clients/${slug}/pipeline`,
+          }}
         />
       ) : (
         <MonthCalendar items={scheduledItems} onOpen={setOpenId} />

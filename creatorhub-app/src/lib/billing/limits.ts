@@ -12,6 +12,7 @@
 import type { Plan } from "@/lib/agency/_phase1_deps";
 import { PLANS, nextPlanUp } from "./plans";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { recordPlanLimitBreadcrumb } from "@/lib/agency/plan-limit-breadcrumb";
 
 export type PlanCapability =
   | { kind: "add_client"; organizationId: string }
@@ -45,6 +46,11 @@ export async function assertPlanAllows(
     case "add_client": {
       const used = await countActiveClients(capability.organizationId);
       if (used >= def.maxClients) {
+        recordPlanLimitBreadcrumb({
+          capability: "add_client",
+          plan,
+          organizationId: capability.organizationId,
+        });
         throw new PlanLimitError(
           "add_client",
           plan,
@@ -55,6 +61,7 @@ export async function assertPlanAllows(
     }
     case "ai_analyzer": {
       if (!def.features.ai) {
+        recordPlanLimitBreadcrumb({ capability: "ai_analyzer", plan });
         throw new PlanLimitError(
           "ai_analyzer",
           plan,
@@ -65,6 +72,7 @@ export async function assertPlanAllows(
     }
     case "video_upload": {
       if (!def.features.video) {
+        recordPlanLimitBreadcrumb({ capability: "video_upload", plan });
         throw new PlanLimitError(
           "video_upload",
           plan,

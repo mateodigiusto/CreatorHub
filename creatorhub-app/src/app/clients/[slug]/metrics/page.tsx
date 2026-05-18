@@ -1,8 +1,9 @@
 "use client";
 
 import { use, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { TabEmptyState } from "@/components/agency/TabEmptyState";
+import { MetricsSkeleton } from "@/components/agency/Skeleton";
 import { MetricsDashboard } from "@/components/agency/metrics/MetricsDashboard";
 import { ContentCardDialog } from "@/components/agency/pipeline/ContentCardDialog";
 import { usePipelineState } from "@/components/agency/pipeline/usePipelineState";
@@ -28,11 +29,18 @@ export default function MetricsPage({
       />
 
       {state.loading ? (
-        <div className="flex items-center justify-center py-20 text-muted">
-          <Loader2 className="w-5 h-5 animate-spin" />
-        </div>
+        <MetricsSkeleton />
       ) : state.error ? (
         <p className="text-[13px] text-[var(--error)]">{state.error}</p>
+      ) : state.items.length === 0 ? (
+        <TabEmptyState
+          title="No metrics yet"
+          description="Add metrics to a published piece to start tracking."
+          primaryAction={{
+            label: "Open pipeline",
+            href: `/clients/${slug}/pipeline`,
+          }}
+        />
       ) : (
         <MetricsDashboard items={state.items} onOpen={setOpenId} />
       )}
