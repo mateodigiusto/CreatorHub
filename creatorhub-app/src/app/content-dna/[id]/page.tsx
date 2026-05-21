@@ -168,7 +168,11 @@ export default function ContentDnaAnalysisPage() {
       });
       if (!r.ok) {
         const err = (await r.json().catch(() => ({}))) as { error?: string };
-        showToast(`Couldn't save: ${err.error ?? r.status}`);
+        showToast(
+          err.error === "hook_too_long"
+            ? "That hook is too long to save (max 500 characters)."
+            : "Couldn't save to Idea Bank. Try again.",
+        );
         return;
       }
       const json = (await r.json()) as { deduped?: boolean };

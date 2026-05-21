@@ -146,8 +146,8 @@ export async function POST(req: NextRequest) {
     .gt("created_at", dayAgo)
     .order("created_at", { ascending: false })
     .limit(1)
-    .returns<IdeaRow[]>()
-    .maybeSingle();
+    .maybeSingle()
+    .returns<IdeaRow | null>();
   if (existing) {
     return NextResponse.json({ idea: toClient(existing), deduped: true });
   }
@@ -169,8 +169,8 @@ export async function POST(req: NextRequest) {
     .select(
       "id, user_id, hook, angle, source_analysis_id, source_url, estimated_reach, score, saved, used, created_at, updated_at",
     )
-    .returns<IdeaRow[]>()
-    .single();
+    .single()
+    .returns<IdeaRow>();
 
   if (error || !data) {
     log.error("ideas.insert_failed", error ?? new Error("no row"));

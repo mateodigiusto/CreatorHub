@@ -144,8 +144,14 @@ export default function IdeasPage() {
     if (busyId) return;
     if (!confirm("Delete this idea? This can't be undone.")) return;
     setBusyId(idea.id);
-    const before = ideas;
-    setIdeas((prev) => (prev ? prev.filter((i) => i.id !== idea.id) : prev));
+    /* Capture the pre-delete list inside the updater so a rollback
+       restores whatever was on screen at delete time (not a stale
+       render-closure snapshot). */
+    let before: IdeaRow[] | null = null;
+    setIdeas((prev) => {
+      before = prev;
+      return prev ? prev.filter((i) => i.id !== idea.id) : prev;
+    });
     try {
       const r = await fetch(`/api/ideas/${idea.id}${clientQ.q}`, {
         method: "DELETE",

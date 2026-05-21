@@ -6,14 +6,17 @@
  * so the endpoint can't be used to force-route into a foreign org.
  *
  * The client refreshes the page after a 200 — `getSession()` then reads
- * the new cookie via `resolveActiveOrgId()` and every `/clients/*` query
- * re-scopes to the switched org.
+ * the new cookie and every `/clients/*` query re-scopes to the switched
+ * org.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { ACTIVE_ORG_COOKIE } from "@/lib/orgs/types";
 import { log } from "@/lib/log";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: NextRequest) {
   const supabase = await getSupabaseServer();
@@ -30,16 +33,28 @@ export async function POST(req: NextRequest) {
   if (!organizationId) {
     return NextResponse.json({ error: "missing_organization_id" }, { status: 400 });
   }
+  /* Reject non-UUIDs up front — keeps a bad body from erroring a
+     `uuid`-typed query and makes the 400 vs 403 split honest. */
+  if (!UUID_RE.test(organizationId)) {
+    return NextResponse.json({ error: "invalid_organization_id" }, { status: 400 });
+  }
 
   /* Membership check — RLS scopes to self, plus an explicit profile_id
-     filter. Zero rows → the caller isn't a member. */
-  const { data: membership } = await supabase
+     filter. A real DB error is a 500; only a genuine zero-row result is
+     `not_a_member`. */
+  const { data: membership, error: membershipErr } = await supabase
     .from("organization_memberships")
     .select("organization_id")
     .eq("profile_id", auth.user.id)
     .eq("organization_id", organizationId)
     .maybeSingle();
 
+  if (membershipErr) {
+    log.error("organizations.switch.membership_check_failed", {
+      err: membershipErr.message,
+    });
+    return NextResponse.json({ error: "lookup_failed" }, { status: 500 });
+  }
   if (!membership) {
     return NextResponse.json({ error: "not_a_member" }, { status: 403 });
   }

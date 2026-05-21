@@ -109,9 +109,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 }
 
 /* Recipient lookup: thread participants (other authors on this content
-   item) + (optionally) the content's `created_by`. Then split into
-   staff vs client recipients and email each with the right permalink.
-   Skips internal comments for client recipients. */
+   item) + the content's `created_by`. Each recipient must be verified as
+   org staff OR an active client viewer of this client before we email
+   them — a stray author_id outside the org is dropped. Staff and client
+   recipients get different permalinks; internal comments skip clients. */
 async function notifyParticipants(args: {
   slug: string;
   contentItemId: string;
@@ -124,9 +125,9 @@ async function notifyParticipants(args: {
 }): Promise<void> {
   const admin = getSupabaseServiceRole();
 
-  /* Pull org name (for the email subject), content title, and authors of
-     every existing comment on this thread in parallel. */
-  const [orgRes, contentRes, threadRes, authorRes] = await Promise.all([
+  /* Org name (email subject), content title, and every comment author on
+     this thread — in parallel. */
+  const [orgRes, contentRes, threadRes] = await Promise.all([
     admin
       .from("organizations")
       .select("name")
@@ -138,29 +139,21 @@ async function notifyParticipants(args: {
       .select("title, created_by")
       .eq("id", args.contentItemId)
       .maybeSingle()
-      .returns<{ title: string; created_by: string | null } | null>(),
+      .returns<{ title: string | null; created_by: string | null } | null>(),
     admin
       .from("content_comments")
       .select("author_id")
       .eq("content_item_id", args.contentItemId)
       .returns<Array<{ author_id: string }>>(),
-    admin
-      .from("users")
-      .select("display_name, email")
-      .eq("id", args.authorId)
-      .maybeSingle()
-      .returns<{ display_name: string | null; email: string } | null>(),
   ]);
 
-  const orgName = (orgRes.data as { name: string } | null)?.name ?? "CreatorHub";
-  const content = contentRes.data as { title: string; created_by: string | null } | null;
+  const content = contentRes.data;
   if (!content) return;
-  const author = authorRes.data as { display_name: string | null; email: string } | null;
-  const authorName =
-    author?.display_name ?? author?.email?.split("@")[0] ?? "A teammate";
+  const orgName = orgRes.data?.name ?? "CreatorHub";
+  const contentTitle = content.title ?? "Untitled content";
 
-  /* Build the deduped recipient set: everyone who's authored on this
-     thread, plus the content creator, minus the current author. */
+  /* Deduped recipient set: thread authors + content creator, minus the
+     current author. */
   const recipientIds = new Set<string>();
   for (const r of threadRes.data ?? []) {
     if (r.author_id && r.author_id !== args.authorId) recipientIds.add(r.author_id);
@@ -169,11 +162,19 @@ async function notifyParticipants(args: {
     recipientIds.add(content.created_by);
   }
   if (recipientIds.size === 0) return;
-
-  /* Look up each recipient's email + figure out whether they're staff
-     (org member) or a client-side workspace user. Permalink differs. */
   const ids = Array.from(recipientIds);
-  const [usersRes, staffRes] = await Promise.all([
+
+  /* Resolve in parallel: the comment author's name; recipient emails;
+     which recipients are org staff; which are active client viewers of
+     this client. The `organization_memberships` join column is
+     `profile_id` (not `user_id`). */
+  const [authorRes, usersRes, staffRes, clientRes] = await Promise.all([
+    admin
+      .from("users")
+      .select("display_name, email")
+      .eq("id", args.authorId)
+      .maybeSingle()
+      .returns<{ display_name: string | null; email: string } | null>(),
     admin
       .from("users")
       .select("id, email, display_name")
@@ -181,19 +182,34 @@ async function notifyParticipants(args: {
       .returns<Array<{ id: string; email: string; display_name: string | null }>>(),
     admin
       .from("organization_memberships")
-      .select("user_id")
+      .select("profile_id")
       .eq("organization_id", args.organizationId)
-      .in("user_id", ids)
-      .returns<Array<{ user_id: string }>>(),
+      .in("profile_id", ids)
+      .returns<Array<{ profile_id: string }>>(),
+    admin
+      .from("client_memberships")
+      .select("profile_id")
+      .eq("client_id", args.clientId)
+      .eq("status", "active")
+      .in("profile_id", ids)
+      .returns<Array<{ profile_id: string }>>(),
   ]);
 
-  const staffIds = new Set((staffRes.data ?? []).map((r) => r.user_id));
+  const author = authorRes.data;
+  const authorName =
+    author?.display_name ?? author?.email?.split("@")[0] ?? "A teammate";
+  const staffIds = new Set((staffRes.data ?? []).map((r) => r.profile_id));
+  const clientIds = new Set((clientRes.data ?? []).map((r) => r.profile_id));
   const users = usersRes.data ?? [];
 
   await Promise.all(
     users.map(async (u) => {
       const isStaff = staffIds.has(u.id);
-      /* Internal comments are staff-only — don't email client viewers. */
+      const isClientViewer = clientIds.has(u.id);
+      /* Drop anyone who is neither org staff nor an active client viewer
+         of this client. */
+      if (!isStaff && !isClientViewer) return;
+      /* Internal comments are staff-only — never email client viewers. */
       if (args.isInternal && !isStaff) return;
       const permalinkPath = isStaff
         ? `/clients/${args.slug}/pipeline?card=${args.contentItemId}`
@@ -203,7 +219,7 @@ async function notifyParticipants(args: {
         authorName,
         organizationName: orgName,
         clientDisplayName: args.clientDisplayName,
-        contentTitle: content.title,
+        contentTitle,
         commentBody: args.commentBody,
         permalinkPath,
         isInternal: args.isInternal,

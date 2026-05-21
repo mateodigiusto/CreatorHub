@@ -31,16 +31,6 @@ import { useAppState } from "@/lib/store";
 
 export type OptimisticError = Response | Error | unknown;
 
-export function useOptimisticRevertToast() {
-  const { showToast } = useAppState();
-  return useCallback(
-    (message: string) => {
-      showToast(message);
-    },
-    [showToast],
-  );
-}
-
 export function useOptimisticErrorReporter() {
   const { showToast } = useAppState();
 

@@ -52,12 +52,19 @@ export async function POST(req: NextRequest) {
   /* Guard against the user belonging to nothing — this route is for
      *additional* orgs. A user with zero memberships should go through
      the founding-org route (POST /api/organizations) so onboarding
-     state stays consistent. */
-  const existing = await service
+     state stays consistent. The session-bound client suffices here:
+     RLS lets a user read their own memberships. */
+  const existing = await supabase
     .from("organization_memberships")
     .select("id")
     .eq("profile_id", user.id)
     .limit(1);
+  if (existing.error) {
+    log.error("organizations.create_additional.precheck_failed", {
+      err: existing.error.message,
+    });
+    return NextResponse.json({ error: "lookup_failed" }, { status: 500 });
+  }
   if (!existing.data || existing.data.length === 0) {
     return NextResponse.json({ error: "no_founding_org" }, { status: 409 });
   }
@@ -105,6 +112,10 @@ export async function POST(req: NextRequest) {
       is_admin: true,
     });
   if (memberErr) {
+    /* The org row is already committed. With no membership it would be a
+       permanent orphan (RLS hides member-less orgs) holding a slug — so
+       roll it back before returning the error. */
+    await service.from("organizations").delete().eq("id", orgId);
     log.error("organizations.create_additional_member_failed", {
       orgId,
       err: memberErr.message,

@@ -17,10 +17,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronsUpDown, Check, Plus, Building2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useAppState } from "@/lib/store";
 import { CreateOrgDialog } from "./CreateOrgDialog";
 import type { OrgSummary } from "@/lib/orgs/types";
 
+/** Where to land after entering an org — agencies live in /clients,
+ *  solo accounts in /dashboard. */
+function landingFor(kind: OrgSummary["kind"]): string {
+  return kind === "agency" ? "/clients" : "/dashboard";
+}
+
 export function OrgSwitcher() {
+  const { showToast } = useAppState();
   const [orgs, setOrgs] = useState<OrgSummary[] | null>(null);
   const [open, setOpen] = useState(false);
   const [switching, setSwitching] = useState<string | null>(null);
@@ -77,13 +85,16 @@ export function OrgSwitcher() {
       });
       if (!res.ok) {
         setSwitching(null);
+        showToast("Couldn't switch organization. Try again.");
         return;
       }
       /* Hard reload so every server component re-resolves the session
-         against the new active-org cookie. */
-      window.location.assign("/dashboard");
+         against the new active-org cookie. Land on the surface that
+         matches the org kind. */
+      window.location.assign(landingFor(org.kind));
     } catch {
       setSwitching(null);
+      showToast("Network error. Try again.");
     }
   }
 

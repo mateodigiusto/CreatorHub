@@ -78,14 +78,20 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ ok: true, updated: 0 });
   }
 
-  const { error } = await reader
+  const { data, error } = await reader
     .from("ideas")
     .update(patch as never)
     .eq("id", id)
-    .eq("user_id", eff.userId);
+    .eq("user_id", eff.userId)
+    .select("id");
   if (error) {
     log.error("ideas.update_failed", error);
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
+  }
+  /* Zero rows → the id is bogus or not the caller's. Report it honestly
+     so the client doesn't show a phantom success. */
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
 }
@@ -105,14 +111,18 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
   }
   const reader = readerFor(supabase, eff.isClient);
 
-  const { error } = await reader
+  const { data, error } = await reader
     .from("ideas")
     .delete()
     .eq("id", id)
-    .eq("user_id", eff.userId);
+    .eq("user_id", eff.userId)
+    .select("id");
   if (error) {
     log.error("ideas.delete_failed", error);
     return NextResponse.json({ error: "delete_failed" }, { status: 500 });
+  }
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
 }

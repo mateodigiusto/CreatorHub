@@ -36,8 +36,8 @@ export function CreateOrgDialog({ onClose }: { onClose: () => void }) {
         return;
       }
       /* create-additional already set the active-org cookie — reload into
-         the new org. */
-      window.location.assign("/dashboard");
+         the new org, landing on the surface that matches its kind. */
+      window.location.assign(kind === "agency" ? "/clients" : "/dashboard");
     } catch {
       setError("Network error. Try again.");
       setSubmitting(false);

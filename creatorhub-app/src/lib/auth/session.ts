@@ -7,12 +7,11 @@
  * they on?`. The shape matches the contract documented in
  * `src/lib/agency/_phase1_deps.ts`.
  *
- * Multi-org-per-user (Phase 9): the active org is resolved by
- * `resolveActiveOrgId()` — it reads the `creatorhub-active-org` cookie,
- * re-verifies membership, and silently falls back to the user's first
- * membership when the cookie is missing or stale. Single-org users are
- * unaffected: with no cookie, the fallback is the same first-membership
- * query this resolver used pre-Phase-9.
+ * Multi-org-per-user (Phase 9): the active org is read from the
+ * `creatorhub-active-org` cookie (`getActiveOrgIdFromCookie()`). A cookie
+ * hit resolves in one membership+org join; a missing / malformed / stale
+ * cookie falls back to the user's first membership — the exact
+ * pre-Phase-9 behavior, so single-org users are unaffected.
  *
  * Memoized per request via React `cache()` so a server component tree
  * + its API route can both call `getSession()` without re-querying.
@@ -20,7 +19,10 @@
 
 import { cache } from "react";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { resolveActiveOrgId } from "@/lib/orgs/active-org";
+import { getActiveOrgIdFromCookie } from "@/lib/orgs/active-org";
+
+const MEMBERSHIP_SELECT =
+  "role, is_admin, organization:organizations ( id, slug, name, kind, plan, subscription_status )";
 
 export type OrgRole = "user" | "editor" | "director";
 export type OrgKind = "agency" | "solo";
@@ -63,41 +65,59 @@ type MembershipRow = {
   } | null;
 };
 
+function toSession(userId: string, email: string, row: MembershipRow): AgencySession | null {
+  if (!row.organization) return null;
+  return {
+    userId,
+    email,
+    organization: {
+      id: row.organization.id,
+      slug: row.organization.slug,
+      name: row.organization.name,
+      kind: row.organization.kind,
+    },
+    orgRole: row.role,
+    isAdmin: row.is_admin,
+    plan: row.organization.plan,
+    subscriptionStatus: row.organization.subscription_status,
+  };
+}
+
 export const getSession = cache(async (): Promise<AgencySession | null> => {
   const supabase = await getSupabaseServer();
 
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) return null;
+  const email = user.email ?? "";
 
-  /* Phase 9 — pick the org the request is acting on (cookie-pinned, with
-     a re-verified-membership fallback to the user's first org). */
-  const activeOrgId = await resolveActiveOrgId({ supabase, userId: user.id });
-  if (!activeOrgId) return null;
+  /* Phase 9 — multi-org. Happy path: the `creatorhub-active-org` cookie
+     pins an org, and a single membership+org join resolves it. If the
+     cookie is missing, malformed, or points at an org the user was
+     removed from, fall through to the first-membership query (the exact
+     pre-Phase-9 behavior). A real DB error throws — never silently
+     downgrade a valid session to "no org". */
+  const cookieOrgId = await getActiveOrgIdFromCookie();
+  if (cookieOrgId) {
+    const { data, error } = await supabase
+      .from("organization_memberships")
+      .select(MEMBERSHIP_SELECT)
+      .eq("profile_id", user.id)
+      .eq("organization_id", cookieOrgId)
+      .maybeSingle<MembershipRow>();
+    if (error) throw new Error(`getSession: active-org lookup failed: ${error.message}`);
+    if (data) return toSession(user.id, email, data);
+    /* Stale cookie — fall through to the first-membership fallback. */
+  }
 
   const { data, error } = await supabase
     .from("organization_memberships")
-    .select(
-      "role, is_admin, organization:organizations ( id, slug, name, kind, plan, subscription_status )",
-    )
+    .select(MEMBERSHIP_SELECT)
     .eq("profile_id", user.id)
-    .eq("organization_id", activeOrgId)
+    .order("created_at", { ascending: true })
+    .limit(1)
     .maybeSingle<MembershipRow>();
-
-  if (error || !data || !data.organization) return null;
-
-  return {
-    userId: user.id,
-    email: user.email ?? "",
-    organization: {
-      id: data.organization.id,
-      slug: data.organization.slug,
-      name: data.organization.name,
-      kind: data.organization.kind,
-    },
-    orgRole: data.role,
-    isAdmin: data.is_admin,
-    plan: data.organization.plan,
-    subscriptionStatus: data.organization.subscription_status,
-  };
+  if (error) throw new Error(`getSession: membership lookup failed: ${error.message}`);
+  if (!data) return null;
+  return toSession(user.id, email, data);
 });
