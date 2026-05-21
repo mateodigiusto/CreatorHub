@@ -74,11 +74,11 @@ const USER_OWNED_TABLES: Array<{
       hook: "RLS test hook",
     }),
   },
-  /* TODO: extend coverage to v18 relationship tables (creator_relationships,
-     relationship_*, notifications) + Phase 1 tables (assets, sequences,
+  /* TODO: extend coverage to the Phase 1 tables (assets, sequences,
      posts, integrations, content_analyses, content_drafts). Each FK
      dependency needs a fixture pattern — defer until the round-trip test
-     framework supports per-test setUp blocks. */
+     framework supports per-test setUp blocks. The agency model's tables
+     (organizations, clients, client_*) are covered by rls-agency.spec.ts. */
 ];
 
 let userA: { id: string; client: SupabaseClient };
