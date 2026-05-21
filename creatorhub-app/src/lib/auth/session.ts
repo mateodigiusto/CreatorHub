@@ -7,9 +7,12 @@
  * they on?`. The shape matches the contract documented in
  * `src/lib/agency/_phase1_deps.ts`.
  *
- * Multi-org-per-user (Phase 9) lands here later: this resolver will read a
- * `creatorhub-active-org` cookie to disambiguate; in v1 we always pick the
- * user's first membership.
+ * Multi-org-per-user (Phase 9): the active org is resolved by
+ * `resolveActiveOrgId()` — it reads the `creatorhub-active-org` cookie,
+ * re-verifies membership, and silently falls back to the user's first
+ * membership when the cookie is missing or stale. Single-org users are
+ * unaffected: with no cookie, the fallback is the same first-membership
+ * query this resolver used pre-Phase-9.
  *
  * Memoized per request via React `cache()` so a server component tree
  * + its API route can both call `getSession()` without re-querying.
@@ -17,6 +20,7 @@
 
 import { cache } from "react";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { resolveActiveOrgId } from "@/lib/orgs/active-org";
 
 export type OrgRole = "user" | "editor" | "director";
 export type OrgKind = "agency" | "solo";
@@ -66,14 +70,18 @@ export const getSession = cache(async (): Promise<AgencySession | null> => {
   const user = userData.user;
   if (!user) return null;
 
+  /* Phase 9 — pick the org the request is acting on (cookie-pinned, with
+     a re-verified-membership fallback to the user's first org). */
+  const activeOrgId = await resolveActiveOrgId({ supabase, userId: user.id });
+  if (!activeOrgId) return null;
+
   const { data, error } = await supabase
     .from("organization_memberships")
     .select(
       "role, is_admin, organization:organizations ( id, slug, name, kind, plan, subscription_status )",
     )
     .eq("profile_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
+    .eq("organization_id", activeOrgId)
     .maybeSingle<MembershipRow>();
 
   if (error || !data || !data.organization) return null;

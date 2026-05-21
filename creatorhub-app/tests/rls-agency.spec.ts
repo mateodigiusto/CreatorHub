@@ -200,3 +200,62 @@ describe("onboarding-split RLS (0038)", () => {
     await sql`delete from auth.users where id = ${D_USER}`;
   });
 });
+
+/* ─── Multi-org-per-user (Phase 9) ───────────────────────────────────────
+   The OrgSwitcher + /api/organizations/{mine,switch} all lean on one
+   RLS guarantee: a user can read `organizations` / `organization_memberships`
+   rows ONLY for orgs they're a member of. The /switch route's `not_a_member`
+   403 is exactly that boundary surfaced as an HTTP error. */
+describe("multi-org-per-user RLS (Phase 9)", () => {
+  /* A third org that A_USER will join as a *second* membership. */
+  const C_ORG = "11111111-1111-1111-1111-11111111111c";
+
+  beforeAll(async () => {
+    await sql`insert into organizations (id, slug, name, created_by, plan) values (${C_ORG}, 'rls-test-c', 'RLS Test C', ${A_USER}, 'pro') on conflict do nothing`;
+    await sql`insert into organization_memberships (organization_id, profile_id, role, is_admin) values (${C_ORG}, ${A_USER}, 'director', true) on conflict do nothing`;
+  });
+
+  afterAll(async () => {
+    await sql`alter table organization_memberships disable trigger trg_org_members_admin_guard`;
+    await sql`delete from organizations where id = ${C_ORG}`;
+    await sql`alter table organization_memberships enable trigger trg_org_members_admin_guard`;
+  });
+
+  it("user A with two memberships can read both of their orgs", async () => {
+    const rows = await asRole<Array<{ organization_id: string }>>(
+      "authenticated",
+      A_USER,
+      (tx) =>
+        tx`select organization_id from organization_memberships
+           where profile_id = ${A_USER} order by created_at`,
+    );
+    const orgIds = rows.map((r) => r.organization_id);
+    expect(orgIds).toContain(A_ORG);
+    expect(orgIds).toContain(C_ORG);
+  });
+
+  it("user A can read org C now that they're a member", async () => {
+    const rows = await asRole("authenticated", A_USER, (tx) =>
+      tx`select id from organizations where id = ${C_ORG}`,
+    );
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
+  it("user B cannot switch into org C — no membership row visible", async () => {
+    /* The /switch route checks `organization_memberships` for
+       (profile_id, organization_id); RLS makes a foreign membership
+       invisible, so the lookup is empty → route returns 403. */
+    const rows = await asRole("authenticated", B_USER, (tx) =>
+      tx`select organization_id from organization_memberships
+         where profile_id = ${B_USER} and organization_id = ${C_ORG}`,
+    );
+    expect(rows.length).toBe(0);
+  });
+
+  it("user B cannot even read org C", async () => {
+    const rows = await asRole("authenticated", B_USER, (tx) =>
+      tx`select id from organizations where id = ${C_ORG}`,
+    );
+    expect(rows.length).toBe(0);
+  });
+});

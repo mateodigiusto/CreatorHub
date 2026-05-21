@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAppState } from "@/lib/store";
+import { OrgSwitcher } from "@/components/orgs/OrgSwitcher";
 import {
   displayNameFor,
   avatarInitialsFor,
@@ -304,6 +305,8 @@ export function Sidebar({
             Creator<span style={{ color: t.wordAccent }}>Hub</span>
           </span>
         </Link>
+
+        <OrgSwitcher />
 
         <SidebarLabel color={t.labelColor}>Workspace</SidebarLabel>
         <SidebarList items={workspace} active={pathname} tokens={t} />
