@@ -45,6 +45,13 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function updateSession(req: NextRequest): Promise<NextResponse> {
+  /* Preview bypass: when PREVIEW_NO_AUTH=1, skip the auth gate entirely so
+     the UI can be browsed without a Supabase session. Never set this in a
+     production deployment that holds real user data. */
+  if (process.env.PREVIEW_NO_AUTH === "1") {
+    return NextResponse.next({ request: req });
+  }
+
   let res = NextResponse.next({ request: req });
 
   const supabase = createServerClient<Database>(
