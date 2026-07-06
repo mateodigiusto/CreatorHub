@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+
+# Node / Next.js
+node_modules
+/creatorhub-app/.next/
+/creatorhub-app/out/
+/creatorhub-app/build/
+/creatorhub-app/coverage/
+/creatorhub-app/.pnp
+/creatorhub-app/.pnp.*
+/creatorhub-app/.yarn/*
+!/creatorhub-app/.yarn/patches
+!/creatorhub-app/.yarn/plugins
+!/creatorhub-app/.yarn/releases
+!/creatorhub-app/.yarn/versions
+/creatorhub-app/*.tsbuildinfo
+/creatorhub-app/next-env.d.ts
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor
+*.pem
+.idea
+.vscode
+
+# Claude Code (planning/scratch outside the repo, but ignore if any leak in)
+.claude/
