@@ -180,6 +180,12 @@ export default function ProductionPage() {
                             setOverCol(null);
                           }}
                           onDelete={() => removeTask(t)}
+                          onMove={(s) => {
+                            if (s !== t.status) {
+                              setTaskStatus(t.id, s);
+                              showToast(`Moved to ${STATUS_LABEL[s]}`);
+                            }
+                          }}
                         />
                       ))
                     )}

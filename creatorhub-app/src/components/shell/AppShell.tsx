@@ -77,10 +77,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           mobileOpen={mobileNavOpen}
           onMobileClose={() => setMobileNavOpen(false)}
         />
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
           <Topbar onOpenMobileNav={() => setMobileNavOpen(true)} />
           <ActingAsBanner />
-          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px] w-full mx-auto">
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px] w-full mx-auto min-w-0">
             {children}
           </main>
         </div>

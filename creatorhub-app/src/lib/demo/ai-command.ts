@@ -27,6 +27,7 @@ export type AiAction =
       kind: "add_task";
       title: string;
       client?: string;
+      assignee?: string;
     }
   | { kind: "unknown"; reason: string };
 
@@ -131,13 +132,35 @@ function findKnownName(text: string, known: string[]): string | undefined {
   return sorted.find((n) => lower.includes(n.toLowerCase()));
 }
 
+/** Find a person by full name OR first name ("Lena" → "Lena M."). */
+function findPerson(text: string, names: string[]): string | undefined {
+  const lower = text.toLowerCase();
+  const sorted = [...names].sort((a, b) => b.length - a.length);
+  return sorted.find((n) => {
+    const full = n.toLowerCase();
+    if (lower.includes(full)) return true;
+    const first = full.split(/\s+/)[0];
+    return (
+      first.length >= 3 &&
+      new RegExp(`\\b${first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(
+        lower,
+      )
+    );
+  });
+}
+
 /**
  * Parse a command. `knownClients` lets remove/pause/payment intents resolve a
  * name by scanning for existing clients (robust to loose phrasing).
  */
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function parseCommand(
   input: string,
   knownClients: string[] = [],
+  knownMembers: string[] = [],
 ): AiAction {
   const text = input.trim();
   if (!text) return { kind: "unknown", reason: "Type a command first." };
@@ -193,14 +216,39 @@ export function parseCommand(
     }
   }
 
-  /* ---- add a task ---- */
-  if (mentions(/\b(add|create|new|make)\b/) && mentions(/\btask\b/)) {
-    const titleM =
-      text.match(/\btask\s+(?:to\s+|for\s+|:\s*)?([^,.]{3,80})/i) ||
-      text.match(/["'“”]([^"'“”]{3,80})["'“”]/);
-    const client = findKnownName(text, knownClients);
-    const title = cleanNote(titleM?.[1] ?? "New task");
-    return { kind: "add_task", title, client };
+  /* ---- add / assign a task ---- */
+  {
+    const assignee = findPerson(text, knownMembers);
+    const actiony = mentions(
+      /\b(edit|cut|make|create|film|shoot|design|write|draft|record|produce|render|post|schedule)\b/,
+    );
+    if (
+      mentions(/\btask\b/) ||
+      mentions(/\bassign\b/) ||
+      (assignee && actiony) ||
+      (assignee && mentions(/\b(tell|ask|get)\b/))
+    ) {
+      const client = findKnownName(text, knownClients);
+      let title = text
+        .replace(/^\s*(please|hey)\s+/i, "")
+        .replace(/^\s*(can|could)\s+you\s+/i, "")
+        .replace(/^(add|create|new|make)\s+(a\s+)?task\s*(to|for|:)?\s*/i, "")
+        .replace(/^assign\s+/i, "")
+        .replace(/^(tell|ask|get)\s+/i, "");
+      if (assignee) {
+        const first = assignee.split(/\s+/)[0];
+        title = title
+          .replace(new RegExp(`\\b${escapeRe(assignee)}\\b\\s*(to\\s+)?`, "i"), "")
+          .replace(new RegExp(`\\b${escapeRe(first)}\\b\\s*(to\\s+)?`, "i"), "");
+      }
+      title = title.replace(/^\s*(to|for|:)\s+/i, "").trim();
+      return {
+        kind: "add_task",
+        title: cleanNote(title || "New task"),
+        client,
+        assignee,
+      };
+    }
   }
 
   /* ---- onboard / add a client ---- */

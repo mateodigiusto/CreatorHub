@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/shell/AppShell";
@@ -17,15 +17,16 @@ export const metadata: Metadata = {
   description: "Premium creator operating system.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#070B14",
+};
+
 const themeBootstrap = `
 (function(){
-  try {
-    var t = localStorage.getItem('creatorhub-theme');
-    if (t !== 'dark' && t !== 'light') t = 'light';
-    document.documentElement.setAttribute('data-theme', t);
-  } catch(e) {
-    document.documentElement.setAttribute('data-theme', 'light');
-  }
+  // Dark mode only — the app ships a single dark theme.
+  document.documentElement.setAttribute('data-theme', 'dark');
   try {
     var p = localStorage.getItem('creatorhub-onboarded');
     document.documentElement.setAttribute('data-onboarded', p === 'true' ? 'true' : 'false');

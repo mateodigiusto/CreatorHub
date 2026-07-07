@@ -113,7 +113,7 @@ export function SelfTasksPanel() {
                 )}
                 <button
                   onClick={() => removeSelfItem(t.id)}
-                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-error cursor-pointer transition-opacity"
+                  className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 text-muted hover:text-error cursor-pointer transition-opacity"
                   aria-label="Remove"
                 >
                   <X className="w-3.5 h-3.5" />

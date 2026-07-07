@@ -9,6 +9,7 @@ import {
   Check,
   AlertTriangle,
   Trash2,
+  Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAppState } from "@/lib/store";
@@ -19,12 +20,13 @@ import {
 } from "@/lib/demo/clients";
 import { useDemoTeam } from "@/lib/demo/team";
 import { parseCommand, type AiAction } from "@/lib/demo/ai-command";
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 
 const EXAMPLES = [
+  "Assign Lena to cut the intro for FitForge",
   "Onboard Nord Coffee at $1,500/mo starting July 8",
   "Log a $1,200 payment for June Launch",
   "Pause FitForge",
-  "Remove Nord Coffee",
 ];
 
 function todayISO() {
@@ -50,11 +52,20 @@ export function AiAssistant({
     setClientStatus,
     logPayment,
   } = useClients();
-  const { members, addTask } = useDemoTeam();
+  const { members, addTask, addComment } = useDemoTeam();
 
   const [text, setText] = useState("");
   const [action, setAction] = useState<AiAction | null>(null);
   const [done, setDone] = useState<string | null>(null);
+
+  const assignable = members.filter((m) => m.id !== "m_owner" && m.role !== "pending");
+
+  const speech = useSpeechRecognition({
+    onFinal: (t) => {
+      setText(t);
+      interpret(t);
+    },
+  });
 
   useEffect(() => {
     const d = dialogRef.current;
@@ -84,7 +95,11 @@ export function AiAssistant({
 
   function interpret(value?: string) {
     const src = value ?? text;
-    const parsed = parseCommand(src, clients.map((c) => c.name));
+    const parsed = parseCommand(
+      src,
+      clients.map((c) => c.name),
+      assignable.map((m) => m.name),
+    );
     setDone(null);
     setAction(parsed);
   }
@@ -152,15 +167,26 @@ export function AiAssistant({
         return;
       }
       case "add_task": {
+        const named = action.assignee
+          ? assignable.find((m) => {
+              const n = action.assignee!.toLowerCase();
+              return (
+                m.name.toLowerCase() === n ||
+                m.name.toLowerCase().startsWith(n.split(" ")[0])
+              );
+            })
+          : undefined;
         const assignee =
-          members.find((m) => m.role === "editor") ??
-          members.find((m) => m.role === "manager");
+          named ??
+          assignable.find((m) => m.role === "editor") ??
+          assignable.find((m) => m.role === "manager") ??
+          members[0];
         const due = new Date();
         due.setDate(due.getDate() + 3);
-        addTask({
+        const id = addTask({
           title: action.title,
           client: action.client ?? "Untitled project",
-          assigneeId: assignee?.id ?? members[0]?.id ?? "",
+          assigneeId: assignee?.id ?? "",
           dueDate: due.toISOString(),
           priority: "medium",
           format: "Reel",
@@ -168,8 +194,24 @@ export function AiAssistant({
           inspirationUrls: [],
           resourceUrls: [],
         });
-        showToast("Task created");
-        setDone(`Created task “${action.title}”.`);
+        if (assignee) {
+          // Simulated notification: the assignee sees it in their portal, and
+          // a note is dropped on the task recording that they were pinged.
+          addComment(
+            id,
+            `Assigned to ${assignee.name} — they've been notified in CreatorHub.`,
+          );
+        }
+        showToast(
+          assignee
+            ? `Task assigned to ${assignee.name} — notified`
+            : "Task created",
+        );
+        setDone(
+          assignee
+            ? `Created “${action.title}” and assigned it to ${assignee.name}. They've been notified.`
+            : `Created task “${action.title}”.`,
+        );
         setAction(null);
         setText("");
         return;
@@ -216,25 +258,49 @@ export function AiAssistant({
               interpret();
             }}
           >
-            <textarea
-              autoFocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  interpret();
+            <div className="relative">
+              <textarea
+                autoFocus
+                value={speech.listening ? speech.transcript : text}
+                readOnly={speech.listening}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    interpret();
+                  }
+                }}
+                rows={2}
+                placeholder={
+                  speech.listening
+                    ? "Listening…"
+                    : "Tell me what to do — or tap the mic and just say it"
                 }
-              }}
-              rows={2}
-              placeholder="Tell me what to do — e.g. “Onboard Nord Coffee at $1,500/mo starting July 8”"
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2.5 text-[13.5px] text-text placeholder:text-muted focus:outline-none focus:border-accent/50 resize-none"
-            />
+                className="w-full rounded-[10px] border border-border bg-surface pl-3 pr-11 py-2.5 text-[13.5px] text-text placeholder:text-muted focus:outline-none focus:border-accent/50 resize-none"
+              />
+              {speech.supported && (
+                <button
+                  type="button"
+                  aria-label={speech.listening ? "Stop listening" : "Speak"}
+                  onClick={() => (speech.listening ? speech.stop() : speech.start())}
+                  className={
+                    "absolute top-2 right-2 w-8 h-8 grid place-items-center rounded-full cursor-pointer transition-colors " +
+                    (speech.listening
+                      ? "bg-error text-white animate-pulse"
+                      : "bg-accent-soft text-accent hover:bg-accent hover:text-white")
+                  }
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-[11px] text-muted">
-                Turns plain English into real changes.
+                {speech.supported
+                  ? "Type or speak — it turns words into real changes."
+                  : "Turns plain English into real changes."}
               </span>
-              <Button type="submit" size="sm" disabled={!text.trim()}>
+              <Button type="submit" size="sm" disabled={!text.trim() || speech.listening}>
                 Interpret <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -341,6 +407,12 @@ function Interpretation({
         {action.client ? (
           <>
             {" "}for <b className="text-text">{action.client}</b>
+          </>
+        ) : null}
+        {action.assignee ? (
+          <>
+            , assigned to <b className="text-text">{action.assignee}</b> (they&apos;ll
+            be notified)
           </>
         ) : null}
         .

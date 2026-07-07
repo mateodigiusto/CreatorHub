@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Plus, Sun, Moon, Menu } from "lucide-react";
+import { Search, Plus, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useAppState } from "@/lib/store";
-import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { AuthMenu } from "./AuthMenu";
 import { RoleSwitcher } from "@/components/team/RoleSwitcher";
@@ -37,7 +35,6 @@ export function Topbar({
   onOpenMobileNav?: () => void;
 } = {}) {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useAppState();
   const title = titles[pathname] || "Dashboard";
   const [activeIntegrations, setActiveIntegrations] = useState<number | null>(null);
 
@@ -112,7 +109,7 @@ export function Topbar({
         <Link
           href="/integrations"
           className={cn(
-            "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11.5px] font-medium border cursor-pointer transition-colors",
+            "hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11.5px] font-medium border cursor-pointer transition-colors",
             isConnected
               ? "text-accent border-accent/20"
               : "text-muted border-border hover:text-text",
@@ -148,14 +145,6 @@ export function Topbar({
             </>
           )}
         </Link>
-
-        <IconButton
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {theme === "dark" ? <Sun className="w-[15px] h-[15px]" /> : <Moon className="w-[15px] h-[15px]" />}
-        </IconButton>
 
         <AuthMenu />
 

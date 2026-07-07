@@ -299,7 +299,7 @@ function EditorCard({
           e.stopPropagation();
           onDelete();
         }}
-        className="absolute top-2 right-2 z-10 w-7 h-7 grid place-items-center rounded-[8px] text-muted opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error/10 transition-[opacity,color,background-color] cursor-pointer"
+        className="absolute top-2 right-2 z-10 w-7 h-7 grid place-items-center rounded-[8px] text-muted opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:text-error hover:bg-error/10 transition-[opacity,color,background-color] cursor-pointer"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>

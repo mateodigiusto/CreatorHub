@@ -48,18 +48,12 @@ const THEME_KEY = "creatorhub-theme";
 const CURRENT_CLIENT_KEY = "creatorhub-current-client";
 
 function readInitialTheme(): Theme {
-  if (typeof document === "undefined") return "light";
-  const attr = document.documentElement.getAttribute("data-theme");
-  if (attr === "dark" || attr === "light") return attr;
-  try {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "dark" || stored === "light") return stored;
-  } catch {}
-  return "light";
+  // Dark mode only — the app ships a single dark theme.
+  return "dark";
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("dark");
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(
     null
@@ -110,19 +104,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t);
+  // Dark mode only — theme is fixed. setTheme/toggleTheme are kept for API
+  // compatibility but always resolve to dark.
+  const setTheme = useCallback((_t: Theme) => {
+    setThemeState("dark");
     if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.setAttribute("data-theme", "dark");
       try {
-        localStorage.setItem(THEME_KEY, t);
+        localStorage.setItem(THEME_KEY, "dark");
       } catch {}
     }
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    setTheme("dark");
+  }, [setTheme]);
 
   const setProfile = useCallback((p: Profile) => {
     setProfileState(p);

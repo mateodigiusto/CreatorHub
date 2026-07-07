@@ -7,7 +7,10 @@ import { cn } from "@/lib/cn";
 import {
   dueLabel,
   useDemoTeam,
+  STATUS_ORDER,
+  STATUS_LABEL,
   type Task,
+  type TaskStatus,
 } from "@/lib/demo/team";
 import {
   StatusBadge,
@@ -26,6 +29,7 @@ export function TaskCard({
   onDragStart,
   onDragEnd,
   onDelete,
+  onMove,
 }: {
   task: Task;
   href: string;
@@ -35,6 +39,7 @@ export function TaskCard({
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
   onDelete?: () => void;
+  onMove?: (status: TaskStatus) => void;
 }) {
   const { memberById } = useDemoTeam();
   const due = dueLabel(task.dueDate);
@@ -62,7 +67,7 @@ export function TaskCard({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="absolute top-2 right-2 z-10 w-7 h-7 grid place-items-center rounded-[8px] text-muted opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error/10 transition-[opacity,color,background-color] cursor-pointer"
+              className="absolute top-2 right-2 z-10 w-7 h-7 grid place-items-center rounded-[8px] text-muted opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:text-error hover:bg-error/10 transition-[opacity,color,background-color] cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -104,6 +109,31 @@ export function TaskCard({
               {showAssignee && <MemberAvatar member={assignee} size={22} />}
             </div>
           </div>
+
+          {/* Mobile-only tap-to-move (drag is desktop-only) */}
+          {onMove && (
+            <div
+              data-nodrag
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="sm:hidden mt-3"
+            >
+              <select
+                aria-label="Move task"
+                value={task.status}
+                onChange={(e) => onMove(e.target.value as TaskStatus)}
+                className="w-full h-8 rounded-[8px] border border-border bg-surface-2 text-[12px] text-text-2 px-2 cursor-pointer focus:outline-none focus:border-accent/50"
+              >
+                {STATUS_ORDER.map((s) => (
+                  <option key={s} value={s}>
+                    Move to: {STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </Card>
       </Link>
     </div>

@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAppState } from "@/lib/store";
-import { Sun, Moon, RefreshCw, Trash2, AlertTriangle, Check } from "lucide-react";
+import { RefreshCw, Trash2, AlertTriangle, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import {
@@ -53,7 +53,7 @@ function planFeatures(trial: Trial | undefined): string[] {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { theme, setTheme, profile, setProfile, clearProfile, showToast } = useAppState();
+  const { profile, setProfile, clearProfile, showToast } = useAppState();
   const initialName = displayNameFor(profile);
   const initialHandle = handleFor(profile);
   const ct = creatorTypeLabel(profile);
@@ -230,31 +230,6 @@ export default function SettingsPage() {
           >
             {openingPortal ? "Opening…" : "Manage subscription"}
           </Button>
-        </Card>
-
-        <Card className="col-span-2">
-          <CardHeader
-            title="Appearance"
-            description="Choose how CreatorHub looks on this device"
-          />
-          <div className="grid grid-cols-2 gap-2.5">
-            <ThemeOption
-              label="Light"
-              hint="Warm off-white surfaces, navy text"
-              icon={<Sun className="w-4 h-4" />}
-              active={theme === "light"}
-              onClick={() => setTheme("light")}
-              preview="light"
-            />
-            <ThemeOption
-              label="Dark"
-              hint="Premium midnight navy"
-              icon={<Moon className="w-4 h-4" />}
-              active={theme === "dark"}
-              onClick={() => setTheme("dark")}
-              preview="dark"
-            />
-          </div>
         </Card>
 
         <DashboardModeCard />
@@ -757,75 +732,5 @@ function ScriptPreferencesCard() {
         </>
       )}
     </Card>
-  );
-}
-
-function ThemeOption({
-  label,
-  hint,
-  icon,
-  active,
-  onClick,
-  preview,
-}: {
-  label: string;
-  hint: string;
-  icon: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-  preview: "light" | "dark";
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "lift text-left rounded-[12px] border p-3 bg-surface card-base flex items-center gap-3 transition-colors",
-        active
-          ? "border-accent/40 ring-2 ring-accent/15"
-          : "border-border"
-      )}
-    >
-      <div
-        className="w-12 h-9 rounded-md shrink-0 flex flex-col overflow-hidden"
-        style={{
-          background:
-            preview === "light"
-              ? "linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 60%)"
-              : "linear-gradient(180deg, #070B14 0%, #0B1220 60%)",
-          border:
-            preview === "light"
-              ? "1px solid #D8E0EA"
-              : "1px solid #1F2A3D",
-        }}
-      >
-        <div
-          className="h-2"
-          style={{
-            background: preview === "light" ? "#0B1220" : "#172033",
-          }}
-        />
-        <div className="flex-1 flex items-center gap-1 px-1.5">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: "#2563EB" }}
-          />
-          <div
-            className="flex-1 h-1 rounded-full"
-            style={{
-              background: preview === "light" ? "#E2E8F0" : "#1F2A3D",
-            }}
-          />
-        </div>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-text/70">{icon}</span>
-          <span className="text-[13px] font-medium text-text">{label}</span>
-        </div>
-        <div className="text-[11.5px] text-muted mt-0.5 leading-snug">
-          {hint}
-        </div>
-      </div>
-    </button>
   );
 }
