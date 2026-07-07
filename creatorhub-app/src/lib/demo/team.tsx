@@ -508,6 +508,7 @@ type DemoTeamApi = {
   /* tasks */
   addTask: (input: NewTaskInput) => string;
   setTaskStatus: (id: string, status: TaskStatus) => void;
+  deleteTask: (id: string) => void;
   setBlocked: (id: string, reason: string, need?: string) => void;
   toggleDone: (id: string) => void;
   addComment: (id: string, body: string) => void;
@@ -617,6 +618,10 @@ export function DemoTeamProvider({ children }: { children: ReactNode }) {
           : t,
       ),
     }));
+  }, []);
+
+  const deleteTask = useCallback((id: string) => {
+    setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }));
   }, []);
 
   const setBlocked = useCallback(
@@ -771,6 +776,7 @@ export function DemoTeamProvider({ children }: { children: ReactNode }) {
     actAs,
     addTask,
     setTaskStatus,
+    deleteTask,
     setBlocked,
     toggleDone,
     addComment,

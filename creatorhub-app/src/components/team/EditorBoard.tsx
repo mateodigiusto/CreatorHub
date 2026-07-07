@@ -9,6 +9,7 @@ import {
   X,
   Send,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -52,7 +53,7 @@ type Pending = { task: Task; kind: "blocked" | "review" | "complete" } | null;
 
 export function EditorBoard() {
   const router = useRouter();
-  const { myTasks, setTaskStatus, setBlocked, attachDeliverable } =
+  const { myTasks, setTaskStatus, setBlocked, attachDeliverable, deleteTask } =
     useDemoTeam();
   const { showToast } = useAppState();
 
@@ -224,6 +225,10 @@ export function EditorBoard() {
                         setOverCol(null);
                       }}
                       onMove={(target) => move(t, target)}
+                      onDelete={() => {
+                        deleteTask(t.id);
+                        showToast("Task deleted");
+                      }}
                     />
                   ))
                 )}
@@ -256,6 +261,7 @@ function EditorCard({
   onDragStart,
   onDragEnd,
   onMove,
+  onDelete,
 }: {
   task: Task;
   dragging: boolean;
@@ -263,6 +269,7 @@ function EditorCard({
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   onMove: (target: TaskStatus) => void;
+  onDelete: () => void;
 }) {
   const due = dueLabel(task.dueDate);
   return (
@@ -280,11 +287,23 @@ function EditorCard({
       role="button"
       tabIndex={0}
       className={cn(
-        "group bg-surface border border-border rounded-[12px] p-3 card-base cursor-grab active:cursor-grabbing transition-[box-shadow,border-color,opacity] hover:border-accent-border hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        "group relative bg-surface border border-border rounded-[12px] p-3 card-base cursor-grab active:cursor-grabbing transition-[box-shadow,border-color,opacity] hover:border-accent-border hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
         dragging && "opacity-50",
       )}
     >
-      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+      <button
+        type="button"
+        data-nodrag
+        aria-label="Delete task"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="absolute top-2 right-2 z-10 w-7 h-7 grid place-items-center rounded-[8px] text-muted opacity-0 group-hover:opacity-100 hover:text-error hover:bg-error/10 transition-[opacity,color,background-color] cursor-pointer"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+      <div className="flex items-center gap-1.5 flex-wrap mb-2 pr-7">
         <ClientChip client={task.client} />
         <FormatChip format={task.format} />
       </div>

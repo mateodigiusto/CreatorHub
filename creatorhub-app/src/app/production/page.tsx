@@ -2,13 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LayoutGrid, Rows3 } from "lucide-react";
+import { Plus, LayoutGrid, Rows3, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { TaskCard } from "@/components/team/TaskCard";
 import { NewTaskModal } from "@/components/team/NewTaskModal";
+import { cn } from "@/lib/cn";
+import { useAppState } from "@/lib/store";
 import {
   StatusBadge,
   PriorityChip,
@@ -22,15 +24,36 @@ import {
   STATUS_LABEL,
   STATUS_ORDER,
   type Task,
+  type TaskStatus,
 } from "@/lib/demo/team";
 
 type View = "board" | "table";
 
 export default function ProductionPage() {
   const router = useRouter();
-  const { tasks, memberById, ready } = useDemoTeam();
+  const { tasks, memberById, ready, setTaskStatus, deleteTask } = useDemoTeam();
+  const { showToast } = useAppState();
   const [view, setView] = useState<View>("board");
   const [modalOpen, setModalOpen] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overCol, setOverCol] = useState<TaskStatus | null>(null);
+
+  function onDrop(status: TaskStatus) {
+    const id = dragId;
+    setDragId(null);
+    setOverCol(null);
+    if (!id) return;
+    const task = tasks.find((t) => t.id === id);
+    if (task && task.status !== status) {
+      setTaskStatus(id, status);
+      showToast(`Moved to ${STATUS_LABEL[status]}`);
+    }
+  }
+
+  function removeTask(t: Task) {
+    deleteTask(t.id);
+    showToast("Task deleted");
+  }
 
   const stats = useMemo(() => {
     const active = tasks.filter((t) => t.status !== "done").length;
@@ -95,36 +118,77 @@ export default function ProductionPage() {
       </div>
 
       {view === "board" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-          {STATUS_ORDER.map((status) => (
-            <div key={status} className="min-w-0">
-              <div className="flex items-center gap-2 mb-3 px-1">
-                <h2 className="text-[12.5px] font-semibold text-text">
-                  {STATUS_LABEL[status]}
-                </h2>
-                <span className="text-[11.5px] text-muted">
-                  {grouped[status].length}
-                </span>
-              </div>
-              <div className="flex flex-col gap-3">
-                {grouped[status].length === 0 ? (
-                  <div className="rounded-[12px] border border-dashed border-border py-6 text-center text-[12px] text-muted">
-                    Nothing here
+        <>
+          <p className="text-[12px] text-muted mb-3 hidden sm:block">
+            Drag a card between columns to move it · hover a card to delete it.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            {STATUS_ORDER.map((status) => {
+              const isOver = Boolean(dragId) && overCol === status;
+              return (
+                <div
+                  key={status}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDragEnter={() => setOverCol(status)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    onDrop(status);
+                  }}
+                  className={cn(
+                    "min-w-0 rounded-[14px] border p-2 transition-colors",
+                    isOver
+                      ? "border-dashed border-accent bg-accent/[0.04]"
+                      : "border-transparent",
+                  )}
+                >
+                  <div className="flex items-center gap-2 mb-3 px-1 pt-1">
+                    <h2 className="text-[12.5px] font-semibold text-text">
+                      {STATUS_LABEL[status]}
+                    </h2>
+                    <span className="text-[11.5px] text-muted">
+                      {grouped[status].length}
+                    </span>
                   </div>
-                ) : (
-                  grouped[status].map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
-                      href={`/production/${t.id}`}
-                      showAssignee
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+                  <div className="flex flex-col gap-3 min-h-[100px]">
+                    {grouped[status].length === 0 ? (
+                      <div className="rounded-[12px] border border-dashed border-border py-6 text-center text-[12px] text-muted">
+                        {isOver ? "Drop to move here" : "Nothing here"}
+                      </div>
+                    ) : (
+                      grouped[status].map((t) => (
+                        <TaskCard
+                          key={t.id}
+                          task={t}
+                          href={`/production/${t.id}`}
+                          showAssignee
+                          draggable
+                          dragging={dragId === t.id}
+                          onDragStart={(e) => {
+                            if ((e.target as HTMLElement).closest("[data-nodrag]")) {
+                              e.preventDefault();
+                              return;
+                            }
+                            setDragId(t.id);
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/plain", t.id);
+                          }}
+                          onDragEnd={() => {
+                            setDragId(null);
+                            setOverCol(null);
+                          }}
+                          onDelete={() => removeTask(t)}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       ) : (
         <Card padded={false} className="overflow-hidden">
           <div className="overflow-x-auto">
@@ -136,6 +200,7 @@ export default function ProductionPage() {
                   <th className="font-medium px-4 py-2.5">Status</th>
                   <th className="font-medium px-4 py-2.5">Due</th>
                   <th className="font-medium px-4 py-2.5">Priority</th>
+                  <th className="font-medium px-4 py-2.5 w-10" />
                 </tr>
               </thead>
               <tbody>
@@ -180,6 +245,19 @@ export default function ProductionPage() {
                       </td>
                       <td className="px-4 py-3">
                         <PriorityChip priority={t.priority} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          aria-label="Delete task"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeTask(t);
+                          }}
+                          className="w-7 h-7 grid place-items-center rounded-[8px] text-muted hover:text-error hover:bg-error/10 cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </td>
                     </tr>
                   );
