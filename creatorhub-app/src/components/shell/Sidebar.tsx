@@ -22,6 +22,7 @@ import {
   Inbox,
   ListChecks,
   UserCog,
+  Wallet,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -42,18 +43,19 @@ type NavItem = {
 };
 
 const ITEMS = {
-  dashboard: { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  analytics: { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  ideas:     { href: "/ideas",     label: "Ideas",     icon: Lightbulb },
-  library:   { href: "/library",   label: "Asset Library", icon: Images },
-  content:   { href: "/content",   label: "Content",   icon: FileText },
-  calendar:  { href: "/calendar",  label: "Calendar",  icon: Calendar },
-  clients:   { href: "/clients",   label: "Clients",   icon: Users },
+  hub:        { href: "/hub",        label: "Clients & Revenue", icon: Wallet },
+  dashboard:  { href: "/dashboard",  label: "Dashboard", icon: LayoutDashboard },
+  production: { href: "/production", label: "Production", icon: ListChecks },
+  analytics:  { href: "/analytics",  label: "Analytics", icon: BarChart3 },
+  ideas:      { href: "/ideas",      label: "Ideas",     icon: Lightbulb },
+  library:    { href: "/library",    label: "Asset Library", icon: Images },
+  content:    { href: "/content",    label: "Content",   icon: FileText },
+  calendar:   { href: "/calendar",   label: "Calendar",  icon: Calendar },
 } as const satisfies Record<string, NavItem>;
 
 const baseWorkspace: NavItem[] = [
-  ITEMS.dashboard, ITEMS.analytics, ITEMS.ideas,
-  ITEMS.library, ITEMS.content, ITEMS.calendar, ITEMS.clients,
+  ITEMS.hub, ITEMS.dashboard, ITEMS.production, ITEMS.analytics,
+  ITEMS.ideas, ITEMS.library, ITEMS.content, ITEMS.calendar,
 ];
 
 /** Order the Workspace nav by what the role uses every day. Same items —
@@ -62,12 +64,12 @@ function workspaceForRole(creatorType: CreatorType | undefined): NavItem[] {
   switch (creatorType) {
     case "editor":
       return [
-        ITEMS.clients, ITEMS.content, ITEMS.calendar,
+        ITEMS.hub, ITEMS.production, ITEMS.content, ITEMS.calendar,
         ITEMS.dashboard, ITEMS.library, ITEMS.analytics, ITEMS.ideas,
       ];
     case "content_manager":
       return [
-        ITEMS.content, ITEMS.calendar, ITEMS.clients,
+        ITEMS.production, ITEMS.content, ITEMS.calendar, ITEMS.hub,
         ITEMS.dashboard, ITEMS.library, ITEMS.analytics, ITEMS.ideas,
       ];
     default:
@@ -97,7 +99,6 @@ function toolsForRole(creatorType: CreatorType | undefined): NavItem[] {
 }
 
 const baseSystem: NavItem[] = [
-  { href: "/production", label: "Production", icon: ListChecks },
   { href: "/team", label: "Team", icon: UserCog },
   { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },

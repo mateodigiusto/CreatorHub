@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppShell } from "@/components/shell/AppShell";
 import { AppStateProvider } from "@/lib/store";
 import { DemoTeamProvider } from "@/lib/demo/team";
+import { ClientsProvider } from "@/lib/demo/clients";
 import { PageviewTracker } from "@/components/analytics/PageviewTracker";
 
 const inter = Inter({
@@ -49,8 +50,10 @@ export default function RootLayout({
       <body className="min-h-full">
         <AppStateProvider>
           <DemoTeamProvider>
-            <PageviewTracker />
-            <AppShell>{children}</AppShell>
+            <ClientsProvider>
+              <PageviewTracker />
+              <AppShell>{children}</AppShell>
+            </ClientsProvider>
           </DemoTeamProvider>
         </AppStateProvider>
       </body>
