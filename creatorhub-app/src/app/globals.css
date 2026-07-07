@@ -163,6 +163,38 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Dark-mode only: tell the browser so native controls (select popups,
+   date pickers, scrollbars, autofill) render with light-on-dark defaults
+   everywhere, not just where colorScheme is set inline. */
+:root {
+  color-scheme: dark;
+}
+
+/* Safety net: any form control that forgot an explicit text color still
+   renders readable white text on the dark surfaces, never black-on-dark. */
+input,
+textarea,
+select {
+  color: var(--text);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+/* Autofilled fields default to black text in some browsers — override. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+/* Native <option> lists inside dark selects. */
+option {
+  color: var(--text);
+  background: var(--surface);
+}
+
 body {
   position: relative;
   min-height: 100vh;
