@@ -254,6 +254,7 @@ type ClientsApi = {
   addClient: (input: NewClientInput) => string;
   setClientStatus: (id: string, status: ClientStatus) => void;
   toggleOnboardingStep: (clientId: string, stepId: string) => void;
+  removeClient: (id: string) => void;
   /* payments */
   logPayment: (p: { clientId: string; amount: number; date: string; note?: string }) => void;
   /* self tasks */
@@ -348,6 +349,14 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const removeClient = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      clients: s.clients.filter((c) => c.id !== id),
+      payments: s.payments.filter((p) => p.clientId !== id),
+    }));
+  }, []);
+
   const logPayment = useCallback(
     (p: { clientId: string; amount: number; date: string; note?: string }) => {
       setState((s) => ({
@@ -413,6 +422,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     addClient,
     setClientStatus,
     toggleOnboardingStep,
+    removeClient,
     logPayment,
     addSelfTask,
     addCheckIn,

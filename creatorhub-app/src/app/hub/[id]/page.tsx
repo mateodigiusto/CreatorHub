@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
@@ -10,6 +10,7 @@ import {
   Link2,
   Copy,
   Mail,
+  Trash2,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -31,15 +32,18 @@ import {
 
 export default function ClientDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const {
     clientById,
     paymentsForClient,
     setClientStatus,
     toggleOnboardingStep,
+    removeClient,
   } = useClients();
   const { tasks } = useDemoTeam();
   const { showToast } = useAppState();
   const [logOpen, setLogOpen] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const client = clientById(params.id);
 
@@ -69,6 +73,13 @@ export default function ClientDetailPage() {
   function copyPortal() {
     navigator.clipboard?.writeText(portalUrl).catch(() => {});
     showToast("Client portal link copied");
+  }
+
+  function doRemove() {
+    if (!client) return;
+    removeClient(client.id);
+    showToast(`${client.name} removed`);
+    router.push("/hub");
   }
 
   return (
@@ -112,6 +123,13 @@ export default function ClientDetailPage() {
             <Button onClick={() => setLogOpen(true)}>
               <Plus className="w-4 h-4" /> Log payment
             </Button>
+            <button
+              type="button"
+              onClick={() => setConfirmRemove(true)}
+              className="h-9 px-3 inline-flex items-center gap-1.5 rounded-[10px] border border-border bg-surface text-[13px] text-text-2 hover:text-error hover:border-error/40 cursor-pointer transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Remove
+            </button>
           </div>
         }
       />
@@ -340,6 +358,38 @@ export default function ClientDetailPage() {
         onClose={() => setLogOpen(false)}
         presetClientId={client.id}
       />
+
+      {confirmRemove && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-text/40 backdrop-blur-sm px-4"
+          onClick={() => setConfirmRemove(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-surface border border-border rounded-[16px] w-[min(420px,92vw)] p-5 shadow-[0_24px_60px_rgba(11,18,32,0.22)]"
+          >
+            <div className="w-10 h-10 rounded-[11px] bg-error/10 grid place-items-center mb-3">
+              <Trash2 className="w-4.5 h-4.5 text-error" />
+            </div>
+            <h2 className="text-[16px] font-semibold text-text">
+              Remove {client.name}?
+            </h2>
+            <p className="text-[13px] text-muted mt-1.5">
+              This off-boards {client.name} and deletes their payment history from
+              your dashboard. Tasks on the Production board stay. This can&apos;t be
+              undone.
+            </p>
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <Button variant="ghost" onClick={() => setConfirmRemove(false)}>
+                Cancel
+              </Button>
+              <Button onClick={doRemove} className="!bg-error !text-white">
+                <Trash2 className="w-3.5 h-3.5" /> Remove client
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

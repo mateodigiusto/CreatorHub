@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { UserPlus, ChevronRight } from "lucide-react";
+import { UserPlus, ChevronRight, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { RevenueHero } from "@/components/hub/RevenueHero";
 import { SelfTasksPanel } from "@/components/hub/SelfTasksPanel";
 import { AddClientModal } from "@/components/hub/AddClientModal";
+import { AiAssistant } from "@/components/hub/AiAssistant";
 import {
   useClients,
   formatMoney,
@@ -32,6 +33,7 @@ export default function HubPage() {
   const { tasks } = useDemoTeam();
   const { profile } = useAppState();
   const [addOpen, setAddOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const firstName = displayNameFor(profile).split(" ")[0];
 
   const wipFor = (name: string) =>
@@ -45,9 +47,14 @@ export default function HubPage() {
         title={`Welcome back, ${firstName}`}
         description="Your business at a glance — what you're making and who you're making it for. Only you see this."
         actions={
-          <Button onClick={() => setAddOpen(true)}>
-            <UserPlus className="w-4 h-4" /> Add client
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setAiOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Assistant
+            </Button>
+            <Button onClick={() => setAddOpen(true)}>
+              <UserPlus className="w-4 h-4" /> Add client
+            </Button>
+          </>
         }
       />
 
@@ -136,6 +143,7 @@ export default function HubPage() {
       </div>
 
       <AddClientModal open={addOpen} onClose={() => setAddOpen(false)} />
+      <AiAssistant open={aiOpen} onClose={() => setAiOpen(false)} />
     </>
   );
 }
