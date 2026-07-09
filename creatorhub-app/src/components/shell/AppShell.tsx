@@ -30,8 +30,10 @@ export function AppShell({ children }: { children: ReactNode }) {
      join screen is a standalone welcome. Both bypass the agency shell. */
   const isEditorPortal = pathname?.startsWith("/editor-portal");
   const isDemoJoin = pathname === "/join";
-  /* The read-only client portal ships its own minimal chrome. */
+  /* The read-only client portal + shared single-task view ship their own
+     minimal chrome. */
   const isClientPortal = pathname?.startsWith("/client-portal");
+  const isSharedTask = pathname?.startsWith("/task/");
   const isFullViewport =
     isOnboarding ||
     isLogin ||
@@ -39,7 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     isPublicStandalone ||
     isEditorPortal ||
     isDemoJoin ||
-    isClientPortal;
+    isClientPortal ||
+    isSharedTask;
 
   /* Close mobile drawer on route change. */
   useEffect(() => {

@@ -14,6 +14,7 @@ import {
   Clock,
   FileVideo,
   AlertTriangle,
+  Link2,
 } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +38,7 @@ import {
   RESOURCE_ICON,
   INSPO_ICON,
 } from "./bits";
+import { buildShareUrl } from "@/lib/demo/shareTask";
 
 export function TaskDetail({
   taskId,
@@ -174,13 +176,22 @@ function TaskDetailBody({
 
   return (
     <div className="max-w-[920px] mx-auto">
-      <Link
-        href={backHref}
-        className="inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-text transition-colors mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        {backLabel}
-      </Link>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-text transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {backLabel}
+        </Link>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => copy(buildShareUrl(task, assigneeName))}
+        >
+          <Link2 className="w-3.5 h-3.5" /> Share link
+        </Button>
+      </div>
 
       {/* Header */}
       <Card className="mb-4">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Link2, Copy, ExternalLink, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAppState } from "@/lib/store";
 import {
@@ -11,6 +11,7 @@ import {
   type TaskPriority,
   type TaskFormat,
 } from "@/lib/demo/team";
+import { buildShareUrl } from "@/lib/demo/shareTask";
 
 const FORMATS: TaskFormat[] = ["Reel", "Carousel", "Short", "YouTube"];
 const PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
@@ -29,8 +30,10 @@ export function NewTaskModal({
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const { members, addTask } = useDemoTeam();
+  const { members, tasks, addTask, memberById } = useDemoTeam();
   const { showToast, theme } = useAppState();
+
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   const editors = members.filter(
     (m) => m.role === "editor" || m.role === "manager",
@@ -88,8 +91,14 @@ export function NewTaskModal({
           : []),
       ],
     };
-    addTask(input);
+    const id = addTask(input);
     showToast("Task created");
+    reset();
+    setCreatedId(id);
+  }
+
+  function close() {
+    setCreatedId(null);
     reset();
     onClose();
   }
@@ -98,15 +107,34 @@ export function NewTaskModal({
     ? dueLabel(new Date(dueDate + "T12:00:00").toISOString()).text
     : "";
 
+  const createdTask = createdId
+    ? tasks.find((t) => t.id === createdId)
+    : null;
+  const shareUrl = createdTask
+    ? buildShareUrl(
+        createdTask,
+        memberById(createdTask.assigneeId)?.name ?? "Unassigned",
+      )
+    : "";
+
   return (
     <dialog
       ref={dialogRef}
-      onClose={onClose}
+      onClose={close}
       onClick={(e) => {
-        if (e.target === dialogRef.current) onClose();
+        if (e.target === dialogRef.current) close();
       }}
       className="bg-transparent p-0 backdrop:bg-text/40 backdrop:backdrop-blur-sm"
     >
+      {createdTask ? (
+        <ShareStep
+          shareUrl={shareUrl}
+          theme={theme}
+          onCopied={() => showToast("Share link copied")}
+          onCreateAnother={() => setCreatedId(null)}
+          onDone={close}
+        />
+      ) : (
       <form
         onSubmit={submit}
         style={{ colorScheme: theme }}
@@ -116,7 +144,7 @@ export function NewTaskModal({
           <h2 className="text-[16px] font-semibold text-text">New task</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             className="w-8 h-8 grid place-items-center rounded-md text-muted hover:text-text hover:bg-surface-2 cursor-pointer"
             aria-label="Close"
           >
@@ -237,7 +265,7 @@ export function NewTaskModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border sticky bottom-0 bg-surface">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={close}>
             Cancel
           </Button>
           <Button type="submit">
@@ -245,7 +273,83 @@ export function NewTaskModal({
           </Button>
         </div>
       </form>
+      )}
     </dialog>
+  );
+}
+
+function ShareStep({
+  shareUrl,
+  theme,
+  onCopied,
+  onCreateAnother,
+  onDone,
+}: {
+  shareUrl: string;
+  theme: string;
+  onCopied: () => void;
+  onCreateAnother: () => void;
+  onDone: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard?.writeText(shareUrl).catch(() => {});
+    setCopied(true);
+    onCopied();
+    setTimeout(() => setCopied(false), 1600);
+  }
+  return (
+    <div
+      style={{ colorScheme: theme }}
+      className="bg-surface border border-border rounded-[16px] w-[min(520px,92vw)] shadow-[0_24px_60px_rgba(11,18,32,0.22)] overflow-hidden"
+    >
+      <div className="px-6 pt-6 pb-3 text-center">
+        <div className="w-12 h-12 rounded-[14px] bg-success/12 grid place-items-center mx-auto mb-3">
+          <Check className="w-5 h-5 text-success" />
+        </div>
+        <h2 className="text-[17px] font-semibold text-text">Task created</h2>
+        <p className="text-[13px] text-muted mt-1">
+          Share this link — anyone can open it and see the full task, no login
+          needed.
+        </p>
+      </div>
+
+      <div className="px-6 py-4">
+        <div className="flex items-center gap-2 mb-2 text-[12px] font-medium text-text-2">
+          <Link2 className="w-3.5 h-3.5 text-accent" /> Shareable link
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={shareUrl}
+            onFocus={(e) => e.currentTarget.select()}
+            className="flex-1 h-9 rounded-[10px] border border-border bg-surface-2 px-3 text-[12px] text-text-2 focus:outline-none"
+          />
+          <button
+            onClick={copy}
+            className="h-9 px-3 shrink-0 inline-flex items-center gap-1.5 rounded-[10px] btn-primary text-white text-[13px] cursor-pointer"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <a
+          href={shareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 mt-3 text-[12.5px] text-accent hover:underline"
+        >
+          <ExternalLink className="w-3.5 h-3.5" /> Preview what they&apos;ll see
+        </a>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
+        <Button variant="ghost" onClick={onCreateAnother}>
+          Create another
+        </Button>
+        <Button onClick={onDone}>Done</Button>
+      </div>
+    </div>
   );
 }
 
