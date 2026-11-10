@@ -1026,6 +1026,9 @@ details.more > summary{cursor:pointer;font-size:12.5px;color:var(--ink-3);width:
 #ed-list:empty{display:none}
 .edit-h .grow{flex:1}
 .toolbar > .grow,.card-h > .grow{flex:1 1 auto;min-width:0}
+/* the preview is a span inside a card: keep its own white text in the light theme too */
+.sp.sp{color:#fff;font-size:12px;line-height:1.12}
+.sp.sp-new{color:var(--ink-2);background:none}
 
 </style>
 </head>
@@ -1967,6 +1970,7 @@ function wsButton(compact){
 function aiStatus(){
   const st = S.claude.status, why = S.claude.why;
   const map = {absent:["", "Claude not set up"], unknown:["", "Checking…"], offline:["off", "Can’t reach the server"], nocode:["wait", "Add your invite"], soon:["", "Claude Code: switching on"], waiting:["wait", "Connect Claude Code"], ready:["", "Claude Code is set up"], connected:["on", "Claude Code connected"], denied:["off", why === "off" ? "Invite switched off" : "Invite not valid"]}[st] || ["", "Claude Code"];
+  if (st === "ready" && !codeSeen()) return h("button", {type:"button", class:"status wait", onclick:connectModal}, h("span", {class:"led"}), h("span", {text:"Connect Claude Code"}));
   return h("button", {type:"button", class:"status " + map[0], onclick:() => st === "connected" || st === "ready" ? go("settings", {settingsTab:"integrations"}) : connectModal()}, h("span", {class:"led"}), h("span", {text:map[1]}));
 }
 function navCounts(){
