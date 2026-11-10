@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap">
-<script>window.CH_CONFIG = {"brain":"http://127.0.0.1:8792/"};</script>
+<script>window.CH_CONFIG = {"brain":"https://knlkkdabdhficbzxtffb.supabase.co/functions/v1/studio"};</script>
 <style>
 /* Layout: a workspace console after the reference screens. Tree sidebar, breadcrumb bar, liquid-glass cards on pure black.
    Inter at tight tracking, white primary actions, hue only as a muted tint on icon tiles and badges. Motion is quiet. */
@@ -1379,6 +1379,7 @@ const Views = {};
    The page holds no prompts and no editing rules. It sends facts to the CreatorHub server; the server
    holds the skills, talks to Claude, and sends back the result. */
 const BRAIN = {url:String((window.CH_CONFIG && window.CH_CONFIG.brain) || ""), code:"", key:"", serverKey:null, allowance:null};
+const BRAIN_LIMITS = {status:8000, ping:45000};
 function brainLoad(){ const b = pref("brain", null) || {}; BRAIN.code = String(b.code || ""); BRAIN.key = String(b.key || ""); BRAIN.serverKey = typeof b.serverKey === "boolean" ? b.serverKey : null; }
 function brainSave(){ setPref("brain", {code:BRAIN.code, key:BRAIN.key, serverKey:BRAIN.serverKey}); }
 function brainState(){ return !BRAIN.url ? "absent" : !BRAIN.code ? "nocode" : (BRAIN.key || BRAIN.serverKey) ? "ready" : BRAIN.serverKey === false ? "nokey" : "unknown"; }
@@ -1443,10 +1444,14 @@ async function brainCall(skill, vars, o){
   if (o.images && o.images.length) body.images = await Promise.all([...o.images].slice(0, 14).map(imagePart));
   if (o.tail && o.tail.length) body.tail = o.tail;
   const headers = {"content-type":"application/json", "x-studio-code":BRAIN.code}; if (BRAIN.key) headers["x-claude-key"] = BRAIN.key;
-  let res;
-  try { res = await fetch(BRAIN.url, {method:"POST", headers, body:JSON.stringify(body), signal:o.signal}); }
-  catch (e){ throw {code:e && e.name === "AbortError" ? "cancelled" : "network"}; }
-  let data = null; try { data = await res.json(); } catch (e){}
+  // Nothing here may hang: every request has a time limit, and running out of time reads as "couldn't reach the server".
+  const ctl = new AbortController(); let late = false;
+  const timer = setTimeout(() => { late = true; ctl.abort(); }, BRAIN_LIMITS[skill] || 300000);
+  if (o.signal){ if (o.signal.aborted) ctl.abort(); else o.signal.addEventListener("abort", () => ctl.abort(), {once:true}); }
+  let res, data = null;
+  try { res = await fetch(BRAIN.url, {method:"POST", headers, body:JSON.stringify(body), signal:ctl.signal}); try { data = await res.json(); } catch (e){ if (late || ctl.signal.aborted) throw e; } }
+  catch (e){ throw {code:late ? "network" : e && e.name === "AbortError" ? "cancelled" : "network"}; }
+  finally { clearTimeout(timer); }
   if (!data || !data.ok){ const err = {code:(data && data.code) || (res.status === 413 ? "too_large" : "upstream"), message:(data && data.message) || ""}; claudeFail(err); throw err; }
   if (skill !== "status") markClaude("connected");
   return data;
@@ -1474,11 +1479,30 @@ async function skillChat(skill, vars, tools, o){
   return {text};
 }
 /* Ask the server whether this invite is good and whether it already has a Claude key of its own. */
+let brainRun = 0, brainRetryT = 0, brainRetries = 0;
 async function brainCheck(){
+  clearTimeout(brainRetryT);
   if (!BRAIN.url){ markClaude("absent"); return false; }
   if (!BRAIN.code){ markClaude("nocode"); return false; }
-  try { const r = await brainCall("status"); BRAIN.serverKey = !!r.serverKey; BRAIN.allowance = r.allowance || null; brainSave(); if (S.claude.status !== "connected" || !(BRAIN.key || BRAIN.serverKey)) markClaude(brainState()); return true; }
-  catch (e){ if (e && e.code !== "no_access" && S.claude.status === "unknown") markClaude(BRAIN.key ? "ready" : "unknown"); return false; }
+  const run = ++brainRun;
+  if (S.claude.status === "offline") markClaude("unknown");
+  for (let i = 0; i < 3; i++){
+    try {
+      const r = await brainCall("status"); if (run !== brainRun) return true;
+      BRAIN.serverKey = !!r.serverKey; BRAIN.allowance = r.allowance || null; brainSave(); brainRetries = 0;
+      if (S.claude.status !== "connected" || !(BRAIN.key || BRAIN.serverKey)) markClaude(brainState());
+      return true;
+    } catch (e){
+      const c = e && e.code; if (run !== brainRun) return false;
+      if (c === "no_access" || c === "invite_off") return false;
+      if (i < 2) await new Promise(res => setTimeout(res, 900 * (i + 1)));
+    }
+  }
+  if (run !== brainRun) return false;
+  // Three tries failed. Say so, and keep trying quietly in the background.
+  if (S.claude.status === "unknown") markClaude(BRAIN.key ? "ready" : "offline");
+  if (brainRetries++ < 6) brainRetryT = setTimeout(brainCheck, 20000);
+  return false;
 }
 /* One real answer from Claude, so the light only turns green when it truly works. */
 async function brainConnect(){ await brainCall("ping"); return true; }
@@ -1491,6 +1515,12 @@ function connectPanel(onChange){
   const run = async fn => { if (CN.busy) return; const a = document.activeElement; if (a && wrap.contains(a)) a.blur(); CN.busy = true; CN.msg = ""; again(); try { await fn(); CN.code = ""; CN.key = ""; } catch (e){ CN.msg = claudeCopy(e); } finally { CN.busy = false; again(); } };
   const msg = CN.msg ? h("p", {class:"err", "aria-live":"polite", text:CN.msg}) : null;
   if (st === "absent"){ wrap.append(h("p", {class:"meta", text:"Claude isn’t set up on this copy of CreatorHub."})); return wrap; }
+  if (st === "offline"){
+    wrap.append(h("p", {class:"err", text:"Couldn’t reach the CreatorHub server. Check your connection, then try again."}),
+      h("div", {class:"toolbar"}, btn(CN.busy ? "Trying…" : "Try again", {class:"btn primary", id:"cn-go", disabled:CN.busy, onclick:() => run(async () => { const ok = await brainCheck(); if (!ok && S.claude.status === "offline") throw {code:"network"}; })}, "refresh")));
+    return wrap;
+  }
+  if (st === "unknown"){ wrap.append(h("div", {class:"toolbar"}, h("span", {class:"spin"}), h("span", {class:"meta", text:"Checking your invite…"}))); return wrap; }
   if (st === "nocode" || (st === "denied" && why === "code")){
     const inp = h("input", {id:"cn-code", placeholder:"CH-XXXXX-XXXXX-XXXXX", autocomplete:"off", spellcheck:"false", "aria-label":"Invite code", value:CN.code || (st === "denied" ? BRAIN.code : ""), oninput:e => { CN.code = e.target.value; }});
     const go2 = () => { const v = inp.value.trim(); run(async () => { if (!v) throw {code:"no_access"}; setInvite(v); const ok = await brainCheck(); if (!ok) throw {code:S.claude.status === "denied" || S.claude.status === "nocode" ? "no_access" : "network"}; if (claudeOK()) await brainConnect(); }); };
@@ -1515,7 +1545,7 @@ function connectPanel(onChange){
       BRAIN.key ? btn("Remove my key", {class:"btn sm ghost", onclick:() => { setClaudeKey(""); brainCheck().then(again); again(); }}) : null), msg);
     return wrap;
   }
-  wrap.append(h("div", {class:"toolbar"}, btn(CN.busy ? "Connecting…" : st === "unknown" ? "Checking…" : "Connect Claude", {class:"btn ai", id:"cn-go", disabled:CN.busy || st === "unknown", onclick:() => run(async () => { if (S.claude.status === "unknown") await brainCheck(); await brainConnect(); })}, "sparkle")), msg);
+  wrap.append(h("div", {class:"toolbar"}, btn(CN.busy ? "Connecting…" : "Connect Claude", {class:"btn ai", id:"cn-go", disabled:CN.busy, onclick:() => run(async () => { await brainConnect(); })}, "sparkle")), msg);
   return wrap;
 }
 function connectModal(){
@@ -1533,6 +1563,7 @@ function localDb(){
   const notify = p => { for (const l of [...listeners]) if (l.isCol ? isChild(l.path, p) : l.path === p) l.fn(l.isCol ? snapCol(l.path) : snapDoc(l.path)); };
   const store = (p, d) => { if (!idb) return; try { const os = idb.transaction("docs", "readwrite").objectStore("docs"); if (d === undefined) os.delete(p); else os.put(d, p); } catch (e){} };
   const ready = new Promise(res => {
+    setTimeout(res, 4000);
     try {
       const rq = indexedDB.open("creatorhub-studio", 1);
       rq.onupgradeneeded = () => rq.result.createObjectStore("docs");
@@ -1693,7 +1724,7 @@ function wsButton(compact){
 }
 function aiStatus(){
   const st = S.claude.status, why = S.claude.why;
-  const map = {absent:["", "Claude not set up"], unknown:["", "Checking Claude…"], nocode:["wait", "Add your invite"], nokey:["wait", "Connect Claude"], ready:["wait", "Claude ready"], connected:["on", "Claude connected"], denied:["off", why === "code" ? "Invite not valid" : why === "off" ? "Invite switched off" : why === "credit" ? "No Claude credit left" : "Claude key not accepted"]}[st] || ["", "Claude"];
+  const map = {absent:["", "Claude not set up"], unknown:["", "Checking Claude…"], offline:["off", "Can’t reach the server"], nocode:["wait", "Add your invite"], nokey:["wait", "Connect Claude"], ready:["wait", "Claude ready"], connected:["on", "Claude connected"], denied:["off", why === "code" ? "Invite not valid" : why === "off" ? "Invite switched off" : why === "credit" ? "No Claude credit left" : "Claude key not accepted"]}[st] || ["", "Claude"];
   return h("button", {type:"button", class:"status " + map[0], onclick:() => st === "connected" || st === "ready" ? go("settings", {settingsTab:"integrations"}) : connectModal()}, h("span", {class:"led"}), h("span", {text:map[1]}));
 }
 function navCounts(){
@@ -1813,7 +1844,7 @@ function wizardUpdate(root, el){
   let body; const err = h("span", {class:"err grow", "aria-live":"polite"});
   if (step === 0){
     const st = S.claude.status, why = S.claude.why; const ok = st === "connected";
-    const line = ok ? "Everything in CreatorHub now runs through it." : st === "nocode" ? "CreatorHub is invite only. Paste the code from your invite." : st === "nokey" ? "Paste a Claude API key. You do this once." : st === "denied" ? (why === "code" ? "That invite isn’t valid." : why === "credit" ? "The Claude account behind your key has no credit left." : "Claude didn’t accept that key.") : st === "absent" ? "Claude isn’t set up on this copy of CreatorHub. You can still look around." : st === "unknown" ? "Checking your invite…" : "Press the button to check the connection.";
+    const line = ok ? "Everything in CreatorHub now runs through it." : st === "nocode" ? "CreatorHub is invite only. Paste the code from your invite." : st === "nokey" ? "Paste a Claude API key. You do this once." : st === "denied" ? (why === "code" ? "That invite isn’t valid." : why === "credit" ? "The Claude account behind your key has no credit left." : "Claude didn’t accept that key.") : st === "absent" ? "Claude isn’t set up on this copy of CreatorHub. You can still look around." : st === "unknown" ? "Checking your invite…" : st === "offline" ? "Couldn’t reach the CreatorHub server." : "Press the button to check the connection.";
     body = [h("div", null, h("h1", {text:"Connect Claude"}), h("p", {class:"lede", text:"CreatorHub is the interface. Claude does the work behind it: it edits your videos, writes your scripts and reads your numbers. You never open a chat or write a prompt."})),
       h("div", {class:"card wz-connect" + (ok ? " ok" : "")}, h("span", {class:"tile", style:"--hue:var(--h-ai)"}, icon(ok ? "check" : "sparkle")), h("div", {class:"grow stack-s", style:"min-width:220px"}, h("div", null, h("b", {text:ok ? "Claude is connected" : "Claude"}), h("div", {class:"meta", id:"wz-claude", text:line})), ok || st === "absent" ? null : connectPanel(() => wizardUpdate(null, wrap)))),
       h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"What happens next"}), btn("Watch the lesson", {class:"btn sm", onclick:() => go("academy", {course:"start-here", lesson:"sh-2"})}, "play")),
@@ -1959,6 +1990,7 @@ function emptyState(title, text, actions, steps){
 }
 function claudeGate(featureText){
   if (claudeOK() || S.claude.status === "unknown") return null;
+  if (S.claude.status === "offline") return h("div", {class:"banner warn"}, icon("alert"), h("span", {class:"grow", text:"Couldn’t reach the CreatorHub server. Check your connection."}), btn("Try again", {class:"btn sm primary", onclick:() => brainCheck()}));
   return h("div", {class:"banner ai"}, icon("info"), h("span", {class:"grow", text:"Connect Claude to turn on " + featureText + "."}), S.claude.status === "absent" ? null : btn("Connect", {class:"btn sm primary", onclick:connectModal}));
 }
 function stagePill(stage){ const st = STAGE[stage] || STAGE.idea; return h("span", {class:"pill", style:`--stage:var(${st.v})`}, h("span", {class:"sw"}), st.label); }
@@ -4016,10 +4048,11 @@ function maybeAutopilot(){
   S.claude.status = brainState();
   loadSharedSeeds();
   render();
+  brainCheck();
+  window.addEventListener("online", () => { if (!claudeOK()) brainCheck(); });
   await db.ready;
   subscribeUser(db);
   render();
-  brainCheck();
 })();
 
 })();
