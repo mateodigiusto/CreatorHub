@@ -1082,6 +1082,20 @@ details.more > summary{cursor:pointer;font-size:12.5px;color:var(--ink-3);width:
 .blank-cta .lnk{background:none;border:0;color:var(--ink-3);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:4px}
 @media (max-width:760px){.blank-cta h2{font-size:22px}.ec-drop > svg{display:none}}
 
+/* ===================== v5: styles as names, clips by choosing ===================== */
+.style-grid,.style-grid.compact{grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:8px}
+.style-card{padding:12px 14px;gap:4px;border-radius:12px;min-height:0}
+.style-card .sc-t b{font-size:14px}
+.style-card .sc-d{-webkit-line-clamp:2}
+.style-card.new .sc-t svg{width:14px;height:14px}
+.sb{grid-template-columns:1fr}
+.ec-drop{display:grid;gap:8px;align-items:stretch}
+.ec-pickrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ec-pickrow .btn{flex:none;cursor:pointer}
+.ec-pickrow .grow{flex:1 1 240px;min-width:0}
+#ec-mic-msg{margin:0;font-size:12.5px;color:var(--bad)}
+#ec-mic-msg[hidden]{display:none}
+
 </style>
 </head>
 <body>
@@ -2451,7 +2465,7 @@ function recentFiles(){
 /* ===================== Editor: the brief, the style, and the hand-off to Claude Code =====================
    Nothing is edited in the browser. The creator says what they want and picks a style; the edit itself is made by
    Claude Code on their computer, with HyperFrames or in Premiere Pro. This screen queues the job and shows how it goes. */
-const EDJ = {draft:null, sending:false, err:"", watching:false, timer:0, loadedAt:0, change:{}, mounted:false, listening:false, rec:null};
+const EDJ = {micMsg:"", draft:null, sending:false, err:"", watching:false, timer:0, loadedAt:0, change:{}, mounted:false, listening:false, rec:null};
 const ENGINES = [
   {id:"hyperframes", name:"HyperFrames", short:"No editing program", desc:"No editing program needed. Claude builds the whole video and hands you the finished MP4."},
   {id:"premiere", name:"Premiere Pro", short:"Inside your Premiere", desc:"Claude works inside your Premiere project. You look it over and export there."}];
@@ -2472,34 +2486,14 @@ function setDefaultStyle(id){ if (!S.profile){ toast("Set up your workspace firs
 function defaultEngine(){ const e = S.profile && S.profile.engine; return e === "premiere" ? "premiere" : "hyperframes"; }
 function engineName(id){ return (ENGINES.find(e => e.id === id) || ENGINES[0]).name; }
 
-/* A small moving picture of each look, built from HTML and CSS the same way the real edit is. */
-function stylePreview(styleId){
-  const st = styleById(styleId); const k = st.custom ? st.base : st.id;
-  const s = (cls, ...kids) => h("span", {class:cls}, ...kids);
-  const bg = s("sp-bg");
-  const pin = () => s("sp-pin");
-  const parts = {
-    bigcaps:() => [s("sp-bar", s("sp-fill")), s("sp-cap caps pop", "THIS IS WHAT ", h("b", {text:"PEOPLE"}), " GET WRONG")],
-    glass:() => [s("sp-pill glass pop", pin(), "Manchester"), s("sp-card glass rise", h("b", {text:"25%"}), s("sp-sub", "growth a year")), s("sp-cap glass capsule", h("b", {text:"This is what"}), " people get wrong")],
-    realestate:() => [s("sp-big green rise", "25%"), s("sp-big2", "GROWTH"), s("sp-pill glass pop", pin(), "HINDLEY"), s("sp-cap caps small", "ACTUALLY GET BUILT")],
-    rating:() => [s("sp-rows", s("sp-row glass", "Tacos", h("b", {text:"6"})), s("sp-row glass", "Ramen", h("b", {text:"9"}))), s("sp-card glass score pop", s("sp-sub up", "THE BURGER"), h("b", {text:"8/10"}), s("sp-meter", s("sp-fill"))), s("sp-cap small", "honestly an eight")],
-    versus:() => [s("sp-split"), s("sp-vs glass", s("sp-side on", "iPhone"), s("sp-badge", "VS"), s("sp-side", "Pixel")), s("sp-ticks l", s("sp-tick ok", "Camera"), s("sp-tick ok", "Battery")), s("sp-ticks r", s("sp-tick no", "Price")), s("sp-cap small", "the camera wins it")],
-    podcast:() => [s("sp-bar", s("sp-fill")), s("sp-name", "MATEO"), s("sp-cap box", "“Nobody ", h("b", {text:"tells you"}), " this part.”"), s("sp-wave", ...[5, 9, 4, 8, 6, 10, 5, 7].map((n, i) => h("i", {style:"--n:" + n + ";--i:" + i})))],
-    tutorial:() => [s("sp-seg", ...[1, 1, 0, 0, 0].map(on => h("i", {class:on ? "on" : ""}))), s("sp-chip", "Step 2 of 5"), s("sp-cap box low", "Screenshot ", h("b", {text:"second zero"}))],
-    clean:() => [s("sp-hook", "What people get wrong"), s("sp-cap box low", "This is what people get wrong")],
-    editorial:() => [s("sp-title", "The first frame", s("sp-rule")), s("sp-cap serif low", "This is what people ", h("b", {text:"get wrong"}))],
-    minimal:() => [s("sp-cap tiny low", "This is what people get wrong")],
-  };
-  return h("span", {class:"sp sp-" + k, "aria-hidden":"true"}, bg, ...(parts[k] || parts.bigcaps)());
-}
 function styleCard(st, picked, onPick, extra){
-  return h("button", {type:"button", class:"style-card", "data-style":st.id, "aria-pressed":String(!!picked), onclick:() => onPick(st.id)}, stylePreview(st.id),
+  return h("button", {type:"button", class:"style-card", "data-style":st.id, "aria-pressed":String(!!picked), onclick:() => onPick(st.id)},
     h("span", {class:"sc-t"}, h("b", {text:st.name}), st.custom ? h("span", {class:"pill neutral", text:"Yours"}) : null, extra || null), h("span", {class:"sc-d", text:st.desc}));
 }
 function styleGallery(cur, onPick, o){
   o = o || {}; const mine = customStyles().map(c => styleFrom(c));
   const grid = h("div", {class:"style-grid" + (o.compact ? " compact" : ""), role:"group", "aria-label":"Editing style"});
-  if (!o.noCreate) grid.append(h("button", {type:"button", class:"style-card new", id:"style-new", onclick:() => openStyleBuilder(null, onPick)}, h("span", {class:"sp sp-new"}, icon("plus")), h("span", {class:"sc-t"}, h("b", {text:"Create a style"})), h("span", {class:"sc-d", text:"Describe the look you want, or point it at videos you like."})));
+  if (!o.noCreate) grid.append(h("button", {type:"button", class:"style-card new", id:"style-new", onclick:() => openStyleBuilder(null, onPick)}, h("span", {class:"sc-t"}, icon("plus"), h("b", {text:"Create a style"})), h("span", {class:"sc-d", text:"Describe the look you want, or point it at videos you like."})));
   for (const st of [...mine, ...EDITING_STYLES]) grid.append(styleCard(st, st.id === cur, onPick, st.custom && !o.noEdit ? h("span", {class:"sc-edit", role:"button", tabindex:"0", "aria-label":"Edit " + st.name, onclick:e => { e.stopPropagation(); openStyleBuilder(st.id, onPick); }}, icon("pen")) : null));
   return grid;
 }
@@ -2513,8 +2507,7 @@ function openStyleBuilder(id, onSaved){
   const name = bindText(h("input", {id:"sb-name", value:d.name, placeholder:"Mateo Classic"}), v => { d.name = v; }, 0);
   const desc = bindText(h("textarea", {id:"sb-desc", rows:"5", placeholder:"Big white captions, two words at a time. Green for numbers, red for the problem. Slow zoom on every key line. No emojis, no sound effects."}), v => { d.description = v; }, 0); desc.value = d.description;
   const refs = bindText(h("input", {id:"sb-refs", value:d.refs, placeholder:"/Users/you/Movies/edits-i-like  or links"}), v => { d.refs = v; }, 0);
-  const prev = h("div", {class:"sb-prev"}); const drawPrev = () => prev.replaceChildren(stylePreview(d.base));
-  const base = h("select", {id:"sb-base", onchange:e => { d.base = e.target.value; drawPrev(); }}, EDITING_STYLES.map(s => opt(s.id, s.name))); base.value = d.base; drawPrev();
+  const base = h("select", {id:"sb-base", onchange:e => { d.base = e.target.value; }}, EDITING_STYLES.map(s => opt(s.id, s.name))); base.value = d.base;
   const save = use => {
     if (!d.name.trim()){ err.textContent = "Give it a name first."; name.focus(); return; }
     if (!d.description.trim() && !d.refs.trim()){ err.textContent = "Describe the look, or point it at videos you like."; desc.focus(); return; }
@@ -2528,8 +2521,7 @@ function openStyleBuilder(id, onSaved){
     h("div", {class:"stack-s"}, fld("Name", name, "sb-name"),
       fld("Describe the look", desc, "sb-desc", "Say it the way you would to an editor. Claude follows this on every edit in this style."),
       fld("Videos you like (optional)", refs, "sb-refs", "A folder on your computer, or links. Claude Code studies them before it edits. Nothing is uploaded."),
-      fld("Start from", base, "sb-base", "The closest look that ships with CreatorHub. Your description bends it.")),
-    prev),
+      fld("Start from", base, "sb-base", "The closest look that ships with CreatorHub. Your description bends it."))),
     actions:[id ? btn("Delete", {class:"btn ghost danger", onclick:() => confirmModal("Delete this style", "Edits already made keep their look. This can’t be undone.", "Delete", () => { closeLayer(); if (S.profile && S.profile.editingStyle === id) setProfile({editingStyle:"bigcaps"}); if (EDJ.draft && EDJ.draft.styleId === id) EDJ.draft.styleId = "bigcaps"; remove("styles", id); })}) : null, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn(id ? "Save" : "Save and use it", {class:"btn primary", id:"sb-save", onclick:() => save(true)}, "check")]});
 }
 
@@ -2572,9 +2564,12 @@ function parseSource(line){
 }
 function addSources(list, text){ let n = 0; for (const line of String(text || "").split(/\r?\n|\t/)){ const x = parseSource(line); if (x && !list.some(y => y.value === x.value) && list.length < 60){ list.push(x); n++; } } return n; }
 function sourceFolder(list){ const f = list.find(x => x.kind === "folder"); if (f) return f.value; const one = list.find(x => x.kind === "file"); return one ? one.value.replace(/[\\/][^\\/]*$/, "") : ""; }
+function clipSize(n){ return n > 1073741824 ? (n / 1073741824).toFixed(1) + " GB" : n > 0 ? Math.max(1, Math.round(n / 1048576)) + " MB" : ""; }
+/* Clips chosen or dropped: only the name, the size and the date are kept, so Claude can find the same file on the computer. Nothing is read or uploaded. */
+function addPicked(list, files){ let n = 0; for (const f of [...(files || [])]){ if (!f || !f.name || list.length >= 60 || list.some(x => x.label === f.name && (x.size || 0) === (f.size || 0))) continue; list.push({kind:"name", value:f.name, label:f.name, size:f.size || 0, modified:f.lastModified || 0}); n++; } return n; }
 function sourceChips(list){
   const ic = {folder:"folder", file:"film", link:"link", name:"film"};
-  return list.length ? h("div", {class:"ec-files"}, list.map((x, i) => h("span", {class:"chip src k-" + x.kind, title:x.value}, icon(ic[x.kind]), h("b", {text:x.label}), x.kind === "folder" || x.kind === "file" ? h("span", {class:"meta", text:x.value.length > x.label.length ? " in " + x.value.slice(0, x.value.length - x.label.length).replace(/[\\/]+$/, "").split(/[\\/]/).slice(-2).join("/") : ""}) : x.kind === "name" ? h("span", {class:"meta", text:" name only"}) : null,
+  return list.length ? h("div", {class:"ec-files"}, list.map((x, i) => h("span", {class:"chip src k-" + x.kind, title:x.value}, icon(ic[x.kind]), h("b", {text:x.label}), x.kind === "folder" || x.kind === "file" ? h("span", {class:"meta", text:x.value.length > x.label.length ? " in " + x.value.slice(0, x.value.length - x.label.length).replace(/[\\/]+$/, "").split(/[\\/]/).slice(-2).join("/") : ""}) : x.kind === "name" && x.size ? h("span", {class:"meta", text:" " + clipSize(x.size)}) : null,
     h("button", {type:"button", class:"x", "aria-label":"Remove " + x.label, onclick:() => { list.splice(i, 1); edRedraw(); }}, icon("close"))))) : null;
 }
 /* Redraw the composer now, even while a box in it has the cursor, and put the cursor back where it was. */
@@ -2593,19 +2588,27 @@ function sourceInput(id, list, placeholder, after){
   inp.addEventListener("blur", () => { if (inp.value.trim() && addSources(list, inp.value)){ inp.value = ""; if (after) after(); setTimeout(edRedraw, 0); } });
   return inp;
 }
-/* Say it instead of typing it. Uses the browser's own speech recognition where it has one. */
-function micButton(area, onText){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return null;
+/* Say it instead of typing it. Uses the browser's own speech recognition. When that is missing or blocked, it says so
+   in plain words and points at the Mac's own dictation, which works in any box. */
+const MIC_NO = "This browser can’t turn speech into text. Open CreatorHub in Chrome or Safari, or click in the box and press the microphone key on your Mac keyboard to dictate.";
+function micSay(t){ EDJ.micMsg = t || ""; const el = $("#ec-mic-msg"); if (el){ el.textContent = EDJ.micMsg; el.hidden = !EDJ.micMsg; } }
+function micButton(onText){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const b = btn("Talk", {class:"btn mic", id:"ec-mic", "aria-pressed":"false", title:"Say what you want instead of typing"}, "mic");
+  const show = on => { const el = $("#ec-mic") || b; el.setAttribute("aria-pressed", String(on)); el.lastChild.textContent = on ? "Listening. Tap to stop" : "Talk"; };
   b.addEventListener("click", () => {
     if (EDJ.rec){ try { EDJ.rec.stop(); } catch (e){} return; }
-    const rec = new SR(); const base = area.value.trim() ? area.value.trim() + " " : ""; let fin = "";
-    rec.continuous = true; rec.interimResults = true; rec.lang = navigator.language || "en-US";
-    rec.onresult = e => { let live = ""; for (let i = e.resultIndex; i < e.results.length; i++){ const t = e.results[i][0].transcript; if (e.results[i].isFinal) fin += t + " "; else live += t; } onText((base + fin + live).replace(/\s+/g, " ").replace(/^\s+/, "")); };
-    rec.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed") toast("Allow the microphone for this page, then press Talk again."); else if (e.error !== "no-speech" && e.error !== "aborted") toast("The microphone stopped. Press Talk to try again."); };
-    rec.onend = () => { EDJ.rec = null; EDJ.listening = false; b.setAttribute("aria-pressed", "false"); b.lastChild.textContent = "Talk"; };
-    try { rec.start(); } catch (e){ return; }
-    EDJ.rec = rec; EDJ.listening = true; b.setAttribute("aria-pressed", "true"); b.lastChild.textContent = "Listening. Tap to stop";
+    const ta = $("#ec-brief");
+    if (!SR){ micSay(MIC_NO); if (ta) ta.focus(); return; }
+    micSay(""); const base = ta && ta.value.trim() ? ta.value.trim() + " " : ""; let got = false;
+    const rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = navigator.language || "en-US";
+    // Read every result each time: browsers differ in what they resend, and this never doubles a sentence.
+    rec.onresult = e => { got = true; let fin = "", live = ""; for (let i = 0; i < e.results.length; i++){ const t = e.results[i][0].transcript; if (e.results[i].isFinal) fin += t + " "; else live += t; } onText((base + fin + live).replace(/\s+/g, " ").replace(/^\s+/, "")); };
+    rec.onerror = e => { const c = e && e.error; if (c === "no-speech" || c === "aborted") return;
+      micSay(c === "not-allowed" || c === "service-not-allowed" ? "The microphone is blocked for this page. Click the icon at the left of the address bar, allow the microphone, then press Talk again." : c === "audio-capture" ? "No microphone was found. Check your sound settings, then press Talk again." : c === "network" || c === "language-not-supported" ? MIC_NO : "The microphone stopped. Press Talk to try again."); };
+    rec.onend = () => { EDJ.rec = null; EDJ.listening = false; show(false); if (!got && !EDJ.micMsg) micSay("Nothing was heard. Press Talk, wait for it to turn red, then speak."); };
+    try { rec.start(); } catch (e){ micSay("The microphone could not start. Press Talk to try again."); return; }
+    EDJ.rec = rec; EDJ.listening = true; show(true);
   });
   return b;
 }
@@ -2613,31 +2616,31 @@ function composer(){
   const d = EDJ.draft; const scripts = listCol("scripts").sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || "")).slice(0, 30);
   const step = (n, title, hint, ...kids) => h("section", {class:"ec-step"}, h("div", {class:"ec-h"}, h("span", {class:"n", text:String(n)}), h("h3", {text:title}), hint ? h("span", {class:"meta", text:hint}) : null), ...kids);
   const clearErr = () => { if (!EDJ.err) return; EDJ.err = ""; const el = $("#ec-err"); if (el) el.textContent = ""; };
-  const src = sourceInput("ec-src", d.sources, "Paste a folder, clips or a link", clearErr);
-  const foot = h("div", {class:"ec-drop", id:"ec-drop"}, icon("folder"), h("div", {class:"grow"}, src,
-    h("span", {class:"help", text:"On a Mac: select the folder or the clips in Finder, press Option + Command + C, then paste here. A Google Drive, Dropbox or YouTube link works too."})));
+  const src = sourceInput("ec-src", d.sources, "Or paste a link: Google Drive, Dropbox, YouTube", clearErr);
+  const pick = h("input", {type:"file", accept:"video/*,audio/*,image/*", multiple:true, class:"sr", id:"ec-pick", onchange:e => { const n = addPicked(d.sources, e.target.files); e.target.value = ""; if (n){ clearErr(); edRedraw(); } }});
+  const foot = h("div", {class:"ec-drop", id:"ec-drop"},
+    h("div", {class:"ec-pickrow"}, h("label", {class:"btn primary", for:"ec-pick"}, icon("upload"), "Choose clips", pick), h("div", {class:"grow"}, src)),
+    h("span", {class:"help", text:"Choose clips from your Mac, drop them here, or paste a link. Nothing is uploaded: CreatorHub notes which clips you picked and Claude finds them on your computer."}));
   foot.addEventListener("dragover", e => { e.preventDefault(); foot.classList.add("over"); }); foot.addEventListener("dragleave", () => foot.classList.remove("over"));
   foot.addEventListener("drop", e => {
-    e.preventDefault(); foot.classList.remove("over"); const dt = e.dataTransfer; let n = addSources(d.sources, dt.getData("text/uri-list") || dt.getData("text/plain"));
-    // Dropped files give their names at once. They are never opened, so nothing waits on their size.
-    for (const it of [...(dt.items || [])]){ if (it.kind !== "file") continue; const en = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null; const name = en ? en.name : ""; if (name && !d.sources.some(x => x.label === name) && d.sources.length < 60){ d.sources.push({kind:"name", value:name, label:name}); n++; } }
+    e.preventDefault(); foot.classList.remove("over"); const dt = e.dataTransfer;
+    // Dropped files give their name and size at once. They are never opened, so a big clip is as quick as a small one.
+    const n = addSources(d.sources, dt.getData("text/uri-list") || dt.getData("text/plain")) + addPicked(d.sources, dt.files);
     if (n){ clearErr(); edRedraw(); }
   });
   const brief = bindText(h("textarea", {id:"ec-brief", rows:"3", placeholder:"Cut the pauses and keep the best take of each line. Add captions. Make it under 40 seconds and open on the strongest line."}), v => { d.brief = v; clearErr(); }, 0); brief.value = d.brief;
-  const mic = micButton(brief, t => { d.brief = t; brief.value = t; clearErr(); });
+  const mic = micButton(t => { d.brief = t; const ta = $("#ec-brief"); if (ta) ta.value = t; clearErr(); });
   const sel = h("select", {id:"ec-script", class:"ctl", "aria-label":"Script", onchange:e => { d.scriptId = e.target.value; }}, opt("", "No script"), scripts.map(sc => opt(sc.id, sc.title || "Untitled"))); sel.value = d.scriptId; if (sel.value !== d.scriptId) d.scriptId = "";
   const fmt = h("select", {id:"ec-format", class:"ctl", "aria-label":"Format", onchange:e => { d.format = e.target.value; }}, FORMATS.map(([v, l]) => opt(v, l))); fmt.value = d.format;
   const insp = sourceInput("ec-insp", d.insp, "Paste a link to an edit you like", null);
   const shots = h("input", {type:"file", accept:"image/*", multiple:true, class:"sr", id:"ec-shots", onchange:e => { for (const f of [...e.target.files]) if (d.shots.length < 4) d.shots.push(f); e.target.value = ""; edRedraw(); }});
   const off = S.claude.status === "soon" || S.claude.status === "nocode" || S.claude.status === "denied" || S.claude.status === "offline" || S.claude.status === "absent";
-  const onlyNames = d.sources.length && d.sources.every(x => x.kind === "name");
   return h("div", {class:"card ec", id:"composer"},
     edits().length ? h("h2", {class:"ec-title", text:"New edit"}) : null,
     step(1, "Your footage", "Nothing is uploaded. It only saves where it is.",
-      foot, sourceChips(d.sources),
-      onlyNames ? h("p", {class:"meta", id:"ec-names", text:"A dropped file only gives its name. Paste the folder it is in as well, or Claude will search your computer for it by name."}) : null),
+      foot, sourceChips(d.sources)),
     step(2, "What do you want?", "Type it or say it",
-      h("div", {class:"ec-brief"}, brief, mic),
+      h("div", {class:"ec-brief"}, brief, mic, h("p", {class:"err", id:"ec-mic-msg", "aria-live":"polite", hidden:!EDJ.micMsg, text:EDJ.micMsg || ""})),
       h("div", {class:"suggest"}, BRIEF_CHIPS.map(c => h("button", {type:"button", onclick:() => { d.brief = (d.brief.trim() ? d.brief.trim().replace(/[.]?$/, ". ") : "") + c + "."; brief.value = d.brief; clearErr(); brief.focus(); }}, c))),
       scripts.length ? h("div", {class:"toolbar"}, h("label", {class:"meta", for:"ec-script", text:"Filmed from a script?"}), sel) : null),
     step(3, "Pick a style", "Or create your own", styleGallery(d.styleId, sid => { d.styleId = sid; render(); }),
@@ -2664,7 +2667,7 @@ async function runEdit(){
   if (!d.brief.trim() && !d.sources.length){ EDJ.err = "Say where your footage is, or what you want, first."; render(); return; }
   EDJ.sending = true; EDJ.err = ""; render();
   const st = styleById(d.styleId); const sc = d.scriptId && getDoc("scripts", d.scriptId); const title = editTitle(d); const folder = sourceFolder(d.sources);
-  const lite = list => list.map(x => ({kind:x.kind, value:x.value}));
+  const lite = list => list.map(x => ({kind:x.kind, value:x.value, ...(x.size ? {size:x.size} : {}), ...(x.modified ? {modified:new Date(x.modified).toISOString().slice(0, 10)} : {})}));
   try {
     const r = await brainPost("job_create", {kind:"edit", title, payload:{brief:d.brief.trim(), engine:d.engine, format:d.format, styleId:st.id, styleName:st.name, style:stylePayload(st.id), footage:{sources:lite(d.sources)}, inspiration:{refs:lite(d.insp)}, script:sc ? scriptText(sc) : "", profile:profileBlock()}}, {images:d.shots, small:true});
     const job = r.job;
@@ -2721,7 +2724,7 @@ function editCard(p){
     body = [h("p", {class:"prose", text:p.reason || "Claude Code couldn’t finish this one."}), h("div", {class:"toolbar"}, btn("Run it again", {class:"btn primary", onclick:again}, "refresh"))];
   } else body = [h("div", {class:"toolbar"}, btn("Run it again", {class:"btn", onclick:again}, "refresh"))];
   return h("article", {class:"card edit", "data-edit":p.id, "data-status":p.status},
-    h("div", {class:"edit-h"}, h("span", {class:"edit-prev"}, stylePreview(st.id)), h("div", {class:"grow", style:"min-width:0"}, h("h3", {text:p.name || "Untitled edit"}),
+    h("div", {class:"edit-h"}, h("div", {class:"grow", style:"min-width:0"}, h("h3", {text:p.name || "Untitled edit"}),
         h("div", {class:"toolbar tight"}, statusPill(p), h("span", {class:"chip", text:p.styleName || st.name}), h("span", {class:"chip", text:engineName(p.engine)}), h("span", {class:"meta", text:ago(p.createdAt)}))),
       btn("", {class:"btn ghost icon sm", "aria-label":"Remove " + (p.name || "edit"), onclick:del}, "trash")),
     p.brief && p.status !== "done" ? h("p", {class:"meta edit-brief", text:"“" + p.brief + "”"}) : null, ...body);
@@ -3523,7 +3526,7 @@ function defaultStyleCard(){
   const g2 = h("optgroup", {label:"CreatorHub styles"}); EDITING_STYLES.forEach(st => g2.append(opt(st.id, st.name))); sel.append(g2); sel.value = cur;
   const eng = h("select", {id:"st-engine", onchange:e => { setProfile({engine:e.target.value}); toast("New edits are made with " + engineName(e.target.value)); }}, ENGINES.map(e => opt(e.id, e.name + " · " + e.short))); eng.value = defaultEngine();
   return h("div", {class:"card stack", style:"gap:12px"}, h("div", {class:"card-h"}, h("h3", {text:"How your videos are made"}), h("span", {class:"muted small", text:"Where every new edit starts"})),
-    h("div", {class:"st-style"}, h("span", {class:"edit-prev lg"}, stylePreview(cur)), h("div", {class:"stack-s grow", style:"min-width:0"}, fld("Usual style", sel, "st-style"), fld("Made with", eng, "st-engine"), h("div", {class:"toolbar"}, btn("Create a style", {class:"btn sm", onclick:() => openStyleBuilder(null)}, "plus")))));
+    h("div", {class:"st-style"}, h("div", {class:"stack-s grow", style:"min-width:0"}, fld("Usual style", sel, "st-style"), fld("Made with", eng, "st-engine"), h("div", {class:"toolbar"}, btn("Create a style", {class:"btn sm", onclick:() => openStyleBuilder(null)}, "plus")))));
 }
 function connectionsSection(){
   const st = S.claude.status, why = S.claude.why;
