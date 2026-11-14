@@ -3,67 +3,171 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>CreatorHub</title>
+<title>CreatorHub by MDG</title>
+<meta name="description" content="CreatorHub is the content platform from MDG. Say what you want, pick a style, and Claude edits your video on your own computer.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23111114'/%3E%3Cpath d='M21.6 11.2a7.4 7.4 0 1 0 0 9.6' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round'/%3E%3Ccircle cx='21.9' cy='16' r='2.3' fill='%23fff'/%3E%3C/svg%3E">
-<meta name="description" content="The content OS for creators. Your videos edited, your scripts written, your numbers read.">
+<script>/* an invite link opens the platform directly */ if (/[#&?]invite=/.test(location.hash + location.search)) location.replace("app/index.html" + (location.hash || "#" + location.search.slice(1)));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:dark;--bg:#09090A;--ink:#F5F5F7;--ink-2:#B9B9C2;--ink-3:#7E7E88;--line:rgba(255,255,255,.09);--glass:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));--accent:#4C8DFF}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-body{background:radial-gradient(60% 40% at 50% 0%,rgba(76,141,255,.14),transparent 70%),var(--bg)}
-.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
-header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em}.logo svg{display:block;border-radius:9px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:12px;border:1px solid var(--line);background:var(--glass);color:var(--ink);text-decoration:none;font-weight:600;font-size:14px;transition:transform .15s,border-color .15s}.btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.2)}
-.btn.primary{background:#F5F5F7;color:#0B0B0F;border-color:transparent}
-.hero{padding:70px 0 40px;text-align:center}
-.eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
-h1{font-size:clamp(34px,6vw,62px);line-height:1.02;letter-spacing:-.035em;margin:14px 0 18px;font-weight:800}
-.lede{font-size:18px;color:var(--ink-2);max-width:640px;margin:0 auto 28px}
-.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.fine{font-size:12.5px;color:var(--ink-3);margin-top:14px}
-.shot{margin:40px auto 0;border-radius:18px;border:1px solid var(--line);background:var(--glass);padding:14px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
-.shot .bar{display:flex;gap:6px;margin-bottom:12px}.shot .bar i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);display:block}
-.mock{display:grid;grid-template-columns:200px 1fr;gap:14px;min-height:300px}
-.mock .side{border-right:1px solid var(--line);padding-right:14px;display:grid;gap:8px;align-content:start}
-.mock .side b{display:block;font-size:12px;padding:8px 10px;border-radius:9px;color:var(--ink-2);font-weight:500}.mock .side b.on{background:rgba(255,255,255,.08);color:var(--ink)}
-.mock .main{display:grid;gap:12px;align-content:start}
-.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.tile{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--glass)}.tile small{color:var(--ink-3);font-size:11px}.tile b{display:block;font-size:22px;letter-spacing:-.02em;margin-top:4px}
-.folders{display:grid;grid-template-columns:repeat(2,minmax(0,240px));gap:10px}.folder{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--glass)}.folder .art{height:70px;border-radius:10px;background:radial-gradient(60% 70% at 50% 60%,rgba(76,141,255,.3),transparent 70%);display:grid;place-items:center}.folder .art span{width:56px;height:38px;border-radius:8px;background:linear-gradient(180deg,#4A4A55,#1a1a20);border:1px solid rgba(255,255,255,.25)}.folder b{display:block;margin-top:8px;font-size:13px}.folder small{color:var(--ink-3);font-size:11.5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;margin:56px 0}
-.card{border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--glass)}.card h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}.card p{margin:0;color:var(--ink-2);font-size:14px}
-.how{margin:10px 0 60px}.how ol{color:var(--ink-2);padding-left:20px;line-height:1.8}
-footer{padding:30px 0 50px;color:var(--ink-3);font-size:12.5px;border-top:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
-@media (max-width:760px){.mock{grid-template-columns:1fr}.mock .side{display:none}.tiles{grid-template-columns:repeat(2,1fr)}.folders{grid-template-columns:1fr 1fr}}
+:root{--bg:#F5F4F1;--ink:#0D0D0D;--muted:#5C5A57;--line:#D9D6D0;--leather:#4F3422;--cream:#EEE9DF;color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.cap{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 18px}
+h1,h2,h3{font-weight:500;letter-spacing:-.035em;line-height:1.02;margin:0}
+h1{font-size:clamp(56px,13vw,168px)}
+h2{font-size:clamp(30px,5vw,56px);max-width:18ch}
+h3{font-size:19px;letter-spacing:-.01em;line-height:1.25}
+p{margin:0}
+.lede{font-size:clamp(17px,2vw,21px);color:var(--muted);max-width:52ch}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border:1px solid var(--ink);font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;background:none;color:var(--ink);transition:background .2s,color .2s}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.solid{background:var(--ink);color:var(--bg)}
+.btn.solid:hover{background:var(--leather);border-color:var(--leather)}
+.link{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-underline-offset:6px}
+header.nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+header.nav .wrap{display:flex;align-items:center;gap:28px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;letter-spacing:-.02em;font-size:17px}
+.brand small{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-left:4px}
+header.nav nav{display:flex;gap:26px;margin-left:auto}
+header.nav nav a{font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--muted)}
+header.nav nav a:hover{color:var(--ink)}
+header.nav .btn{padding:10px 18px}
+section{padding:clamp(64px,10vw,128px) 0;border-bottom:1px solid var(--line);scroll-margin-top:64px}
+.hero{padding-top:clamp(48px,8vw,96px)}
+.hero .lede{margin:22px 0 30px}
+.cta{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.frame{margin:clamp(36px,6vw,72px) 0 0;border:1px solid var(--ink);background:#0b0b0d;padding:10px}
+.frame img{width:100%}
+.split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(28px,6vw,88px);align-items:start}
+.story h2{margin-bottom:22px}
+.chapters{list-style:none;margin:0;padding:0;border-top:1px solid var(--ink)}
+.chapters li{display:grid;grid-template-columns:54px 1fr;gap:8px;padding:20px 0;border-bottom:1px solid var(--line)}
+.chapters .n{font-size:12px;letter-spacing:.14em;color:var(--muted);padding-top:4px}
+.chapters p{color:var(--muted);margin-top:4px}
+.photos{display:grid;grid-template-columns:5fr 7fr;gap:14px;margin-top:clamp(36px,6vw,72px)}
+.photos img{width:100%;height:100%;object-fit:cover}
+.photos .stack{display:grid;gap:14px}
+.capsl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:0;margin-top:clamp(36px,6vw,72px);border-top:1px solid var(--ink)}
+.capsl div{padding:20px 20px 20px 0;border-bottom:1px solid var(--line)}
+.capsl p{color:var(--muted);font-size:14.5px;margin-top:4px}
+.bridge{margin-top:clamp(36px,6vw,64px);font-size:clamp(20px,2.6vw,30px);letter-spacing:-.02em;line-height:1.25;max-width:30ch}
+.dark{background:var(--ink);color:var(--bg);border-color:#2a2a2a;--muted:#A9A69F;--line:#2B2B2B}
+.dark .btn{border-color:var(--bg);color:var(--bg)}
+.dark .btn:hover{background:var(--bg);color:#0D0D0D}
+.shots{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(24px,4vw,56px);margin-top:44px;align-items:start}
+.tabs{display:grid;border-top:1px solid #3a3a3a}
+.tabs button{all:unset;cursor:pointer;display:grid;gap:4px;padding:16px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+.tabs button b{font-size:19px;font-weight:500;letter-spacing:-.01em}
+.tabs button span{font-size:14.5px;line-height:1.45;display:none}
+.tabs button[aria-selected="true"]{color:var(--bg)}
+.tabs button[aria-selected="true"] span{display:block;color:var(--muted)}
+.tabs button:focus-visible{outline:2px solid var(--bg);outline-offset:2px}
+.shot{border:1px solid #3a3a3a;padding:8px;background:#060607;position:sticky;top:88px}
+.styles{list-style:none;margin:44px 0 0;padding:0;border-top:1px solid var(--ink);columns:2;column-gap:clamp(28px,6vw,88px)}
+.styles li{break-inside:avoid;display:grid;grid-template-columns:44px 1fr;gap:8px;padding:18px 0;border-bottom:1px solid var(--line)}
+.styles .n{font-size:12px;letter-spacing:.14em;color:var(--muted);padding-top:4px}
+.styles p{color:var(--muted);font-size:14.5px;margin-top:3px}
+.own{margin-top:32px;display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+.own p{color:var(--muted);max-width:60ch}
+.cream{background:var(--cream)}
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:clamp(24px,4vw,48px);margin-top:44px}
+.mods h3{padding-bottom:12px;border-bottom:1px solid var(--ink)}
+.mods ol{list-style:none;margin:0;padding:0}
+.mods li{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.mods li span{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.note{margin-top:26px;color:var(--muted);font-size:14.5px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:0;margin-top:44px;border-top:1px solid var(--ink)}
+.steps div{padding:24px 24px 24px 0;border-bottom:1px solid var(--line)}
+.steps .n{font-size:12px;letter-spacing:.14em;color:var(--muted);display:block;margin-bottom:10px}
+.steps p{color:var(--muted);margin-top:6px;font-size:15px}
+.access{text-align:center}
+.access h2{margin:0 auto 18px}
+.access p{color:var(--muted);margin:0 auto 28px;max-width:46ch}
+footer{padding:36px 0 48px;font-size:12.5px;color:var(--muted)}
+footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap}
+@media (max-width:860px){header.nav nav{display:none}header.nav .btn{margin-left:auto}.split,.shots{grid-template-columns:1fr}.photos{grid-template-columns:1fr}.styles{columns:1}.shot{position:static}.tabs button span{display:block}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header><div class="logo"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#F5F5F7"/><path d="M21.6 11.2a7.4 7.4 0 1 0 0 9.6" fill="none" stroke="#09090A" stroke-width="3.4" stroke-linecap="round"/><circle cx="21.9" cy="16" r="2.3" fill="#09090A"/></svg>CreatorHub</div><nav style="display:flex;gap:8px"><a class="btn primary" href="app/">Open CreatorHub</a></nav></header>
-<section class="hero">
-<div class="eyebrow">The content OS for creators</div>
-<h1>Your videos edited.<br>Your scripts written.<br>Your numbers read.</h1>
-<p class="lede">Say what you want and pick a style. Claude edits it on your own computer, with HyperFrames or inside Premiere Pro. One topic in, a full script out. CreatorHub is the interface; your own Claude does the work.</p>
-<div class="cta"><a class="btn primary" href="app/">Open CreatorHub</a></div>
-<p class="fine">Invite only. Your footage never leaves your computer.</p>
-<div class="shot"><div class="bar"><i></i><i></i><i></i></div>
-<div class="mock"><div class="side"><b class="on">Home</b><b>Performance</b><b>Editor</b><b>Scripts</b><b>Planner</b><b>Competitors</b><b>Academy</b></div>
-<div class="main"><div class="tiles"><div class="tile"><small>Views, last 30 days</small><b>—</b></div><div class="tile"><small>Average views per post</small><b>—</b></div><div class="tile"><small>Engagement rate</small><b>—</b></div><div class="tile"><small>In production</small><b>—</b></div></div>
-<div class="folders"><div class="folder"><div class="art"><span></span></div><b>Editor</b><small>Say what you want, get the edit</small></div><div class="folder"><div class="art"><span></span></div><b>Scripts</b><small>Three hooks, beats, caption</small></div></div></div></div></div>
-</section>
-<section class="grid">
-<div class="card"><h3>AI editor</h3><p>Point it at your footage and say what you want. Pick a style. Claude Code cuts it, captions it and builds the graphics on your computer, then hands you the finished video. Ask for changes in plain words.</p></div>
-<div class="card"><h3>Styles you can see</h3><p>Big Caps, Apple UI, Real Estate, Rating, Comparison and more, each one moving in front of you. Or describe your own look, point it at videos you like, and save it under your name.</p></div>
-<div class="card"><h3>Performance</h3><p>Bring in your numbers. Views by hook type, by format, by weekday, and a plain-words read of what to repeat.</p></div>
-<div class="card"><h3>Scripts</h3><p>One topic in, a full script out, three hook options, written to sound like you and not like a model.</p></div>
-<div class="card"><h3>Competitors</h3><p>Add a handle and their best posts. Their patterns, their hook types ranked by views, and five hooks adapted to your niche.</p></div>
-<div class="card"><h3>Planner</h3><p>A board for what you are making and where each piece is. Type in any column to add to it.</p></div>
-<div class="card"><h3>No editing program needed</h3><p>HyperFrames builds the whole video in code and renders the file. Edit in Premiere Pro? Claude works inside your project instead.</p></div>
-</section>
-<section class="how"><h2 style="letter-spacing:-.02em">How it works</h2>
-<ol><li>Open your invite link.</li><li>Connect Claude Code with one line. It runs on your own Claude plan: no API key, no extra bill.</li><li>Answer three short screens: who you are, what you want, how your videos are made.</li><li>Queue your first edit and say “run CreatorHub” in Claude Code.</li></ol></section>
-<footer><span>CreatorHub · Beta</span><span>Invite only. Ask for an invite link to get in.</span></footer>
-</div>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="#top"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M21.6 11.2a7.4 7.4 0 1 0 0 9.6" fill="none" stroke="var(--bg)" stroke-width="3.4" stroke-linecap="round"/><circle cx="21.9" cy="16" r="2.3" fill="var(--bg)"/></svg>CreatorHub<small>by MDG</small></a>
+  <nav aria-label="Sections"><a href="#story">MDG</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a></nav>
+  <a class="btn" href="app/index.html">Log in</a>
+</div></header>
+
+<section class="hero" id="top"><div class="wrap">
+  <p class="cap">MDG · Creative direction · Strategy · Film · AI · Growth</p>
+  <h1>CreatorHub</h1>
+  <p class="lede">The platform behind the agency. Say what you want, pick a style, and Claude edits your video on your own computer.</p>
+  <div class="cta"><a class="btn solid" href="app/index.html">Open the platform</a><a class="link" href="#platform">See inside</a></div>
+  <figure class="frame"><img src="img/app-editor.jpg" width="1440" height="900" alt="The CreatorHub editor: your footage, what you want, and a style"></figure>
+</div></section>
+
+<section class="story" id="story"><div class="wrap">
+  <p class="cap">01 · MDG</p>
+  <div class="split">
+    <div><h2>I work with founders who are building something big.</h2>
+      <p class="lede">Creative direction, strategy, film and AI. From the first idea to the final frame, and everything that makes it grow.</p></div>
+    <ol class="chapters"><li><span class="n">01</span><div><h3>It started with a camera.</h3><p>Filming in Zagreb, learning what makes people watch.</p></div></li><li><span class="n">02</span><div><h3>Shooting for media.</h3><p>Campaigns for Armani, L’Oréal Paris and Porsche.</p></div></li><li><span class="n">03</span><div><h3>Working for Iman Gadzhi.</h3><p>The kickoff for everything else. It took me into the online space and into personal brands.</p></div></li><li><span class="n">04</span><div><h3>Scaling personal brands.</h3><p>One after another. Founders and creators, grown into brands people follow.</p></div></li><li><span class="n">05</span><div><h3>MDG today.</h3><p>An agency building content and AI systems for founders and brands.</p></div></li></ol>
+  </div>
+  <div class="photos"><img src="img/mdg-night.jpg" width="900" height="1170" loading="lazy" alt="Mateo Di Giusto at night beside a Mercedes-AMG">
+    <div class="stack"><img src="img/mdg-porsche.jpg" width="1300" height="867" loading="lazy" alt="Behind the scenes of a Porsche studio shoot"><img src="img/mdg-laptop.jpg" width="1300" height="731" loading="lazy" alt="Mateo Di Giusto working on a laptop on a balcony"></div></div>
+  <div class="capsl"><div><h3>Creative strategy</h3><p>Positioning, content plans, campaigns</p></div><div><h3>Content systems</h3><p>A steady pipeline of posts, reels and ads</p></div><div><h3>Film production</h3><p>Brand films, VSLs, commercials</p></div><div><h3>AI</h3><p>AI-powered editing, graphics and workflows</p></div><div><h3>Post-production</h3><p>Edit, colour, sound, motion</p></div><div><h3>Brand &amp; social</h3><p>Instagram rebrands, grids, photography</p></div></div>
+  <p class="bridge">CreatorHub is that work as a platform: the same editing rules, styles and systems, in one place you log in to.</p>
+</div></section>
+
+<section class="dark" id="platform"><div class="wrap">
+  <p class="cap">02 · The platform</p>
+  <h2>One place for the whole content week.</h2>
+  <div class="shots">
+    <div class="tabs" role="tablist" aria-label="Parts of the platform"><button role="tab" aria-selected="true" data-shot="editor"><b>Editor</b><span>Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.</span></button><button role="tab" aria-selected="false" data-shot="edits"><b>Your edits</b><span>Watch each stage as it happens. When it is ready, ask for changes in plain words.</span></button><button role="tab" aria-selected="false" data-shot="scripts"><b>Scripts</b><span>One line in, a full script out: three openings, the beats, the caption.</span></button><button role="tab" aria-selected="false" data-shot="planner"><b>Planner</b><span>Everything you are making, on one board. Type in any column to add to it.</span></button><button role="tab" aria-selected="false" data-shot="performance"><b>Performance</b><span>Your numbers as charts, and a plain read of what to repeat next week.</span></button><button role="tab" aria-selected="false" data-shot="academy"><b>Academy</b><span>Every screen explained, click by click.</span></button></div>
+    <figure class="shot" style="margin:0"><img id="shot" src="img/app-editor.jpg" width="1440" height="900" loading="lazy" alt="Editor"></figure>
+  </div>
+</div></section>
+
+<section id="styles"><div class="wrap">
+  <p class="cap">03 · Styles</p>
+  <h2>Ten looks, ready to use. Or build your own.</h2>
+  <ol class="styles"><li><span class="n">01</span><div><h3>Big Caps</h3><p>Heavy white caps, one word lit, big words on the points that matter. The short-form standard.</p></div></li><li><span class="n">02</span><div><h3>Apple UI</h3><p>Frosted glass captions, pills and number cards. Soft, app-like motion.</p></div></li><li><span class="n">03</span><div><h3>Real Estate</h3><p>Property reels: big white caps, green numbers, glass location tags, a cinematic push.</p></div></li><li><span class="n">04</span><div><h3>Rating</h3><p>A score card for everything you rate, and a running list of the results.</p></div></li><li><span class="n">05</span><div><h3>Comparison</h3><p>This against that: two sides, ticks and crosses, and a winner.</p></div></li><li><span class="n">06</span><div><h3>Podcast</h3><p>Quote captions with a speaker tag. Built for clips from long conversations.</p></div></li><li><span class="n">07</span><div><h3>Tutorial</h3><p>Numbered steps, a progress bar and the thing you are showing, up close.</p></div></li><li><span class="n">08</span><div><h3>Clean</h3><p>Sentence case on a soft dark box, lower third. Calm and readable.</p></div></li><li><span class="n">09</span><div><h3>Editorial</h3><p>Serif captions and slow moves for story-led and documentary pieces.</p></div></li><li><span class="n">10</span><div><h3>Minimal</h3><p>Small, light captions with lots of air. For quiet, premium brands.</p></div></li></ol>
+  <div class="own"><h3>Your own style</h3><p>Describe the look the way you would to an editor, or point it at videos you like. It is saved under your name and any edit can use it.</p></div>
+</div></section>
+
+<section class="cream" id="academy"><div class="wrap">
+  <p class="cap">04 · Academy</p>
+  <h2>Learn to run it, click by click.</h2>
+  <div class="mods"><div><h3>Getting in</h3><ol><li>Welcome and a quick tour<span>3 min</span></li><li>Connecting Claude Code<span>5 min</span></li><li>Setting up your workspace<span>3 min</span></li></ol></div><div><h3>Claude Code basics</h3><ol><li>What Claude Code is, and the plan you need<span>2 min</span></li><li>Installing it and signing in<span>3 min</span></li><li>Your first conversation, and the questions it asks<span>3 min</span></li><li>Where your files go, and what to do when it stops<span>3 min</span></li><li>Quick start: invite to finished video in 10 minutes<span>10 min</span></li></ol></div><div><h3>The editor</h3><ol><li>Your first edit, start to finish<span>6 min</span></li><li>Your footage: folders, files and links<span>3 min</span></li><li>Telling it what you want<span>4 min</span></li><li>Picking a style<span>4 min</span></li><li>HyperFrames or Premiere Pro<span>3 min</span></li><li>What happens in Claude Code<span>4 min</span></li><li>Your finished edit and asking for changes<span>3 min</span></li><li>Create your own style<span>4 min</span></li><li>When something goes wrong<span>3 min</span></li></ol></div><div><h3>The rest of the app</h3><ol><li>Scripts<span>3 min</span></li><li>Planner<span>3 min</span></li><li>Performance<span>3 min</span></li><li>Competitors<span>3 min</span></li><li>Settings and your profile<span>2 min</span></li></ol></div></div>
+  <p class="note">22 lessons. Each one has its steps written out inside the platform; the videos are being recorded.</p>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <p class="cap">05 · How it works</p>
+  <h2>Your Claude does the work.</h2>
+  <div class="steps">
+    <div><span class="n">01</span><h3>Connect Claude Code once</h3><p>One line links it to your CreatorHub. It runs on your own Claude plan, so there is no extra bill.</p></div>
+    <div><span class="n">02</span><h3>Say what you want</h3><p>Choose your clips or paste a link, type or say the brief, pick a style.</p></div>
+    <div><span class="n">03</span><h3>Claude edits it on your computer</h3><p>With HyperFrames, which needs no editing program, or inside Premiere Pro. Your footage never leaves your machine.</p></div>
+  </div>
+</div></section>
+
+<section class="dark access"><div class="wrap">
+  <p class="cap">Access</p>
+  <h2>CreatorHub is invite only.</h2>
+  <p>Have an invite link? Open it and you are in. Already set up? Log in and carry on where you left off.</p>
+  <a class="btn" href="app/index.html">Log in</a>
+</div></section>
+
+<footer><div class="wrap"><span>CreatorHub · MDG Growth LLC</span><span>Invite only · Beta</span></div></footer>
+<script>
+document.querySelectorAll(".tabs button").forEach(function (b) { b.addEventListener("click", function () {
+  document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", String(x === b)); });
+  var img = document.getElementById("shot"); img.src = "img/app-" + b.dataset.shot + ".jpg"; img.alt = b.querySelector("b").textContent;
+}); });
+</script>
 </body>
 </html>
