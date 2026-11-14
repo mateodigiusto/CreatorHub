@@ -3,171 +3,405 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>CreatorHub by MDG</title>
-<meta name="description" content="CreatorHub is the content platform from MDG. Say what you want, pick a style, and Claude edits your video on your own computer.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23111114'/%3E%3Cpath d='M21.6 11.2a7.4 7.4 0 1 0 0 9.6' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round'/%3E%3Ccircle cx='21.9' cy='16' r='2.3' fill='%23fff'/%3E%3C/svg%3E">
+<title>CreatorHub | The most advanced AI video editor</title>
+<meta name="description" content="CreatorHub is the home of MDG Editor, the most advanced AI video editor: the editor, your styles, your planner and the Academy behind one login.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f3f6fa">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c1018'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='Helvetica Neue,Arial' font-weight='700' font-size='14' letter-spacing='-0.8' fill='%23f3f6fa'%3ECH%3C/text%3E%3C/svg%3E">
 <script>/* an invite link opens the platform directly */ if (/[#&?]invite=/.test(location.hash + location.search)) location.replace("app/index.html" + (location.hash || "#" + location.search.slice(1)));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F5F4F1;--ink:#0D0D0D;--muted:#5C5A57;--line:#D9D6D0;--leather:#4F3422;--cream:#EEE9DF;color-scheme:light}
+:root{--bg:#f3f6fa;--ink:#0c1018;--muted:#5b6577;--faint:#8a93a3;--line:rgba(12,16,24,.08);--line-2:rgba(12,16,24,.15);--blue:#3a4ff0;color-scheme:light}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Helvetica Neue",Helvetica,"Inter",Arial,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 img{max-width:100%;height:auto;display:block}
-a{color:inherit}
-.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
-.cap{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 18px}
-h1,h2,h3{font-weight:500;letter-spacing:-.035em;line-height:1.02;margin:0}
-h1{font-size:clamp(56px,13vw,168px)}
-h2{font-size:clamp(30px,5vw,56px);max-width:18ch}
-h3{font-size:19px;letter-spacing:-.01em;line-height:1.25}
+a{color:inherit;text-decoration:none}
 p{margin:0}
-.lede{font-size:clamp(17px,2vw,21px);color:var(--muted);max-width:52ch}
-.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border:1px solid var(--ink);font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;background:none;color:var(--ink);transition:background .2s,color .2s}
-.btn:hover{background:var(--ink);color:var(--bg)}
-.btn.solid{background:var(--ink);color:var(--bg)}
-.btn.solid:hover{background:var(--leather);border-color:var(--leather)}
-.link{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-underline-offset:6px}
-header.nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-header.nav .wrap{display:flex;align-items:center;gap:28px;height:64px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;letter-spacing:-.02em;font-size:17px}
-.brand small{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-left:4px}
-header.nav nav{display:flex;gap:26px;margin-left:auto}
-header.nav nav a{font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--muted)}
-header.nav nav a:hover{color:var(--ink)}
-header.nav .btn{padding:10px 18px}
-section{padding:clamp(64px,10vw,128px) 0;border-bottom:1px solid var(--line);scroll-margin-top:64px}
-.hero{padding-top:clamp(48px,8vw,96px)}
-.hero .lede{margin:22px 0 30px}
-.cta{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.frame{margin:clamp(36px,6vw,72px) 0 0;border:1px solid var(--ink);background:#0b0b0d;padding:10px}
-.frame img{width:100%}
-.split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(28px,6vw,88px);align-items:start}
-.story h2{margin-bottom:22px}
-.chapters{list-style:none;margin:0;padding:0;border-top:1px solid var(--ink)}
-.chapters li{display:grid;grid-template-columns:54px 1fr;gap:8px;padding:20px 0;border-bottom:1px solid var(--line)}
-.chapters .n{font-size:12px;letter-spacing:.14em;color:var(--muted);padding-top:4px}
-.chapters p{color:var(--muted);margin-top:4px}
-.photos{display:grid;grid-template-columns:5fr 7fr;gap:14px;margin-top:clamp(36px,6vw,72px)}
-.photos img{width:100%;height:100%;object-fit:cover}
-.photos .stack{display:grid;gap:14px}
-.capsl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:0;margin-top:clamp(36px,6vw,72px);border-top:1px solid var(--ink)}
-.capsl div{padding:20px 20px 20px 0;border-bottom:1px solid var(--line)}
-.capsl p{color:var(--muted);font-size:14.5px;margin-top:4px}
-.bridge{margin-top:clamp(36px,6vw,64px);font-size:clamp(20px,2.6vw,30px);letter-spacing:-.02em;line-height:1.25;max-width:30ch}
-.dark{background:var(--ink);color:var(--bg);border-color:#2a2a2a;--muted:#A9A69F;--line:#2B2B2B}
-.dark .btn{border-color:var(--bg);color:var(--bg)}
-.dark .btn:hover{background:var(--bg);color:#0D0D0D}
-.shots{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(24px,4vw,56px);margin-top:44px;align-items:start}
-.tabs{display:grid;border-top:1px solid #3a3a3a}
-.tabs button{all:unset;cursor:pointer;display:grid;gap:4px;padding:16px 0;border-bottom:1px solid var(--line);color:var(--muted)}
-.tabs button b{font-size:19px;font-weight:500;letter-spacing:-.01em}
-.tabs button span{font-size:14.5px;line-height:1.45;display:none}
-.tabs button[aria-selected="true"]{color:var(--bg)}
-.tabs button[aria-selected="true"] span{display:block;color:var(--muted)}
-.tabs button:focus-visible{outline:2px solid var(--bg);outline-offset:2px}
-.shot{border:1px solid #3a3a3a;padding:8px;background:#060607;position:sticky;top:88px}
-.styles{list-style:none;margin:44px 0 0;padding:0;border-top:1px solid var(--ink);columns:2;column-gap:clamp(28px,6vw,88px)}
-.styles li{break-inside:avoid;display:grid;grid-template-columns:44px 1fr;gap:8px;padding:18px 0;border-bottom:1px solid var(--line)}
-.styles .n{font-size:12px;letter-spacing:.14em;color:var(--muted);padding-top:4px}
-.styles p{color:var(--muted);font-size:14.5px;margin-top:3px}
-.own{margin-top:32px;display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
-.own p{color:var(--muted);max-width:60ch}
-.cream{background:var(--cream)}
-.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:clamp(24px,4vw,48px);margin-top:44px}
-.mods h3{padding-bottom:12px;border-bottom:1px solid var(--ink)}
-.mods ol{list-style:none;margin:0;padding:0}
-.mods li{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
-.mods li span{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
-.note{margin-top:26px;color:var(--muted);font-size:14.5px}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:0;margin-top:44px;border-top:1px solid var(--ink)}
-.steps div{padding:24px 24px 24px 0;border-bottom:1px solid var(--line)}
-.steps .n{font-size:12px;letter-spacing:.14em;color:var(--muted);display:block;margin-bottom:10px}
-.steps p{color:var(--muted);margin-top:6px;font-size:15px}
-.access{text-align:center}
-.access h2{margin:0 auto 18px}
-.access p{color:var(--muted);margin:0 auto 28px;max-width:46ch}
-footer{padding:36px 0 48px;font-size:12.5px;color:var(--muted)}
-footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap}
-@media (max-width:860px){header.nav nav{display:none}header.nav .btn{margin-left:auto}.split,.shots{grid-template-columns:1fr}.photos{grid-template-columns:1fr}.styles{columns:1}.shot{position:static}.tabs button span{display:block}}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+button{font:inherit;color:inherit}
+svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.fill{fill:currentColor;stroke:none}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.display{font-weight:700;line-height:.96;letter-spacing:-.045em;margin:0;text-wrap:balance}
+h1.display{font-size:clamp(42px,6.6vw,76px)}
+h2.display{font-size:clamp(34px,4.6vw,58px)}
+h3{font-size:16px;font-weight:700;letter-spacing:-.02em;line-height:1.25;margin:0}
+.lede{color:var(--muted);font-size:clamp(16px,1.5vw,18px);max-width:56ch}
+.center{text-align:center}.center .lede{margin-left:auto;margin-right:auto}
+section{scroll-margin-top:72px}
+/* buttons, as on mdgeditor.com */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:9999px;font-size:15px;line-height:1.375;text-align:center;cursor:pointer;border:0;transition:transform .22s cubic-bezier(.23,1,.32,1),background-color .2s,border-color .2s,color .2s}
+.btn:active{transform:scale(.97)}
+.btn.sm{padding:8px 16px;font-size:14px;background:var(--ink);color:var(--bg)}
+.btn.glow{padding:16px 28px;background:var(--ink);color:#fff;box-shadow:0 0 0 4px rgba(12,16,24,.06),0 14px 30px -14px rgba(12,16,24,.6)}
+.btn.glow:hover{transform:translateY(-2px)}
+.btn.line{padding:15px 28px;border:1.5px solid var(--ink);background:transparent}
+.btn.line:hover{background:var(--ink);color:var(--bg)}
+.btn.ghost{padding:13px 24px;border:1px solid var(--line-2);background:transparent}
+.btn.ghost:hover{border-color:rgba(12,16,24,.4)}
+.btn.light{padding:15px 28px;background:#fff;color:var(--ink);box-shadow:0 14px 30px -14px rgba(255,255,255,.35)}
+.btn.light:hover{transform:translateY(-2px)}
+.btn.dline{padding:14px 28px;border:1px solid rgba(255,255,255,.25);color:#fff;background:transparent}
+.btn.dline:hover{border-color:rgba(255,255,255,.6)}
+.btn.wide{width:100%}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;padding:6px 12px;border-radius:9999px;border:1px solid var(--line-2);color:var(--muted);background:rgba(255,255,255,.6)}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.card{border-radius:22px;border:1px solid rgba(12,16,24,.07);background:rgba(255,255,255,.7);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 20px 40px -24px rgba(28,40,64,.25)}
+/* header */
+header.nav{position:sticky;top:0;z-index:20;background:rgba(243,246,250,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+header.nav .wrap{display:flex;align-items:center;gap:26px;height:64px}
+.wm{font-size:19px;letter-spacing:-.04em;font-weight:400;white-space:nowrap}
+.wm b{font-weight:700}
+header.nav nav{display:flex;gap:24px;margin-left:auto}
+header.nav nav a,header.nav .login{font-size:14px;color:var(--muted)}
+header.nav nav a:hover,header.nav .login:hover{color:var(--ink)}
+/* hero */
+.glowbg{background:radial-gradient(60% 50% at 75% 0%,rgba(196,214,240,.55),transparent 70%),radial-gradient(50% 40% at 10% 20%,rgba(214,226,244,.6),transparent 70%),var(--bg)}
+.hero{padding:clamp(40px,6vw,72px) 0 clamp(28px,4vw,48px);text-align:center}
+.sel{position:relative;display:inline-block;padding:0 .07em;background:rgba(58,79,240,.2);box-shadow:inset 3px 0 0 var(--blue),inset -3px 0 0 var(--blue)}
+.sel::before,.sel::after{content:"";position:absolute;width:.26em;height:.26em;border-radius:50%;background:var(--blue)}
+.sel::before{left:-.1em;top:-.2em}.sel::after{right:-.1em;bottom:-.2em}
+.hero .sub{margin:20px auto 0;color:var(--muted);font-size:clamp(16px,1.5vw,18px);max-width:46ch}
+.film{position:relative;display:block;width:min(100%,836px);margin:clamp(26px,3.6vw,40px) auto 0;aspect-ratio:16/9;border-radius:28px;border:1px solid var(--ink);overflow:hidden;background:#0c1018;padding:0;cursor:pointer;box-shadow:0 40px 80px -40px rgba(28,40,64,.5)}
+.film img,.film video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.film .pl{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:14px;color:var(--ink)}
+.film .pl i{width:96px;height:96px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 14px rgba(255,255,255,.25),0 18px 40px -12px rgba(0,0,0,.5);transition:transform .22s cubic-bezier(.23,1,.32,1)}
+.film:hover .pl i{transform:scale(1.06)}
+.film .pl svg{width:30px;height:30px;margin-left:4px}
+.film .pl span{background:#fff;border-radius:9999px;padding:6px 14px;font-size:15px;white-space:nowrap}
+.cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.under{margin-top:14px;color:var(--muted);font-size:15px}
+.under a{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+/* raw footage in, a finished edit out */
+.how{padding:clamp(40px,6vw,72px) 0 clamp(20px,3vw,40px);overflow:hidden;text-align:center}
+.how .giant{font-size:clamp(40px,8.4vw,122px);color:rgba(12,16,24,.86);margin-top:4px}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.6fr) minmax(0,1fr);gap:18px;align-items:center;margin-top:clamp(-56px,-3vw,-12px)}
+.side{display:grid;justify-items:center;gap:10px;font-size:14px}
+.side b{font-weight:700;letter-spacing:-.01em}
+.side small{color:var(--muted);font-size:12.5px}
+.side .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--muted)}
+.stack{position:relative;width:170px;height:104px}
+.stack img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;box-shadow:0 14px 30px -14px rgba(28,40,64,.5)}
+.stack img:nth-child(1){transform:rotate(-7deg) translate(-8px,4px);opacity:.85}
+.stack img:nth-child(2){transform:rotate(-3deg)}
+.bubble{background:var(--ink);color:#fff;border-radius:14px;padding:9px 16px;font-size:14px;margin-top:22px}
+.outs{display:flex;align-items:flex-end;justify-content:center}
+.outs img{border-radius:10px;box-shadow:0 14px 30px -14px rgba(28,40,64,.5);object-fit:cover}
+.outs .w{width:124px;height:72px}
+.outs .t{width:52px;height:88px;margin-left:-14px;border:2px solid #fff}
+.outs .t + .t{transform:rotate(4deg)}
+.ready{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+.ready svg{width:14px;height:14px;color:var(--ink)}
+.mac{position:relative;width:min(100%,816px);margin:0 auto}
+.mac > img{width:100%;position:relative;z-index:1;pointer-events:none}
+.mac .screen{position:absolute;z-index:2;left:16.299%;top:14.9153%;width:67.402%;height:58.4746%;overflow:hidden;border-radius:2px;background:#fff}
+.mac .screen img{width:100%;height:100%;object-fit:cover;object-position:left top}
+.mac::after{content:"";position:absolute;left:10%;right:10%;bottom:2%;height:8%;border-radius:50%;background:rgba(20,34,60,.28);filter:blur(28px)}
+.more{display:flex;justify-content:center;padding:8px 20px 20px}
+.more a{display:inline-flex;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:9999px;padding:8px 14px 8px 8px;font-size:14px;box-shadow:0 14px 30px -14px rgba(12,16,24,.6)}
+.more .avs{display:flex}
+.more .avs img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--ink);margin-left:-10px}
+.more .avs img:first-child{margin-left:0}
+.more a > i{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center}
+.more a > i svg{width:13px;height:13px}
+/* benefits */
+.sec{padding:clamp(48px,7vw,88px) 0}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:980px;margin:clamp(28px,4vw,44px) auto 0}
+.ben{padding:10px 10px 18px;text-align:left}
+.ben .tile{height:164px;border-radius:14px;background:#eef1f5;display:grid;place-items:center;overflow:hidden;position:relative}
+.ben h3{margin:16px 6px 4px}
+.ben p{margin:0 6px;color:var(--muted);font-size:13.5px;line-height:1.45}
+.fillimg{width:100%;height:100%;object-fit:cover}
+.mini{width:74%}
+.mini.white{background:#fff;border-radius:12px;padding:14px;box-shadow:0 10px 24px -14px rgba(28,40,64,.35)}
+.mini .lab{display:block;font-size:10.5px;color:var(--muted);margin-bottom:8px;text-align:left}
+.cuts{display:flex;gap:3px;height:16px}
+.cuts i{background:#1d2535;border-radius:3px}
+.cuts i.cut{background:#ef6b6b}
+.wave{display:block;height:14px;margin-top:8px;background:repeating-linear-gradient(90deg,#8a93a3 0 2px,transparent 2px 5px);-webkit-mask:linear-gradient(90deg,#000 0 20%,transparent 20% 23%,#000 23% 52%,transparent 52% 56%,#000 56% 100%);mask:linear-gradient(90deg,#000 0 20%,transparent 20% 23%,#000 23% 52%,transparent 52% 56%,#000 56% 100%);opacity:.8}
+.mini.pics{position:relative;height:96px;width:78%}
+.mini.pics img{position:absolute;border-radius:8px;object-fit:cover;box-shadow:0 12px 24px -12px rgba(28,40,64,.5)}
+.mini.pics .wide{left:0;top:16px;width:52%;height:auto}
+.mini.pics .tall{width:22%;height:92px;top:2px;border:2px solid #fff}
+.mini.pics .tall.a{left:56%;transform:rotate(-4deg)}.mini.pics .tall.b{left:75%;transform:rotate(4deg)}
+.lanes{display:grid;gap:9px}
+.lanes > div{display:grid;grid-template-columns:38px 1fr;align-items:center;position:relative;height:12px}
+.lanes span{font:10px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);text-align:left}
+.lanes i{position:absolute;top:0;height:12px}
+.lanes .blk{background:#1d2535;border-radius:3px;margin-left:38px}
+.lanes .dot{width:5px;height:5px;top:4px;border-radius:50%;background:#1d2535;margin-left:calc(38px + 5%)}
+.lanes i.wave{left:38px;right:0;margin:0}
+.lanes .curve{left:38px;right:0;top:5px;height:2px;border-radius:2px;background:linear-gradient(90deg,#8a93a3,#cfd6e0,#8a93a3)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;width:70%}
+.cal b{font:500 9px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);text-align:center}
+.cal i{font-style:normal;font-size:9.5px;aspect-ratio:1;border-radius:5px;display:grid;place-items:center;background:#e3e7ee;color:#8a93a3}
+.cal i.on{background:#0c1018;color:#fff}
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;padding:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:clamp(36px,5vw,56px)}
+.strip > div{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start}
+.strip .ic{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.strip .ic svg{width:15px;height:15px}
+.strip b{font-size:14px;letter-spacing:-.01em;display:block}
+.strip p{color:var(--muted);font-size:13px;line-height:1.45;margin-top:2px}
+/* the platform */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:clamp(24px,3.6vw,36px)}
+.tabs button{border:1px solid var(--line-2);background:rgba(255,255,255,.6);border-radius:9999px;padding:9px 16px;font-size:14px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.tabs button:hover{border-color:rgba(12,16,24,.4)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabnote{margin:16px auto 0;color:var(--muted);max-width:60ch;min-height:3em}
+.win{margin:22px auto 0;max-width:1080px;border-radius:18px;overflow:hidden;border:1px solid var(--line-2);background:#fff;box-shadow:0 40px 80px -40px rgba(28,40,64,.45)}
+.win .bar{height:36px;display:flex;align-items:center;gap:7px;padding:0 14px;background:#f3f5f9;border-bottom:1px solid var(--line)}
+.win .bar i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.win .bar i:nth-child(2){background:#febc2e}.win .bar i:nth-child(3){background:#28c840}
+.win .bar span{margin:0 auto;font-size:12.5px;color:var(--muted);transform:translateX(-25px)}
+.win img{width:100%}
+/* styles */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px;margin-top:clamp(28px,4vw,44px)}
+.scard{padding:20px;text-align:left}
+.scard .n{font:500 11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.scard h3{margin:10px 0 6px;font-size:18px;letter-spacing:-.03em}
+.scard p{color:var(--muted);font-size:14px;line-height:1.45}
+.scard.own{background:transparent;border:1.5px dashed var(--line-2);box-shadow:none}
+.scard.own .n{color:var(--ink)}
+/* academy */
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;margin-top:clamp(28px,4vw,44px);align-items:start}
+.mod{padding:20px}
+.mod h3{font-size:18px;letter-spacing:-.03em}
+.mod .cnt{color:var(--faint);font-size:12.5px;margin-top:2px}
+.mod ol{list-style:none;margin:14px 0 0;padding:0}
+.mod li{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.35}
+.mod li span{color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.note{margin-top:22px;color:var(--muted);font-size:14.5px}
+/* real projects */
+.dark{background:radial-gradient(70% 36% at 50% 0%,rgba(22,32,84,.6),transparent 70%),#030405;color:#fff;padding:clamp(56px,8vw,104px) 0}
+.dark .chip{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:rgba(255,255,255,.75)}
+.dark h2{margin-top:18px}
+.dark h2 em{font-style:normal;color:rgba(255,255,255,.55)}
+.dark .lede{color:rgba(255,255,255,.6);margin-top:18px;max-width:28ch}
+.projs{margin-top:clamp(32px,5vw,56px);display:grid;gap:26px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.42fr);gap:14px;align-items:start}
+.col{display:grid;gap:14px}
+.proj{all:unset;display:block;cursor:pointer;min-width:0}
+.proj .pic{display:block;position:relative;border-radius:18px;overflow:hidden;background:#0c1018}
+.proj.wide .pic{aspect-ratio:16/9;border-radius:22px}.proj.tall .pic{aspect-ratio:9/16}.proj.land .pic{aspect-ratio:16/9}
+.proj img{width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.23,1,.32,1)}
+.proj:hover img{transform:scale(1.03)}
+.proj .pl{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;color:#0c1018;display:grid;place-items:center;box-shadow:0 10px 24px -8px rgba(0,0,0,.6)}
+.proj .pl svg{width:16px;height:16px;margin-left:2px}
+.proj.wide .pl{width:64px;height:64px}.proj.wide .pl svg{width:22px;height:22px}
+.proj .cap{display:flex;justify-content:space-between;gap:12px;padding:12px 4px 0;font-size:14.5px}
+.proj .cap b{letter-spacing:-.01em}
+.proj .cap span{color:rgba(255,255,255,.5);font-size:13px}
+.proj:focus-visible .pic{outline:2px solid #fff;outline-offset:3px}
+dialog.lb{border:0;padding:0;background:transparent;max-width:min(94vw,1100px);width:100%;overflow:visible}
+dialog.lb::backdrop{background:rgba(3,4,5,.86);backdrop-filter:blur(6px)}
+dialog.lb video{display:block;max-width:100%;max-height:84vh;margin:0 auto;border-radius:16px;background:#000}
+dialog.lb .x{position:absolute;right:0;top:-46px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer}
+dialog.lb p{color:rgba(255,255,255,.7);text-align:center;font-size:14px;margin-top:12px}
+dialog.lb p a{text-decoration:underline;text-underline-offset:4px;color:#fff}
+/* pricing */
+.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:880px;margin:clamp(28px,4vw,48px) auto 0;text-align:left}
+.plan{border-radius:26px;padding:30px;display:flex;flex-direction:column;gap:6px;min-height:520px}
+.plan.dk{background:var(--ink);color:var(--bg);box-shadow:0 30px 60px -30px rgba(12,16,24,.7)}
+.plan.lt{background:#fff;border:1px solid var(--line)}
+.plan .top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px}
+.plan .top > span:first-child{opacity:.75}
+.plan .pop{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--ink);border-radius:9999px;padding:5px 12px;font-size:12px;font-weight:700}
+.plan .pop i{width:6px;height:6px;border-radius:50%;background:var(--ink)}
+.plan .nm{font-size:19px;font-weight:700;letter-spacing:-.03em;margin-top:8px}
+.plan .pr{font-size:40px;font-weight:700;letter-spacing:-.045em;line-height:1.1;margin-top:10px}
+.plan .sm{font-size:13px;opacity:.7}
+.plan ul{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:11px;font-size:14.5px}
+.plan li{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;line-height:1.4}
+.plan li svg{margin-top:1px}
+.plan .plus{font-weight:700;font-size:14.5px;margin-top:22px}
+.plan .acts{margin-top:auto;padding-top:26px;display:grid;gap:10px}
+.fine{margin-top:18px;color:var(--faint);font-size:12.5px}
+.book{margin:clamp(28px,4vw,44px) auto 0;max-width:980px;border-radius:26px;padding:clamp(24px,3.4vw,38px);display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;color:#fff;text-align:left;
+  background:radial-gradient(60% 140% at 6% 50%,rgba(22,163,74,.8),transparent 72%),radial-gradient(45% 120% at 96% 50%,rgba(74,222,128,.35),transparent 70%),#0d1f17;box-shadow:0 30px 60px -30px rgba(13,31,23,.8)}
+.book h2{font-size:clamp(22px,2.6vw,30px);font-weight:700;letter-spacing:-.035em;margin:0;line-height:1.1}
+.book p{color:rgba(255,255,255,.75);font-size:14.5px;margin-top:6px}
+/* faq */
+.faq{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:clamp(28px,6vw,88px);align-items:start}
+.faq .left p{color:var(--muted);margin:18px 0 16px}
+details{border-top:1px solid var(--line)}
+details:last-child{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;font-weight:700;letter-spacing:-.015em;font-size:16.5px}
+summary::-webkit-details-marker{display:none}
+summary i{width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;flex:none;transition:transform .2s}
+summary i svg{width:13px;height:13px}
+details[open] summary i{transform:rotate(45deg)}
+details p{color:var(--muted);padding:0 44px 22px 0;max-width:64ch}
+/* footer */
+footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,255,255,.35)}
+.fgrid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:28px}
+.fgrid p{color:var(--muted);font-size:14px;margin-top:10px;max-width:26ch}
+.fgrid h4{font-size:14px;margin:0 0 12px;letter-spacing:-.01em}
+.fgrid a{display:block;color:var(--muted);font-size:14px;padding:4px 0}
+.fgrid a:hover{color:var(--ink)}
+.fgrid a.wm{color:var(--ink);font-size:19px;padding:0}
+.legal{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:34px;padding-top:20px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;line-height:1.5}
+.legal span:last-child{max-width:52ch;text-align:right}
+@media (max-width:980px){
+  header.nav nav{display:none}header.nav .login{margin-left:auto}
+  .flow{grid-template-columns:1fr;margin-top:18px}.flow .left{order:1}.flow .mac{order:2}.flow .right{order:3}
+  .grid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row{grid-template-columns:repeat(2,minmax(0,1fr))}.row .col{grid-column:1 / -1;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .faq{grid-template-columns:1fr}
+  .fgrid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .grid3,.plans{grid-template-columns:1fr}
+  .strip{grid-template-columns:1fr}
+  .row .col{grid-template-columns:1fr}
+  .proj.tall .cap{flex-direction:column;gap:2px}
+  .plan{min-height:0}
+  .film{border-radius:20px}.film .pl i{width:68px;height:68px;box-shadow:0 0 0 9px rgba(255,255,255,.25)}
+  .legal span:last-child{text-align:left}
+  .btn.glow,.btn.line{width:100%}
+  details p{padding-right:0}
+  header.nav .wrap{gap:14px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 </style>
 </head>
 <body>
 <header class="nav"><div class="wrap">
-  <a class="brand" href="#top"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M21.6 11.2a7.4 7.4 0 1 0 0 9.6" fill="none" stroke="var(--bg)" stroke-width="3.4" stroke-linecap="round"/><circle cx="21.9" cy="16" r="2.3" fill="var(--bg)"/></svg>CreatorHub<small>by MDG</small></a>
-  <nav aria-label="Sections"><a href="#story">MDG</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a></nav>
-  <a class="btn" href="app/index.html">Log in</a>
+  <a class="wm" href="#top" aria-label="CreatorHub, back to top"><b>Creator</b>Hub</a>
+  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#pricing">Pricing</a></nav>
+  <a class="login" href="app/index.html">Log in</a>
+  <a class="btn sm" href="#pricing">Get access</a>
 </div></header>
 
-<section class="hero" id="top"><div class="wrap">
-  <p class="cap">MDG · Creative direction · Strategy · Film · AI · Growth</p>
-  <h1>CreatorHub</h1>
-  <p class="lede">The platform behind the agency. Say what you want, pick a style, and Claude edits your video on your own computer.</p>
-  <div class="cta"><a class="btn solid" href="app/index.html">Open the platform</a><a class="link" href="#platform">See inside</a></div>
-  <figure class="frame"><img src="img/app-editor.jpg" width="1440" height="900" alt="The CreatorHub editor: your footage, what you want, and a style"></figure>
+<main>
+<section class="hero glowbg" id="top"><div class="wrap">
+  <h1 class="display">The Most Advanced<br><span class="sel">AI Editor</span></h1>
+  <p class="sub">MDG Editor, your styles, your planner and the Academy. One platform, one login.</p>
+  <button type="button" class="film" id="film" data-video="https://www.mdgeditor.com/media/vsl.mp4" aria-label="Watch how it works">
+    <img src="media/vsl-poster.jpg" width="1920" height="1080" alt="Mateo at a desk beside a laptop showing content numbers">
+    <span class="pl"><i><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></i><span>Watch how it works</span></span>
+  </button>
+  <p class="under" id="film-msg" hidden>This video did not load here. <a href="https://www.mdgeditor.com/#top" rel="noopener">Watch it on mdgeditor.com</a></p>
+  <div class="cta"><a class="btn glow" href="#pricing">Get access to MDG Editor <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="https://www.mdgeditor.com/book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> See how it would work for your content</a></div>
+  <p class="under">Includes a 1:1 onboarding. Already have access? <a href="app/index.html">Log in</a></p>
 </div></section>
 
-<section class="story" id="story"><div class="wrap">
-  <p class="cap">01 · MDG</p>
-  <div class="split">
-    <div><h2>I work with founders who are building something big.</h2>
-      <p class="lede">Creative direction, strategy, film and AI. From the first idea to the final frame, and everything that makes it grow.</p></div>
-    <ol class="chapters"><li><span class="n">01</span><div><h3>It started with a camera.</h3><p>Filming in Zagreb, learning what makes people watch.</p></div></li><li><span class="n">02</span><div><h3>Shooting for media.</h3><p>Campaigns for Armani, L’Oréal Paris and Porsche.</p></div></li><li><span class="n">03</span><div><h3>Working for Iman Gadzhi.</h3><p>The kickoff for everything else. It took me into the online space and into personal brands.</p></div></li><li><span class="n">04</span><div><h3>Scaling personal brands.</h3><p>One after another. Founders and creators, grown into brands people follow.</p></div></li><li><span class="n">05</span><div><h3>MDG today.</h3><p>An agency building content and AI systems for founders and brands.</p></div></li></ol>
+<section class="how" id="how"><div class="wrap">
+  <h2 class="display">Raw footage in.</h2>
+  <p class="display giant">A finished edit out.</p>
+  <div class="flow">
+    <div class="side left"><div class="stack"><img src="media/t-james.jpg" width="320" height="180" alt=""><img src="media/t-james.jpg" width="320" height="180" alt=""></div>
+      <b>Your raw footage</b><span class="mono">C0838.MP4 · 4K</span>
+      <span class="bubble">“Edit this in my style”</span><small>Tell it what you want</small></div>
+    <div class="mac"><img src="media/macbook.webp" width="816" height="590" alt=""><div class="screen"><img src="img/app-mac.jpg" width="1040" height="652" alt="The CreatorHub editor on a laptop: your footage, what you want, and a style"></div></div>
+    <div class="side right"><div class="outs"><img class="w" src="media/t-james.jpg" width="320" height="180" alt=""><img class="t" src="media/r-1.jpg" width="216" height="384" alt=""><img class="t" src="media/r-4.jpg" width="216" height="384" alt=""></div>
+      <b>Finished edit + reels</b><span class="ready"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg> Ready to post</span></div>
   </div>
-  <div class="photos"><img src="img/mdg-night.jpg" width="900" height="1170" loading="lazy" alt="Mateo Di Giusto at night beside a Mercedes-AMG">
-    <div class="stack"><img src="img/mdg-porsche.jpg" width="1300" height="867" loading="lazy" alt="Behind the scenes of a Porsche studio shoot"><img src="img/mdg-laptop.jpg" width="1300" height="731" loading="lazy" alt="Mateo Di Giusto working on a laptop on a balcony"></div></div>
-  <div class="capsl"><div><h3>Creative strategy</h3><p>Positioning, content plans, campaigns</p></div><div><h3>Content systems</h3><p>A steady pipeline of posts, reels and ads</p></div><div><h3>Film production</h3><p>Brand films, VSLs, commercials</p></div><div><h3>AI</h3><p>AI-powered editing, graphics and workflows</p></div><div><h3>Post-production</h3><p>Edit, colour, sound, motion</p></div><div><h3>Brand &amp; social</h3><p>Instagram rebrands, grids, photography</p></div></div>
-  <p class="bridge">CreatorHub is that work as a platform: the same editing rules, styles and systems, in one place you log in to.</p>
+</div>
+<div class="more"><a href="#projects"><span class="avs"><img src="media/t-launch.jpg" width="320" height="180" alt=""><img src="media/t-james.jpg" width="320" height="180" alt=""><img src="media/t-reel.jpg" width="180" height="320" alt=""></span>See other projects made with AI<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></i></a></div>
+</section>
+
+<section class="sec center"><div class="wrap">
+  <h2 class="display">Content on autopilot.<br>At the S-tier level.</h2>
+  <div class="grid3"><div class="card ben"><div class="tile"><div class="mini white"><span class="lab">Raw footage</span><div class="cuts"><i style="flex:3"></i><i style="flex:1" class="cut"></i><i style="flex:2"></i><i style="flex:4" class="cut"></i><i style="flex:1"></i><i style="flex:3" class="cut"></i><i style="flex:1"></i><i style="flex:3" class="cut"></i></div><div class="wave"></div></div></div><h3>Edit on autopilot</h3><p>Drop in raw footage. Get a finished, professional edit back.</p></div><div class="card ben"><div class="tile"><div class="mini pics"><img class="wide" src="media/t-james.jpg" width="320" height="180" loading="lazy" alt=""><img class="tall a" src="media/r-1.jpg" width="216" height="384" loading="lazy" alt=""><img class="tall b" src="media/r-4.jpg" width="216" height="384" loading="lazy" alt=""></div></div><h3>Reels on autopilot</h3><p>Turn one long video into short-form clips, ready to post.</p></div><div class="card ben"><div class="tile"><img class="fillimg" src="media/p-serge.jpg" width="1280" height="720" loading="lazy" alt="A finished edit of a presenter in a courtyard"></div><h3>Raw to short-form</h3><p>The hook, the 9:16 frame and the captions, done for you.</p></div><div class="card ben"><div class="tile"><img class="fillimg" src="media/p-launch.jpg" width="1920" height="1080" loading="lazy" alt="A motion graphics frame: What if you could create content on autopilot, with AI?"></div><h3>Pro motion graphics</h3><p>Graphics designed for every line, like a top motion designer.</p></div><div class="card ben"><div class="tile"><div class="mini white lanes"><div><span>GFX</span><i class="blk" style="left:8%;width:16%"></i><i class="blk" style="left:38%;width:13%"></i><i class="blk" style="left:66%;width:17%"></i></div><div><span>SFX</span><i class="dot" style="left:8%"></i><i class="dot" style="left:38%"></i><i class="dot" style="left:66%"></i></div><div><span>Voice</span><i class="wave"></i></div><div><span>Music</span><i class="curve"></i></div></div></div><h3>Sound and music</h3><p>Sound effects and music placed to every move on screen.</p></div><div class="card ben"><div class="tile"><div class="mini cal"><b>M</b><b>T</b><b>W</b><b>T</b><b>F</b><b>S</b><b>S</b><i class="on">1</i><i class="on">2</i><i class="on">3</i><i class="on">4</i><i class="on">5</i><i>6</i><i>7</i><i class="on">8</i><i class="on">9</i><i class="on">10</i><i class="on">11</i><i class="on">12</i><i>13</i><i>14</i><i class="on">15</i><i class="on">16</i><i>17</i><i>18</i><i>19</i><i>20</i><i>21</i></div></div><h3>Systemise your output</h3><p>One workflow for every video. The same quality and style, every week.</p></div></div>
+  <div class="strip" style="text-align:left"><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div><b>Runs on your computer</b><p>Your footage is edited on your machine, never uploaded to us.</p></div></div><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span><div><b>Your style, saved</b><p>Saved once, used on every video.</p></div></div><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="m16 10 5-3v10l-5-3"/></svg></span><div><b>1:1 onboarding</b><p>We install it with you and get your first edit out.</p></div></div><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/></svg></span><div><b>Lifetime access</b><p>One payment, every future update included.</p></div></div></div>
 </div></section>
 
-<section class="dark" id="platform"><div class="wrap">
-  <p class="cap">02 · The platform</p>
-  <h2>One place for the whole content week.</h2>
-  <div class="shots">
-    <div class="tabs" role="tablist" aria-label="Parts of the platform"><button role="tab" aria-selected="true" data-shot="editor"><b>Editor</b><span>Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.</span></button><button role="tab" aria-selected="false" data-shot="edits"><b>Your edits</b><span>Watch each stage as it happens. When it is ready, ask for changes in plain words.</span></button><button role="tab" aria-selected="false" data-shot="scripts"><b>Scripts</b><span>One line in, a full script out: three openings, the beats, the caption.</span></button><button role="tab" aria-selected="false" data-shot="planner"><b>Planner</b><span>Everything you are making, on one board. Type in any column to add to it.</span></button><button role="tab" aria-selected="false" data-shot="performance"><b>Performance</b><span>Your numbers as charts, and a plain read of what to repeat next week.</span></button><button role="tab" aria-selected="false" data-shot="academy"><b>Academy</b><span>Every screen explained, click by click.</span></button></div>
-    <figure class="shot" style="margin:0"><img id="shot" src="img/app-editor.jpg" width="1440" height="900" loading="lazy" alt="Editor"></figure>
+<section class="sec center" id="platform" style="padding-top:0"><div class="wrap">
+  <span class="chip"><i></i>The platform</span>
+  <h2 class="display" style="margin-top:18px">One login.<br>Everything in one place.</h2>
+  <p class="lede" style="margin-top:18px">CreatorHub is where you run MDG Editor. Queue an edit, keep your styles, plan the week and learn the system.</p>
+  <div class="tabs" role="tablist" aria-label="Parts of the platform"><button type="button" role="tab" aria-selected="true" data-shot="editor" data-note="Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.">Editor</button><button type="button" role="tab" aria-selected="false" data-shot="edits" data-note="Watch each stage as it happens. When it is ready, ask for changes in plain words.">Your edits</button><button type="button" role="tab" aria-selected="false" data-shot="styles" data-note="Start from a ready style or describe your own. It is saved once and any edit can use it.">Styles</button><button type="button" role="tab" aria-selected="false" data-shot="scripts" data-note="One line in, a full script out: three openings, the beats, the caption.">Scripts</button><button type="button" role="tab" aria-selected="false" data-shot="planner" data-note="Everything you are making, on one board. Type in any column to add to it.">Planner</button><button type="button" role="tab" aria-selected="false" data-shot="performance" data-note="Your numbers as charts, and a plain read of what to repeat next week.">Performance</button><button type="button" role="tab" aria-selected="false" data-shot="academy" data-note="Every screen explained, click by click.">Academy</button></div>
+  <p class="tabnote" id="tabnote">Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.</p>
+  <figure class="win" style="margin-bottom:0"><div class="bar"><i></i><i></i><i></i><span>CreatorHub</span></div><img id="shot" src="img/app-editor.jpg" width="1440" height="900" loading="lazy" alt="Editor"></figure>
+  <div class="cta"><a class="btn glow" href="app/index.html">Log in <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="#pricing">Get access</a></div>
+</div></section>
+
+<section class="sec center" id="styles" style="padding-top:0"><div class="wrap">
+  <h2 class="display">Pre-built styles.<br>Or build your own.</h2>
+  <p class="lede" style="margin-top:18px">Pick a look and every edit follows it: the captions, the graphics, the pace and the camera.</p>
+  <div class="sgrid"><div class="card scard"><span class="n">01</span><h3>Big Caps</h3><p>Heavy white caps, one word lit, big words on the points that matter. The short-form standard.</p></div><div class="card scard"><span class="n">02</span><h3>Apple UI</h3><p>Frosted glass captions, pills and number cards. Soft, app-like motion.</p></div><div class="card scard"><span class="n">03</span><h3>Real Estate</h3><p>Property reels: big white caps, green numbers, glass location tags, a cinematic push.</p></div><div class="card scard"><span class="n">04</span><h3>Rating</h3><p>A score card for everything you rate, and a running list of the results.</p></div><div class="card scard"><span class="n">05</span><h3>Comparison</h3><p>This against that: two sides, ticks and crosses, and a winner.</p></div><div class="card scard"><span class="n">06</span><h3>Podcast</h3><p>Quote captions with a speaker tag. Built for clips from long conversations.</p></div><div class="card scard"><span class="n">07</span><h3>Tutorial</h3><p>Numbered steps, a progress bar and the thing you are showing, up close.</p></div><div class="card scard"><span class="n">08</span><h3>Clean</h3><p>Sentence case on a soft dark box, lower third. Calm and readable.</p></div><div class="card scard"><span class="n">09</span><h3>Editorial</h3><p>Serif captions and slow moves for story-led and documentary pieces.</p></div><div class="card scard"><span class="n">10</span><h3>Minimal</h3><p>Small, light captions with lots of air. For quiet, premium brands.</p></div>
+    <div class="card scard own"><span class="n">+</span><h3>Build your own</h3><p>Describe the look the way you would to an editor, or point it at videos you like. It is saved under your name and any edit can use it.</p></div></div>
+</div></section>
+
+<section class="sec center" id="academy" style="padding-top:0"><div class="wrap">
+  <span class="chip"><i></i>Academy</span>
+  <h2 class="display" style="margin-top:18px">Learn to edit with AI.</h2>
+  <p class="lede" style="margin-top:18px">22 short lessons inside the platform, from your first login to a finished video.</p>
+  <div class="mods" style="text-align:left"><div class="card mod"><h3>Getting in</h3><p class="cnt">3 lessons</p><ol><li>Welcome and a quick tour<span>3 min</span></li><li>Connecting Claude Code<span>5 min</span></li><li>Setting up your workspace<span>3 min</span></li></ol></div><div class="card mod"><h3>Claude Code basics</h3><p class="cnt">5 lessons</p><ol><li>What Claude Code is, and the plan you need<span>2 min</span></li><li>Installing it and signing in<span>3 min</span></li><li>Your first conversation, and the questions it asks<span>3 min</span></li><li>Where your files go, and what to do when it stops<span>3 min</span></li><li>Quick start: invite to finished video in 10 minutes<span>10 min</span></li></ol></div><div class="card mod"><h3>The editor</h3><p class="cnt">9 lessons</p><ol><li>Your first edit, start to finish<span>6 min</span></li><li>Your footage: folders, files and links<span>3 min</span></li><li>Telling it what you want<span>4 min</span></li><li>Picking a style<span>4 min</span></li><li>HyperFrames or Premiere Pro<span>3 min</span></li><li>What happens in Claude Code<span>4 min</span></li><li>Your finished edit and asking for changes<span>3 min</span></li><li>Create your own style<span>4 min</span></li><li>When something goes wrong<span>3 min</span></li></ol></div><div class="card mod"><h3>The rest of the app</h3><p class="cnt">5 lessons</p><ol><li>Scripts<span>3 min</span></li><li>Planner<span>3 min</span></li><li>Performance<span>3 min</span></li><li>Competitors<span>3 min</span></li><li>Settings and your profile<span>2 min</span></li></ol></div></div>
+  <p class="note">Each lesson has its steps written out inside the platform. The videos are being recorded.</p>
+</div></section>
+
+<section class="dark" id="projects"><div class="wrap">
+  <span class="chip"><i></i>Made with MDG Editor</span>
+  <h2 class="display">Real projects.<br>Made with <em>AI.</em></h2>
+  <p class="lede">SaaS videos, VSLs, reels and ads. Click any video to watch it with sound.</p>
+  <div class="projs"><button type="button" class="proj wide" data-video="https://www.mdgeditor.com/media/opener/film.mp4" data-title="SaaS product video"><span class="pic"><img src="media/p-launch.jpg" width="1920" height="1080" loading="lazy" alt="SaaS product video, motion graphics"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>SaaS product video</b><span>Motion graphics</span></span></button>
+    <div class="row"><button type="button" class="proj tall" data-video="https://www.mdgeditor.com/media/projects/car.mp4" data-title="Reel"><span class="pic"><img src="media/p-car.jpg" width="540" height="960" loading="lazy" alt="Reel, personal brand"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>Reel</b><span>Personal brand</span></span></button><button type="button" class="proj tall" data-video="https://www.mdgeditor.com/media/projects/bakery.mp4" data-title="Real estate ad"><span class="pic"><img src="media/p-bakery.jpg" width="540" height="960" loading="lazy" alt="Real estate ad, property developer"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>Real estate ad</b><span>Property developer</span></span></button><div class="col"><button type="button" class="proj land" data-video="https://www.mdgeditor.com/media/full/james.mp4" data-title="VSL"><span class="pic"><img src="media/p-james.jpg" width="1280" height="720" loading="lazy" alt="VSL, paid-ads offer"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>VSL</b><span>Paid-ads offer</span></span></button><button type="button" class="proj land" data-video="https://www.mdgeditor.com/media/full/serge.mp4" data-title="VSL"><span class="pic"><img src="media/p-serge.jpg" width="1280" height="720" loading="lazy" alt="VSL, ai automation"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>VSL</b><span>AI automation</span></span></button></div></div></div>
+</div></section>
+
+<section class="sec center" id="pricing"><div class="wrap">
+  <h2 class="display">Get MDG Editor.</h2>
+  <div class="plans">
+    <div class="plan dk"><div class="top"><span>AI editor</span><span class="pop"><i></i>Most popular</span></div>
+      <div class="nm">MDG Editor</div><div class="pr">€997</div><div class="sm">One payment. Lifetime access.</div>
+      <ul><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Edits long-form: VSLs, YouTube videos, podcasts</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Cuts reels and short-form from the videos you already have</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Motion graphics, sound effects and music</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Edits in your style</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>1:1 onboarding call</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>All future updates</span></li></ul>
+      <div class="acts"><a class="btn light wide" href="https://buy.stripe.com/8x2cMZ2iXdGV6Qi3931oI0i">Get access to MDG Editor <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn dline wide" href="https://www.mdgeditor.com/book">See how it works for you</a></div></div>
+    <div class="plan lt"><div class="top"><span>MDG for brands</span></div>
+      <div class="nm">Brands &amp; Companies</div><div class="pr">Enterprise</div><div class="sm">Pricing on a call with our team.</div>
+      <div class="plus">Everything in MDG Editor, plus:</div>
+      <ul style="margin-top:12px"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>We build your styles and set up everything for you</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>We onboard and train your team</span></li></ul>
+      <div class="acts"><a class="btn ghost wide" href="https://www.mdgeditor.com/brands">Talk to our team</a></div></div>
   </div>
+  <p class="fine">Runs in Claude Code. Needs a paid Claude plan, billed separately by Anthropic.</p>
+  <div class="book" id="book"><div><h2>Want to see how it would work for you?</h2><p>Book a short call and see how it would work for your content.</p></div><a class="btn light" href="https://www.mdgeditor.com/book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Pick a time</a></div>
 </div></section>
 
-<section id="styles"><div class="wrap">
-  <p class="cap">03 · Styles</p>
-  <h2>Ten looks, ready to use. Or build your own.</h2>
-  <ol class="styles"><li><span class="n">01</span><div><h3>Big Caps</h3><p>Heavy white caps, one word lit, big words on the points that matter. The short-form standard.</p></div></li><li><span class="n">02</span><div><h3>Apple UI</h3><p>Frosted glass captions, pills and number cards. Soft, app-like motion.</p></div></li><li><span class="n">03</span><div><h3>Real Estate</h3><p>Property reels: big white caps, green numbers, glass location tags, a cinematic push.</p></div></li><li><span class="n">04</span><div><h3>Rating</h3><p>A score card for everything you rate, and a running list of the results.</p></div></li><li><span class="n">05</span><div><h3>Comparison</h3><p>This against that: two sides, ticks and crosses, and a winner.</p></div></li><li><span class="n">06</span><div><h3>Podcast</h3><p>Quote captions with a speaker tag. Built for clips from long conversations.</p></div></li><li><span class="n">07</span><div><h3>Tutorial</h3><p>Numbered steps, a progress bar and the thing you are showing, up close.</p></div></li><li><span class="n">08</span><div><h3>Clean</h3><p>Sentence case on a soft dark box, lower third. Calm and readable.</p></div></li><li><span class="n">09</span><div><h3>Editorial</h3><p>Serif captions and slow moves for story-led and documentary pieces.</p></div></li><li><span class="n">10</span><div><h3>Minimal</h3><p>Small, light captions with lots of air. For quiet, premium brands.</p></div></li></ol>
-  <div class="own"><h3>Your own style</h3><p>Describe the look the way you would to an editor, or point it at videos you like. It is saved under your name and any edit can use it.</p></div>
+<section class="sec" id="faq" style="padding-top:0"><div class="wrap faq">
+  <div class="left"><h2 class="display">Questions,<br>answered.</h2><p>Something else on your mind?</p><a class="btn ghost" href="https://www.mdgeditor.com/book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a call</a></div>
+  <div><details><summary>What does the onboarding look like?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Right after you pay, you book your 1:1 call. On the call we install MDG Editor on your computer with you, connect it to your editing app and make your first edit together, so you leave with a finished video and a setup ready for the next one.</p></details><details><summary>How much does it cost to run?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>MDG Editor is one payment of €997, with lifetime access. There are no credits and no monthly fee from us. It runs inside Claude, and the $20 a month Claude Pro plan is enough to run it. If you edit several videos every day, a bigger Claude plan gives you more room.</p></details><details><summary>Do I need to know how to edit?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>No. You tell it what you want in plain words, the way you would brief an editor, and it does the edit. If you do edit, every cut is a real clip on your timeline, so you can change anything by hand.</p></details><details><summary>What do I need to run it?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>A Mac or a Windows computer, Claude Code (free to install) and a paid Claude plan. It works with Premiere Pro, DaVinci Resolve, Final Cut Pro and CapCut, or with no editing app at all. We set it all up with you on the onboarding call.</p></details><details><summary>Can it edit in my style?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Yes. Your style (fonts, colours, captions and the way you like your cuts) is saved once and used on every video.</p></details><details><summary>How do I log in?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Open your invite link once and you are in. After that, Log in on this page takes you back to your workspace in the same browser.</p></details></div>
 </div></section>
+</main>
 
-<section class="cream" id="academy"><div class="wrap">
-  <p class="cap">04 · Academy</p>
-  <h2>Learn to run it, click by click.</h2>
-  <div class="mods"><div><h3>Getting in</h3><ol><li>Welcome and a quick tour<span>3 min</span></li><li>Connecting Claude Code<span>5 min</span></li><li>Setting up your workspace<span>3 min</span></li></ol></div><div><h3>Claude Code basics</h3><ol><li>What Claude Code is, and the plan you need<span>2 min</span></li><li>Installing it and signing in<span>3 min</span></li><li>Your first conversation, and the questions it asks<span>3 min</span></li><li>Where your files go, and what to do when it stops<span>3 min</span></li><li>Quick start: invite to finished video in 10 minutes<span>10 min</span></li></ol></div><div><h3>The editor</h3><ol><li>Your first edit, start to finish<span>6 min</span></li><li>Your footage: folders, files and links<span>3 min</span></li><li>Telling it what you want<span>4 min</span></li><li>Picking a style<span>4 min</span></li><li>HyperFrames or Premiere Pro<span>3 min</span></li><li>What happens in Claude Code<span>4 min</span></li><li>Your finished edit and asking for changes<span>3 min</span></li><li>Create your own style<span>4 min</span></li><li>When something goes wrong<span>3 min</span></li></ol></div><div><h3>The rest of the app</h3><ol><li>Scripts<span>3 min</span></li><li>Planner<span>3 min</span></li><li>Performance<span>3 min</span></li><li>Competitors<span>3 min</span></li><li>Settings and your profile<span>2 min</span></li></ol></div></div>
-  <p class="note">22 lessons. Each one has its steps written out inside the platform; the videos are being recorded.</p>
-</div></section>
-
-<section id="how"><div class="wrap">
-  <p class="cap">05 · How it works</p>
-  <h2>Your Claude does the work.</h2>
-  <div class="steps">
-    <div><span class="n">01</span><h3>Connect Claude Code once</h3><p>One line links it to your CreatorHub. It runs on your own Claude plan, so there is no extra bill.</p></div>
-    <div><span class="n">02</span><h3>Say what you want</h3><p>Choose your clips or paste a link, type or say the brief, pick a style.</p></div>
-    <div><span class="n">03</span><h3>Claude edits it on your computer</h3><p>With HyperFrames, which needs no editing program, or inside Premiere Pro. Your footage never leaves your machine.</p></div>
+<footer><div class="wrap">
+  <div class="fgrid">
+    <div><a class="wm" href="#top"><b>Creator</b>Hub</a><p>The most advanced AI video editor, produced by MDG.</p></div>
+    <div><h4>Product</h4><a href="#top">Watch the film</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#projects">Real projects</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
+    <div><h4>Get started</h4><a href="https://www.mdgeditor.com/book">See how it works for you</a><a href="#pricing">Get access</a><a href="app/index.html">Log in</a></div>
+    <div><h4>Contact</h4><a href="mailto:mateo@mdg-growth.com">mateo@mdg-growth.com</a><a href="https://instagram.com/MateoDiGiusto" rel="noopener">Instagram</a><a href="https://www.mdgeditor.com" rel="noopener">mdgeditor.com</a></div>
   </div>
-</div></section>
+  <div class="legal"><span>© 2026 MDG Growth LLC. MDG Editor runs in Claude Code and needs a paid Claude plan.</span><span>Claude and Claude Code are trademarks of Anthropic, PBC. MDG Editor is an independent product and is not affiliated with or endorsed by Anthropic.</span></div>
+</div></footer>
 
-<section class="dark access"><div class="wrap">
-  <p class="cap">Access</p>
-  <h2>CreatorHub is invite only.</h2>
-  <p>Have an invite link? Open it and you are in. Already set up? Log in and carry on where you left off.</p>
-  <a class="btn" href="app/index.html">Log in</a>
-</div></section>
-
-<footer><div class="wrap"><span>CreatorHub · MDG Growth LLC</span><span>Invite only · Beta</span></div></footer>
+<dialog class="lb" id="lb" aria-label="Video"><button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><video controls playsinline preload="none"></video><p hidden>This video did not load here. <a href="https://www.mdgeditor.com/#projects" rel="noopener">Watch it on mdgeditor.com</a></p></dialog>
 <script>
-document.querySelectorAll(".tabs button").forEach(function (b) { b.addEventListener("click", function () {
-  document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", String(x === b)); });
-  var img = document.getElementById("shot"); img.src = "img/app-" + b.dataset.shot + ".jpg"; img.alt = b.querySelector("b").textContent;
-}); });
+(function () {
+  // the platform screens
+  var tabs = document.querySelectorAll(".tabs button"), shot = document.getElementById("shot"), note = document.getElementById("tabnote");
+  tabs.forEach(function (b) { b.addEventListener("click", function () {
+    tabs.forEach(function (x) { x.setAttribute("aria-selected", String(x === b)); });
+    shot.src = "img/app-" + b.dataset.shot + ".jpg"; shot.alt = b.textContent; note.textContent = b.dataset.note;
+  }); });
+  // the film plays in place
+  var film = document.getElementById("film");
+  film.addEventListener("click", function () {
+    if (film.querySelector("video")) return;
+    var v = document.createElement("video"); v.controls = true; v.autoplay = true; v.playsInline = true; v.poster = "media/vsl-poster.jpg"; v.src = film.dataset.video;
+    v.addEventListener("error", function () { v.remove(); document.getElementById("film-msg").hidden = false; });
+    film.querySelector(".pl").remove(); film.appendChild(v); film.style.cursor = "default"; var p = v.play(); if (p && p.catch) p.catch(function () {});
+  });
+  // the projects open large, with sound
+  var lb = document.getElementById("lb"), lv = lb.querySelector("video"), lp = lb.querySelector("p");
+  function shut() { lv.pause(); lv.removeAttribute("src"); lv.load(); if (lb.open) lb.close(); }
+  document.querySelectorAll(".proj").forEach(function (b) {
+    b.addEventListener("click", function () { lp.hidden = true; lv.src = b.dataset.video; lb.setAttribute("aria-label", b.dataset.title); lb.showModal(); var p = lv.play(); if (p && p.catch) p.catch(function () {}); });
+  });
+  lv.addEventListener("error", function () { if (lv.getAttribute("src")) lp.hidden = false; });
+  lb.querySelector(".x").addEventListener("click", shut);
+  lb.addEventListener("click", function (e) { if (e.target === lb) shut(); });
+  lb.addEventListener("close", function () { lv.pause(); });
+})();
 </script>
 </body>
 </html>
