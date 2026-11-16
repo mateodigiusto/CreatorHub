@@ -1247,6 +1247,12 @@ body.gated .app,body.gated .tabbar,body.gated #toast{display:none!important}
 .gate-foot{margin:0;text-align:center}
 .gate-foot a{color:var(--ink)}
 
+/* the creator's own AI key */
+.ak.ok{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.ak-row{display:flex;gap:8px;flex-wrap:wrap}
+.ak-row input{flex:1;min-width:200px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.ak .err{font-size:12.5px;color:var(--bad);margin:0}
+
 </style>
 </head>
 <body>
@@ -1785,7 +1791,7 @@ function onRender(fn){ RenderSubs.add(fn); return () => RenderSubs.delete(fn); }
    Claude Code, on their own Claude plan. The page puts work in a queue on the CreatorHub server, Claude Code takes it
    from there with its instructions, and the result comes back here. */
 const BRAIN = {url:String((window.CH_CONFIG && window.CH_CONFIG.brain) || "").replace(/\/$/, ""), code:"", key:"", serverKey:null, allowance:null, worker:null, queue:null};
-const BRAIN_LIMITS = {status:8000, job_get:15000, job_list:15000, job_create:60000, job_cancel:15000, job_retry:15000, job_delete:15000};
+const BRAIN_LIMITS = {status:8000, ping:30000, job_get:15000, job_list:15000, job_create:60000, job_cancel:15000, job_retry:15000, job_delete:15000};
 const DIRECT = new Set(Object.keys(BRAIN_LIMITS));
 const TASKS = {script_write:"Write a script", script_humanize:"Make a script sound like you", competitor_analyze:"Study a competitor", competitor_extract:"Read a competitor’s posts", posts_extract:"Read your posts", hooks_tag:"Tag your hooks", numbers_read:"Read your numbers", lesson_teacher:"Answer a lesson question", profile_scan:"Read your profile", posts_sync:"Update your Instagram numbers", competitor_sync:"Read a competitor’s Instagram", editor_help:"Answer a question"};
 function brainLoad(){ const b = pref("brain", null) || {}; BRAIN.code = String(b.code || ""); BRAIN.key = String(b.key || ""); BRAIN.serverKey = typeof b.serverKey === "boolean" ? b.serverKey : null; BRAIN.queue = typeof b.queue === "boolean" ? b.queue : null; BRAIN.worker = b.seen ? {seenAt:String(b.seen), active:false} : null; }
@@ -1836,8 +1842,9 @@ function claudeCopy(e){
   if (code === "limit_month") return "This month’s allowance is used up. It resets on the 1st.";
   if (code === "limit_global") return "CreatorHub is at its monthly limit. Try again next month.";
   if (code === "busy") return "The server is busy. Try again in a minute.";
-  if (code === "no_key" || code === "not_available") return "Connect Claude Code first. It takes two minutes, under Settings.";
-  if (code === "bad_key" || code === "no_credit") return "Claude is switched off on CreatorHub’s side right now. Try again later.";
+  if (code === "no_key" || code === "not_available") return "Turn on the AI first: add your Claude API key under Settings, Connections.";
+  if (code === "bad_key") return BRAIN.key ? "Claude didn’t accept your API key. Check it under Settings, Connections." : "The AI is switched off on CreatorHub’s side right now. Try again later.";
+  if (code === "no_credit") return BRAIN.key ? "Your Claude account has no credit left. Add credit under Billing in the Claude Console." : "The AI is switched off on CreatorHub’s side right now. Try again later.";
   if (code === "rate_limited") return "Too many requests right now. Try again in a minute.";
   if (code === "overloaded") return "Claude is busy right now. Try again in a minute.";
   if (code === "refused") return "Claude declined this one. Change the brief and try again.";
@@ -2015,8 +2022,35 @@ function connectPanel(onChange){
 }
 function connectModal(){
   const body = h("div", {class:"stack-s"}); let closed = false;
-  const draw = () => { if (closed) return; const a = document.activeElement; if (a && body.contains(a) && a.tagName === "INPUT" && body.firstChild) return; body.replaceChildren(h("p", {class:"prose small", text:"CreatorHub is the interface. The work runs in Claude Code on your computer, on your own Claude plan: no API key and no extra bill."}), connectPanel(draw)); };
-  draw(); const un = onRender(draw); openModal({title:"Connect Claude Code", body, onClose:() => { closed = true; un(); }});
+  const draw = () => { if (closed) return; const a = document.activeElement; if (a && body.contains(a) && a.tagName === "INPUT" && body.firstChild) return; body.replaceChildren(aiKeyCard(draw), h("div", {class:"card stack-s"}, h("div", null, h("b", {text:"Claude Code, for editing your videos"}), h("div", {class:"meta", text:"Edits and reading Instagram run on your own computer, so your footage never leaves it."})), connectPanel(draw))); };
+  draw(); const un = onRender(draw); openModal({title:"Turn on the AI", body, onClose:() => { closed = true; un(); }});
+}
+/* The creator's own Claude API key: with it, scripts, Ask AI and analysis answer right here in the app.
+   It is kept in this browser only and travels with each request to Claude; CreatorHub's server does not store it. */
+const AK = {busy:false, msg:"", val:""};
+function aiKeyCard(again){
+  const redraw = () => { if (again) again(); else scheduleRender(); };
+  const head = (line, ok) => h("div", {style:"display:flex;gap:14px;align-items:center"}, h("span", {class:"tile", style:"--hue:var(--h-settings)"}, icon("wand")), h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:"AI in the app"}), h("div", {class:"meta", id:"ak-state", text:line})), ok ? h("span", {class:"pill good"}, icon("check"), "AI is on") : null);
+  if (!BRAIN.key && BRAIN.serverKey === true) return h("div", {class:"card stack-s ak ok", id:"ak"}, head("Included with your access. Scripts, Ask AI and analysis answer right here.", true));
+  if (BRAIN.key) return h("div", {class:"card stack-s ak ok", id:"ak"}, head("Your Claude API key ending in " + BRAIN.key.slice(-4) + " is connected in this browser. Scripts, Ask AI and analysis answer right here.", true),
+    h("div", {class:"toolbar"}, btn("Remove key", {class:"btn sm ghost", id:"ak-remove", onclick:() => { BRAIN.key = ""; brainSave(); markClaude(brainState()); AK.msg = ""; redraw(); render(); }})));
+  const inp = h("input", {id:"ak-key", type:"password", placeholder:"sk-ant-…", autocomplete:"off", spellcheck:"false", "aria-label":"Claude API key", value:AK.val, oninput:e => { AK.val = e.target.value; }});
+  const go = () => saveAiKey(inp.value, redraw);
+  inp.addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); go(); } });
+  return h("div", {class:"card stack-s ak", id:"ak"}, head("Add your Claude API key and scripts, Ask AI and analysis work right here, with nothing else to open."),
+    h("div", {class:"ak-row"}, inp, btn(AK.busy ? "Checking…" : "Turn on AI", {class:"btn primary", id:"ak-go", disabled:AK.busy, onclick:go}, AK.busy ? null : "wand")),
+    AK.msg ? h("p", {class:"err", id:"ak-err", "aria-live":"polite", text:AK.msg}) : null,
+    h("p", {class:"meta", style:"margin:0"}, "No key yet? ", h("a", {href:"https://console.anthropic.com/settings/keys", target:"_blank", rel:"noopener", text:"Create one in the Claude Console"}), ", then add a little credit under Billing. You pay Claude directly for what you use. The key is kept in this browser only."));
+}
+async function saveAiKey(v, redraw){
+  v = String(v || "").trim(); if (AK.busy) return;
+  if (!/^sk-ant-[A-Za-z0-9_-]{16,}$/.test(v)){ AK.msg = v ? "That doesn’t look like a Claude API key. It starts with sk-ant-." : "Paste your Claude API key."; redraw(); return; }
+  const a = document.activeElement; if (a && a.id === "ak-key") a.blur();
+  AK.busy = true; AK.msg = ""; redraw();
+  const prev = BRAIN.key; BRAIN.key = v;
+  try { await brainPost("ping", {}); AK.val = ""; brainSave(); markClaude(brainState()); toast("AI is on"); }
+  catch (e){ BRAIN.key = prev; const c = e && e.code; AK.msg = c === "bad_key" ? "Claude didn’t accept that key. Copy it again from the Claude Console." : c === "no_credit" ? "The key is right, but the account has no credit. Add credit under Billing in the Claude Console, then try again." : claudeCopy(e) || "Couldn’t check the key. Try again."; }
+  finally { AK.busy = false; redraw(); render(); }
 }
 
 /* ---------- Storage: this browser. Nothing here leaves the device. ---------- */
@@ -2140,7 +2174,7 @@ async function signOut(msg){
   // Anything not saved to the account yet goes up first; the key is needed for that.
   if (SYNC.on && SYNC.dirty.size){ try { await Promise.race([syncQueue(syncPush), new Promise(r => setTimeout(r, 4000))]); } catch (e){} }
   syncStop();
-  setPref("login", null); setInvite(""); GATE.prefill = ""; GATE.msg = msg || "";
+  setPref("login", null); BRAIN.key = ""; setInvite(""); GATE.prefill = ""; GATE.msg = msg || "";
   try { history.replaceState(null, "", location.pathname); } catch (e){}
   closeAllLayers();
   for (const sel of ["#rail", "#topbar", "#main", "#tabbar"]){ const el = $(sel); if (el) el.replaceChildren(); }
@@ -2434,7 +2468,7 @@ function wsButton(compact){
 }
 function aiStatus(){
   const st = S.claude.status, why = S.claude.why;
-  const map = {absent:["", "Claude not set up"], unknown:["", "Checking…"], offline:["off", "Can’t reach the server"], nocode:["wait", "Add your invite"], soon:["", "Claude Code: switching on"], waiting:["wait", "Connect Claude Code"], ready:["", "Claude Code is set up"], connected:["on", "Claude Code connected"], denied:["off", why === "off" ? "Invite switched off" : "Invite not valid"]}[st] || ["", "Claude Code"];
+  const map = {absent:["", "Claude not set up"], unknown:["", "Checking…"], offline:["off", "Can’t reach the server"], nocode:["wait", "Add your invite"], soon:["", "Claude Code: switching on"], waiting:["wait", "Turn on the AI"], ready:["", "Claude Code is set up"], connected:["on", "Claude Code connected"], denied:["off", why === "off" ? "Invite switched off" : "Invite not valid"]}[st] || ["", "Claude Code"];
   // With AI running on the CreatorHub server, writing and questions work right here; Claude Code is only for edits and reading Instagram.
   if (st === "ready" && !codeSeen()) return apiOK() ? h("button", {type:"button", class:"status on", id:"ai-on", onclick:() => go("settings", {settingsTab:"integrations"})}, h("span", {class:"led"}), h("span", {text:"AI is on"})) : h("button", {type:"button", class:"status wait", onclick:connectModal}, h("span", {class:"led"}), h("span", {text:"Connect Claude Code"}));
   return h("button", {type:"button", class:"status " + map[0], onclick:() => st === "connected" || st === "ready" ? go("settings", {settingsTab:"integrations"}) : connectModal()}, h("span", {class:"led"}), h("span", {text:map[1]}));
@@ -2517,7 +2551,7 @@ function hasExamples(){ return COLS.some(c => listCol(c).some(d => d.example)); 
 
 /* ---------- Setup wizard: connect Claude, learn who they are, learn what they want, pick a look ---------- */
 const WZ = {draft:null, step:0, shots:[], scanning:false, scanMsg:"", connecting:false};
-const WZ_STEPS = [["Connect","Link Claude Code"],["You","Who you are and what you make"],["Your goal","What you’re trying to achieve"],["Your videos","How they are made and how they look"]];
+const WZ_STEPS = [["Turn on the AI","Your key and Claude Code"],["You","Who you are and what you make"],["Your goal","What you’re trying to achieve"],["Your videos","How they are made and how they look"]];
 const BLOCKERS = ["Editing takes too long","I don’t know what to post","I’m not consistent","Low views","Views but no leads","No time to film"];
 const FILMING = ["Talking to camera","Voiceover and B-roll","Podcast or interview clips","Screen recordings","Vlogs"];
 const HOURS = [["1","About 1 hour a week"],["3","2 to 3 hours a week"],["5","4 to 6 hours a week"],["8","7 hours or more"]];
@@ -2531,7 +2565,7 @@ async function shotBlob(file){
 }
 async function scanProfile(wrap){
   const d = wizardDraft(); if (WZ.scanning) return;
-  if (!claudeOK()){ WZ.scanMsg = "Connect Claude Code in step 1 first. You can also just type the three answers below."; wizardUpdate(null, wrap); return; }
+  if (!claudeOK()){ WZ.scanMsg = "Turn on the AI in step 1 first. You can also just type the three answers below."; wizardUpdate(null, wrap); return; }
   if (!WZ.shots.length && !String(d.bio || "").trim()){ WZ.scanMsg = "Add a screenshot of your profile or paste your bio, then press it again."; wizardUpdate(null, wrap); return; }
   WZ.scanning = true; WZ.scanMsg = "Reading what you added…"; wizardUpdate(null, wrap);
   try {
@@ -2565,9 +2599,10 @@ function wizardUpdate(root, el){
   if (step === 0){
     const st = S.claude.status, why = S.claude.why; const ok = claudeOK();
     const line = ok ? (codeActive() ? "Connected. Everything in CreatorHub runs through it." : "Set up. Open Claude Code when you have work for it.") : st === "nocode" ? "CreatorHub is invite only. Paste the code from your invite." : st === "denied" ? (why === "off" ? "This invite has been switched off." : "That invite isn’t valid.") : st === "absent" ? "Claude isn’t set up on this copy of CreatorHub. You can still look around." : st === "unknown" ? "Checking your invite…" : st === "offline" ? "Couldn’t reach the CreatorHub server." : st === "soon" ? "Your invite is good." : "Three steps, once. After that it just works.";
-    body = [h("div", null, h("h1", {text:"Connect Claude Code"}), h("p", {class:"lede", text:"CreatorHub is the interface. The work runs in Claude Code on your computer, on your own Claude plan: it edits your videos with HyperFrames or in Premiere Pro and writes your scripts. No API key, no extra bill, and your footage never leaves your machine."})),
-      h("div", {class:"card wz-connect" + (ok ? " ok" : "")}, h("div", {class:"grow stack-s", style:"min-width:220px"}, h("div", null, h("b", {text:"Claude Code"}), h("div", {class:"meta", id:"wz-claude", text:line})), st === "absent" ? null : connectPanel(() => wizardUpdate(null, wrap)))),
-      h("div", {class:"prose small"}, h("p", {text:"What CreatorHub’s server sees: your brief, your style and your profile, so it can hand Claude Code the right instructions. Your video files stay on your computer."}))];
+    body = [h("div", null, h("h1", {text:"Turn on the AI"}), h("p", {class:"lede", text:"Two connections, once. Your Claude API key makes scripts, Ask AI and analysis work right here in the app. Claude Code on your computer edits your videos, so your footage never leaves your machine."})),
+      st === "absent" || st === "nocode" || st === "denied" ? null : aiKeyCard(() => wizardUpdate(null, wrap)),
+      h("div", {class:"card wz-connect" + (codeSeen() ? " ok" : "")}, h("div", {class:"grow stack-s", style:"min-width:220px"}, h("div", null, h("b", {text:"Claude Code, for editing your videos"}), h("div", {class:"meta", id:"wz-claude", text:line})), st === "absent" ? null : connectPanel(() => wizardUpdate(null, wrap)))),
+      h("div", {class:"prose small"}, h("p", {text:"What CreatorHub’s server sees: your brief, your style and your profile, so the AI gets the right instructions. Your API key is kept in this browser and only passed on to Claude. Your video files stay on your computer."}))];
   } else if (step === 1){
     const files = h("input", {type:"file", accept:"image/*", multiple:true, class:"sr", id:"wz-shots", onchange:async e => { const fs = [...e.target.files].slice(0, 4); e.target.value = ""; for (const f of fs){ const b = await shotBlob(f); if (b && WZ.shots.length < 4) WZ.shots.push(b); } wizardUpdate(null, wrap); }});
     const bio = bindText(h("textarea", {rows:"2", id:"wz-bio", placeholder:"Paste your bio, or say in a line or two what you do and who it’s for"}), v => { d.bio = v; }, 0); bio.value = d.bio || "";
@@ -2714,7 +2749,7 @@ function claudeGate(featureText){
   if (st === "offline") return h("div", {class:"banner warn"}, icon("alert"), h("span", {class:"grow", text:"Couldn’t reach the CreatorHub server. Check your connection."}), btn("Try again", {class:"btn sm primary", onclick:() => brainCheck()}));
   if (st === "soon") return h("div", {class:"banner"}, icon("info"), h("span", {class:"grow", text:"The connection for Claude Code is being switched on. This turns on by itself."}));
   if (st === "absent") return h("div", {class:"banner"}, icon("info"), h("span", {class:"grow", text:"Claude isn’t set up on this copy of CreatorHub."}));
-  return h("div", {class:"banner ai"}, icon("info"), h("span", {class:"grow", text:(st === "nocode" || st === "denied" ? "Add your invite" : "Connect Claude Code") + " to turn on " + featureText + "."}), btn(st === "nocode" || st === "denied" ? "Add invite" : "Connect", {class:"btn sm primary", onclick:connectModal}));
+  return h("div", {class:"banner ai"}, icon("info"), h("span", {class:"grow", text:(st === "nocode" || st === "denied" ? "Add your invite" : "Turn on the AI") + " to use " + featureText + "."}), btn(st === "nocode" || st === "denied" ? "Add invite" : "Turn on", {class:"btn sm primary", onclick:connectModal}));
 }
 function stagePill(stage){ const st = STAGE[stage] || STAGE.idea; return h("span", {class:"pill", style:`--stage:var(${st.v})`}, h("span", {class:"sw"}), st.label); }
 function exTag(doc){ return doc && doc.example ? h("span", {class:"ex-tag", text:"example"}) : null; }
@@ -2795,7 +2830,8 @@ function startSteps(){
   const own = col => listCol(col).some(d => !d.example);
   const social = (S.profile && S.profile.social) || {};
   const steps = [
-    {title:"Connect Claude Code", text:"One line, once. It runs on your own Claude plan.", done:claudeOK(), go:connectClaude},
+    {title:"Turn on the AI", text:"Add your Claude API key. Scripts, Ask AI and analysis then work right here.", done:apiOK(), go:connectModal},
+    {title:"Connect Claude Code", text:"For editing your videos. One line, once.", done:codeSeen(), go:connectClaude},
     {title:"Make your first edit", text:"Say what you want, pick a style, run it.", done:own("projects"), go:() => go("editor", {project:null})},
     {title:"Create your own style", text:"Describe the look, or point it at videos you like.", done:listCol("styles").length > 0, go:() => openStyleBuilder(null)}];
   if (FEATURES.posts) steps.push({title:"Make your first post", text:"A story sequence or carousel in about a minute.", done:own("queue"), go:() => go("posts", {post:null})});
@@ -4005,12 +4041,12 @@ Views.help = {
 };
 function helpBubbles(){
   const out = helpMsgs().map(m => h("div", {class:"msg " + (m.role === "user" ? "user" : "ai"), text:m.content}));
-  if (HP.busy){ const p = [...QUEUE.pending.values()].find(x => x.title === TASKS.editor_help); out.push(h("div", {class:"msg ai typing"}, h("span", {class:"spin"}), p && p.status === "queued" ? " Waiting for Claude Code to pick this up…" : " Thinking…")); }
+  if (HP.busy){ const p = [...QUEUE.pending.values()].find(x => x.title === TASKS.editor_help); out.push(h("div", {class:"msg ai typing"}, h("span", {class:"spin"}), p && p.status === "queued" ? " Waiting for Claude Code to pick this up. Add your Claude API key in Settings and answers come straight away." : " Thinking…")); }
   return out;
 }
 async function askHelp(text){
   text = String(text || "").trim(); if (!text || HP.busy) return;
-  if (!claudeOK()){ HP.err = "Connect Claude Code to turn on Ask AI."; render(); return; }
+  if (!claudeOK()){ HP.err = "Turn on the AI to use Ask AI."; render(); return; }
   HP.busy = true; HP.err = ""; HP.ctl = new AbortController();
   const msgs = helpMsgs(); msgs.push({role:"user", content:text}); saveHelp(); render();
   const ta = $("#hp-q"); if (ta) ta.value = "";
@@ -4210,8 +4246,9 @@ function connectionsSection(){
   const st = S.claude.status, why = S.claude.why;
   const line = st === "connected" ? "Connected. Edits and scripts run through it." : st === "ready" ? "Set up. Open Claude Code when you have work for it." : st === "waiting" ? "Three steps, once. After that it just works." : st === "soon" ? "Your invite is good." : st === "nocode" ? "CreatorHub is invite only. Paste the code from your invite." : st === "denied" ? (why === "off" ? "This invite has been switched off." : "That invite isn’t valid.") : st === "absent" ? "Claude isn’t set up on this copy of CreatorHub." : st === "offline" ? "Couldn’t reach the CreatorHub server." : "Checking…";
   return h("div", {class:"stack"},
-    h("div", {class:"card stack-s"}, h("div", {style:"display:flex;gap:14px;align-items:center"}, h("span", {class:"tile", style:"--hue:var(--h-settings)"}, icon("terminal")), h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:"Claude Code"}), h("div", {class:"meta", text:line}))), connectPanel(() => render())),
-    h("div", {class:"prose small"}, h("p", {text:"The work runs in Claude Code on your computer, on your own Claude plan. What goes to CreatorHub’s server: your briefs, your style, your profile, the words you add and the numbers you import, so it can hand Claude Code the right instructions and show you the result. Your video files never leave your computer. Everything you make here is saved in this browser."})));
+    st === "absent" || st === "nocode" || st === "denied" ? null : aiKeyCard(() => render()),
+    h("div", {class:"card stack-s"}, h("div", {style:"display:flex;gap:14px;align-items:center"}, h("span", {class:"tile", style:"--hue:var(--h-settings)"}, icon("terminal")), h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:"Claude Code, for editing your videos"}), h("div", {class:"meta", text:line}))), connectPanel(() => render())),
+    h("div", {class:"prose small"}, h("p", {text:"Scripts, Ask AI and analysis run on your Claude API key, right in the app. Video edits and reading Instagram run in Claude Code on your computer. What goes to CreatorHub’s server: your briefs, your style, your profile, the words you add and the numbers you load, so the AI gets the right instructions. Your API key is kept in this browser and only passed on to Claude. Your video files never leave your computer."})));
 }
 function dataSection(){
   return h("div", {class:"grid2"},
