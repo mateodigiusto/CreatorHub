@@ -1223,6 +1223,15 @@ textarea.brief-out.edit:focus{outline:none;border-color:var(--accent);box-shadow
 .crumbs .path button.up{all:unset;cursor:pointer;color:var(--ink-3);border-radius:6px;padding:2px 4px;margin:-2px -4px}
 .crumbs .path button.up:hover{color:var(--ink);background:var(--hover)}
 .crumbs .path button.up:focus-visible{outline:2px solid var(--accent)}
+/* Ask AI */
+.help-chat{display:grid;gap:14px;max-width:860px}
+.help-chat .msgs{max-height:min(62vh,640px);min-height:80px}
+.help-chat .msg{font-size:14.5px;max-width:86%}
+.help-chat .msg.user{background:var(--ink);color:var(--bg)}
+.help-chat .msg.typing{display:flex;gap:8px;align-items:center;color:var(--ink-3)}
+.help-in{display:flex;gap:10px;align-items:flex-end}
+.help-in textarea{flex:1;resize:vertical;min-height:52px}
+.help-start{display:grid;gap:8px}
 
 </style>
 </head>
@@ -1243,20 +1252,21 @@ textarea.brief-out.edit:focus{outline:none;border-color:var(--accent);box-shadow
 /* ---- 00-core.js ---- */
 /* ===================== Core: vocabulary, state, helpers ===================== */
 const FEATURES = {posts:false};
-const VIEWS = ["home","performance","posts","editor","scripts","tracker","competitors","reports","academy","settings"].filter(v => v !== "posts" || FEATURES.posts);
+const VIEWS = ["home","performance","posts","editor","scripts","tracker","competitors","reports","academy","help","settings"].filter(v => v !== "posts" || FEATURES.posts);
 const VIEW_META = {
   home:{label:"Home", icon:"home", hint:"Today at a glance"},
   performance:{label:"Performance", icon:"chart", hint:"Your numbers and what works"},
   posts:{label:"Posts", icon:"layers", beta:true, hint:"Autopilot makes your posts"},
-  editor:{label:"Editor", icon:"film", hint:"Auto-edit your videos"},
+  editor:{label:"AI Editor", icon:"film", hint:"Auto-edit your videos"},
   scripts:{label:"Scripts", icon:"pen", hint:"Scripts with hook options"},
   tracker:{label:"Planner", icon:"columns", hint:"What to make and when"},
   competitors:{label:"Competitors", icon:"users", hint:"What works for others"},
   reports:{label:"Reports", icon:"file", hint:"Your numbers and competitors, to save or send"},
   academy:{label:"Academy", icon:"book", hint:"Courses on using all of this"},
+  help:{label:"Ask AI", icon:"message", hint:"Questions about your footage, your edits or the app"},
   settings:{label:"Settings", icon:"settings", hint:"Profile, style, connections"},
 };
-const NAV_GROUPS = [["", ["home","performance","posts","editor","scripts","tracker","competitors","reports"].filter(v => VIEWS.includes(v))], ["", ["academy"]]];
+const NAV_GROUPS = [["", ["home","performance","posts","editor","scripts","tracker","competitors","reports"].filter(v => VIEWS.includes(v))], ["", ["academy","help"]]];
 const STAGES = [
   {id:"idea", label:"Idea", v:"--s-idea"},
   {id:"script", label:"Scripting", v:"--s-script"},
@@ -1761,7 +1771,7 @@ function onRender(fn){ RenderSubs.add(fn); return () => RenderSubs.delete(fn); }
 const BRAIN = {url:String((window.CH_CONFIG && window.CH_CONFIG.brain) || "").replace(/\/$/, ""), code:"", key:"", serverKey:null, allowance:null, worker:null, queue:null};
 const BRAIN_LIMITS = {status:8000, job_get:15000, job_list:15000, job_create:60000, job_cancel:15000, job_retry:15000, job_delete:15000};
 const DIRECT = new Set(Object.keys(BRAIN_LIMITS));
-const TASKS = {script_write:"Write a script", script_humanize:"Make a script sound like you", competitor_analyze:"Study a competitor", competitor_extract:"Read a competitor’s posts", posts_extract:"Read your posts", hooks_tag:"Tag your hooks", numbers_read:"Read your numbers", lesson_teacher:"Answer a lesson question", profile_scan:"Read your profile"};
+const TASKS = {script_write:"Write a script", script_humanize:"Make a script sound like you", competitor_analyze:"Study a competitor", competitor_extract:"Read a competitor’s posts", posts_extract:"Read your posts", hooks_tag:"Tag your hooks", numbers_read:"Read your numbers", lesson_teacher:"Answer a lesson question", profile_scan:"Read your profile", posts_sync:"Update your Instagram numbers", editor_help:"Answer a question"};
 function brainLoad(){ const b = pref("brain", null) || {}; BRAIN.code = String(b.code || ""); BRAIN.key = String(b.key || ""); BRAIN.serverKey = typeof b.serverKey === "boolean" ? b.serverKey : null; BRAIN.queue = typeof b.queue === "boolean" ? b.queue : null; BRAIN.worker = b.seen ? {seenAt:String(b.seen), active:false} : null; }
 function brainSave(){ setPref("brain", {code:BRAIN.code, key:BRAIN.key, serverKey:BRAIN.serverKey, queue:BRAIN.queue, seen:(BRAIN.worker && BRAIN.worker.seenAt) || ""}); }
 function apiOK(){ return !!(BRAIN.key || BRAIN.serverKey); }
@@ -2098,7 +2108,7 @@ function themeButton(){
 
 /* ---- 10-data.js ---- */
 /* ===================== Seeds: shared content fallback, editing styles, example workspace ===================== */
-const ACADEMY_SEED = [{"id":"start-here","title":"How to use CreatorHub","subtitle":"From your invite to a finished video","level":"Beginner","hue":0,"order":1,"description":"Get in, connect Claude Code, run your first edit, and learn every screen. Twenty-two short lessons, click by click.","modules":[{"title":"Getting in","lessons":[{"id":"h-01","title":"Welcome and a quick tour","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub is the interface. You say what you want and Claude does the work on your own computer, on your own Claude plan.\n\n## Steps\n1. Editor: where your videos get edited. You point it at your footage, say what you want and pick a style.\n2. Scripts: one line in, a full script out. Or write your own.\n3. Planner: everything you are making, on one board.\n4. Performance and Competitors: your numbers, and what works for accounts ahead of you.\n5. The light at the bottom left tells you if Claude Code is connected. Setting that up is the next lesson, and you do it once.\n\nYour footage never leaves your computer."},{"id":"h-02","title":"Connecting Claude Code","duration":"5 min","status":"coming","video":"","resources":[],"notes":"This is the only setup, and you do it once per computer. There is no API key and no extra bill.\n\n## Steps\n1. Open your invite link. Your invite is already filled in; if not, paste the code and press Continue.\n2. Install Claude from claude.com/download and sign in. You need a paid Claude plan.\n3. In CreatorHub press Copy next to \"Your connect line\". It contains your invite, so do not share it.\n4. Open Terminal, paste the line, press Enter.\n5. Open Claude Code and type: run CreatorHub.\n6. The card in CreatorHub turns green and reads \"Claude Code is connected\".\n\n## Without Terminal\nIn Claude open Customize, then Connectors, then Add custom connector. Paste the server URL and the request header shown under the connect steps.\n\n## The routine from now on\nQueue work in CreatorHub. Then open Claude Code and say \"run CreatorHub\"."},{"id":"h-03","title":"Setting up your workspace","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Three short screens. Everything Claude writes and edits for you starts from these answers.\n\n## Steps\n1. You: your name, your handle, where you post. Write your niche in one sentence a stranger would understand: who it is for and what it does for them.\n2. Your goal: what would make the next 90 days a win, what is in your way, how much time you have.\n3. Your videos: pick HyperFrames if you do not use an editing program, Premiere Pro if you edit in it. You can change it for any single video.\n4. Pick a look to start with and press \"Create my workspace\".\n\nChange any of it later under Settings."}]},{"title":"Claude Code basics","lessons":[{"id":"h-18","title":"What Claude Code is, and the plan you need","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Claude Code is Claude with hands. It can open your files and run things on your computer, which is how it edits your video.\n\n## Steps\n1. It is part of the Claude desktop app, under the Code tab.\n2. You need a paid Claude plan. That is the only cost: CreatorHub does not add a bill on top.\n3. You never write code. You type one sentence and it does the work."},{"id":"h-19","title":"Installing it and signing in","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Download, open, sign in. That is the whole install.\n\n## Steps\n1. Download Claude from claude.com/download and open it.\n2. Sign in with your Claude account.\n3. Open the Code tab. It asks which folder to work in: pick the folder your footage is in."},{"id":"h-20","title":"Your first conversation, and the questions it asks","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Ask it something simple first, so you see how it answers.\n\n## Steps\n1. Type: what is in this folder?\n2. Before it runs anything on your computer, it asks you. \"Yes\" means once.\n3. \"Yes, and don't ask again\" lets it repeat that kind of step. For editing, allow the ones it repeats."},{"id":"h-21","title":"Where your files go, and what to do when it stops","duration":"3 min","status":"coming","video":"","resources":[],"notes":"It never changes your originals. Everything it makes goes in a new folder beside them.\n\n## Steps\n1. If it stops and asks you something, answer in a sentence and it carries on.\n2. If you reach your plan's limit, it tells you when it resets. Your edit is not lost: say \"run CreatorHub\" again later.\n3. If anything looks stuck, close Claude Code, open it, and say \"run CreatorHub\"."},{"id":"h-22","title":"Quick start: invite to finished video in 10 minutes","duration":"10 min","status":"coming","video":"","resources":[],"notes":"The whole path in one go. This is the lesson to watch if you only watch one.\n\n## Steps\n1. Open your invite link.\n2. Connect Claude Code with the connect line.\n3. Editor: choose a clip, say what you want, pick a style, press \"Run it through Claude\".\n4. In Claude Code say \"run CreatorHub\".\n5. Open the finished video from the location shown on the edit."}]},{"title":"The editor","lessons":[{"id":"h-04","title":"Your first edit, start to finish","duration":"6 min","status":"coming","video":"","resources":[],"notes":"Four things: your footage, what you want, a style, and how it is made.\n\n## Steps\n1. Sidebar, Editor.\n2. Your footage: in Finder select the folder, press Option + Command + C, and paste it into the box. Nothing uploads. It only saves the location.\n3. What do you want: say it the way you would to an editor. \"Cut the pauses, add captions, under 40 seconds.\"\n4. Pick a style.\n5. Leave HyperFrames selected and press \"Run it through Claude\". The edit appears under \"Your edits\" as waiting.\n6. Open Claude Code and say \"run CreatorHub\". It finds the footage, cuts it, builds the captions and graphics, checks its own frames and renders.\n7. CreatorHub shows each stage. When it reads Ready you get a summary and the location of the finished file.\n\nA talking-head clip under three minutes is the best first test. The first edit on a computer takes longer, because Claude Code sets up its tools once."},{"id":"h-05","title":"Your footage: folders, files and links","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub never uploads your footage. It only needs to know where it is.\n\n## Steps\n1. A whole shoot: select the folder in Finder, press Option + Command + C, paste.\n2. Specific clips: select them in Finder, press Option + Command + C, paste. Each one becomes its own line.\n3. Footage somewhere else: paste a Google Drive, Dropbox or YouTube link. Claude Code downloads it to your computer first.\n4. Remove a line with the x next to it.\n5. Leave it empty and Claude Code uses the folder it is open in.\n\nIf you drag a file onto the box, CreatorHub only gets its name. Paste the folder too, or Claude searches your computer for the name.\nA Drive link has to be set to \"anyone with the link\"."},{"id":"h-06","title":"Telling it what you want","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Three things make a good brief: what to cut, how long, and how it should open.\n\n## Steps\n1. Type it, or press Talk and say it. Press Talk again to stop.\n2. The buttons under the box add the common requests for you.\n3. Filmed from a script? Pick it, so Claude knows what you meant to say.\n4. Going for a specific look? Under the styles, paste a link to an edit you like or add screenshots. Claude studies them before it starts.\n\n\"Make it good\" gets you an average edit. \"Open on the line about the price, cut every pause, 30 seconds\" gets you yours."},{"id":"h-07","title":"Picking a style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Each style is a complete look: captions, graphics, pace and camera.\n\n## Steps\n1. Big Caps: the short-form standard. Opinions and myth-busting.\n2. Apple UI: everything on frosted glass. Calm and premium.\n3. Real Estate: property reels. Green numbers and location tags.\n4. Rating: a score card for everything you rate.\n5. Comparison: this against that, with a winner.\n6. Podcast: clips from long conversations, with a name tag.\n7. Tutorial: numbered steps and a progress bar.\n8. Clean, Editorial, Minimal: calmer looks for advice, stories and quiet brands.\n\nPick the closest one. Bend it in the brief, or make your own."},{"id":"h-08","title":"HyperFrames or Premiere Pro","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Claude does the editing either way. This decides where the video gets built.\n\n## Steps\n1. HyperFrames needs no editing program. You get a finished video file.\n2. Premiere Pro leaves a finished sequence in a copy of your project. You look it over and export. Premiere has to be open with its panel connected.\n3. Set your usual one under Settings. Change it for any single video on the Editor screen."},{"id":"h-09","title":"What happens in Claude Code","duration":"4 min","status":"coming","video":"","resources":[],"notes":"\"run CreatorHub\" is the only thing you ever type there.\n\n## Steps\n1. Claude Code asks before it runs things on your computer. Choose \"Yes, and don't ask again\" for the ones it repeats.\n2. The first edit takes longer, because it sets up its tools once.\n3. It works through everything you queued, one after the other.\n4. It never touches your original files. Everything it makes goes in a new folder next to them.\n5. Leave Claude Code open while it works. You can close CreatorHub; the result is there when you come back."},{"id":"h-10","title":"Your finished edit and asking for changes","duration":"3 min","status":"coming","video":"","resources":[],"notes":"The first version is close. This is how you get it right.\n\n## Steps\n1. A Ready card shows what was cut and what was added.\n2. Copy the location and open the video.\n3. Write what should change under the edit: \"Make the captions bigger.\" \"Cut the part about pricing.\" Press \"Send changes to Claude\".\n4. It picks up the same project and gives you version 2. The first one stays.\n\nOne change per sentence works best."},{"id":"h-11","title":"Create your own style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Describe your look once and pick it for any edit.\n\n## Steps\n1. Editor, \"Create a style\".\n2. Name it.\n3. Describe it the way you would to an editor: \"Big white captions, two words at a time. Green for numbers. Slow zoom on every key line.\"\n4. Optional: point it at videos you like. Paste a folder or links.\n5. Pick the closest starting look and press \"Save and use it\".\n\nYour styles sit first in the gallery, marked Yours. The pen on the card changes one."},{"id":"h-12","title":"When something goes wrong","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Most problems are one of these five.\n\n## Steps\n1. An edit sits on \"Waiting for Claude Code\": open Claude Code and say \"run CreatorHub\".\n2. \"Couldn't finish\": the card says why. Fix that and press \"Run it again\".\n3. The light reads \"Connect Claude Code\" on a new computer: paste the connect line again.\n4. A Premiere edit fails: open Premiere and connect its panel, or switch that edit to HyperFrames.\n5. \"Invite not valid\" or \"switched off\": ask for a new invite link.\n\nYou can stop or remove any edit. Your files are never deleted."}]},{"title":"The rest of the app","lessons":[{"id":"h-13","title":"Scripts","duration":"3 min","status":"coming","video":"","resources":[],"notes":"One line in, a full script out. Or write your own and keep it here.\n\n## Steps\n1. Sidebar, Scripts. Type what the video is about and pick the format.\n2. Press \"Write the script\", then say \"run CreatorHub\" in Claude Code.\n3. Pick the opening you would say.\n4. Press \"Make it sound like me\" if anything reads stiff.\n5. \"Write it myself\" keeps your own script here.\n6. \"Edit a video from it\" starts an edit with the script attached."},{"id":"h-14","title":"Planner","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Everything you are making and where each piece is.\n\n## Steps\n1. Type in any column and press Enter to add a card.\n2. Drag a card as it moves forward.\n3. Open a card for its date, your notes and its script.\n4. The calendar shows the same pieces by date. Tasks is a plain to-do list."},{"id":"h-15","title":"Performance","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Your numbers as charts, read for you.\n\n## Steps\n1. Sidebar, Performance. Press \"Connect Instagram\".\n2. Until Instagram login is switched on, take screenshots of your posts grid or your insights and drop them in the box under it. Or click the box and choose them, or paste one with Cmd+V. Up to 12 at a time.\n3. Press \"Read screenshots\". Claude reads every post, its date and its numbers.\n4. Check the list. A post with no date shows it in orange. Press Import.\n5. Do it again next week. Posts you already have get their new numbers; new posts are added.\n6. The charts show views over time, which openings work, which format and which day. Press \"What's working\" for what to repeat next week."},{"id":"h-16","title":"Competitors","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Find out why their posts work before you guess.\n\n## Steps\n1. Sidebar, Competitors, \"Add competitor\". Type the handle of an account one step ahead of you.\n2. Add their best posts: paste the captions with their numbers.\n3. Press Analyze, then say \"run CreatorHub\" in Claude Code.\n4. Read what their openings have in common and the five ideas adapted for you."},{"id":"h-17","title":"Settings and your profile","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Everything Claude writes and edits starts from your profile. Keep it current.\n\n## Steps\n1. Settings, Profile: niche, audience, offer, tone.\n2. \"How your videos are made\": the style and the program every new edit starts with.\n3. Connections: reconnect Claude Code on a new computer.\n4. Your data: export everything you have made, or reset."}]}]}];
+const ACADEMY_SEED = [{"id":"start-here","title":"How to use CreatorHub","subtitle":"From your invite to a finished video","level":"Beginner","hue":0,"order":1,"description":"Get in, connect Claude Code, run your first edit, and learn every screen. Twenty-two short lessons, click by click.","modules":[{"title":"Getting in","lessons":[{"id":"h-01","title":"Welcome and a quick tour","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub is the interface. You say what you want and Claude does the work on your own computer, on your own Claude plan.\n\n## Steps\n1. Editor: where your videos get edited. You point it at your footage, say what you want and pick a style.\n2. Scripts: one line in, a full script out. Or write your own.\n3. Planner: everything you are making, on one board.\n4. Performance and Competitors: your numbers, and what works for accounts ahead of you.\n5. The light at the bottom left tells you if Claude Code is connected. Setting that up is the next lesson, and you do it once.\n\nYour footage never leaves your computer."},{"id":"h-02","title":"Connecting Claude Code","duration":"5 min","status":"coming","video":"","resources":[],"notes":"This is the only setup, and you do it once per computer. There is no API key and no extra bill.\n\n## Steps\n1. Open your invite link. Your invite is already filled in; if not, paste the code and press Continue.\n2. Install Claude from claude.com/download and sign in. You need a paid Claude plan.\n3. In CreatorHub press Copy next to \"Your connect line\". It contains your invite, so do not share it.\n4. Open Terminal, paste the line, press Enter.\n5. Open Claude Code and type: run CreatorHub.\n6. The card in CreatorHub turns green and reads \"Claude Code is connected\".\n\n## Without Terminal\nIn Claude open Customize, then Connectors, then Add custom connector. Paste the server URL and the request header shown under the connect steps.\n\n## The routine from now on\nQueue work in CreatorHub. Then open Claude Code and say \"run CreatorHub\"."},{"id":"h-03","title":"Setting up your workspace","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Three short screens. Everything Claude writes and edits for you starts from these answers.\n\n## Steps\n1. You: your name, your handle, where you post. Write your niche in one sentence a stranger would understand: who it is for and what it does for them.\n2. Your goal: what would make the next 90 days a win, what is in your way, how much time you have.\n3. Your videos: pick HyperFrames if you do not use an editing program, Premiere Pro if you edit in it. You can change it for any single video.\n4. Pick a look to start with and press \"Create my workspace\".\n\nChange any of it later under Settings."}]},{"title":"Claude Code basics","lessons":[{"id":"h-18","title":"What Claude Code is, and the plan you need","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Claude Code is Claude with hands. It can open your files and run things on your computer, which is how it edits your video.\n\n## Steps\n1. It is part of the Claude desktop app, under the Code tab.\n2. You need a paid Claude plan. That is the only cost: CreatorHub does not add a bill on top.\n3. You never write code. You type one sentence and it does the work."},{"id":"h-19","title":"Installing it and signing in","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Download, open, sign in. That is the whole install.\n\n## Steps\n1. Download Claude from claude.com/download and open it.\n2. Sign in with your Claude account.\n3. Open the Code tab. It asks which folder to work in: pick the folder your footage is in."},{"id":"h-20","title":"Your first conversation, and the questions it asks","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Ask it something simple first, so you see how it answers.\n\n## Steps\n1. Type: what is in this folder?\n2. Before it runs anything on your computer, it asks you. \"Yes\" means once.\n3. \"Yes, and don't ask again\" lets it repeat that kind of step. For editing, allow the ones it repeats."},{"id":"h-21","title":"Where your files go, and what to do when it stops","duration":"3 min","status":"coming","video":"","resources":[],"notes":"It never changes your originals. Everything it makes goes in a new folder beside them.\n\n## Steps\n1. If it stops and asks you something, answer in a sentence and it carries on.\n2. If you reach your plan's limit, it tells you when it resets. Your edit is not lost: say \"run CreatorHub\" again later.\n3. If anything looks stuck, close Claude Code, open it, and say \"run CreatorHub\"."},{"id":"h-22","title":"Quick start: invite to finished video in 10 minutes","duration":"10 min","status":"coming","video":"","resources":[],"notes":"The whole path in one go. This is the lesson to watch if you only watch one.\n\n## Steps\n1. Open your invite link.\n2. Connect Claude Code with the connect line.\n3. Editor: choose a clip, say what you want, pick a style, press \"Run it through Claude\".\n4. In Claude Code say \"run CreatorHub\".\n5. Open the finished video from the location shown on the edit."}]},{"title":"The editor","lessons":[{"id":"h-04","title":"Your first edit, start to finish","duration":"6 min","status":"coming","video":"","resources":[],"notes":"Four things: your footage, what you want, a style, and how it is made.\n\n## Steps\n1. Sidebar, Editor.\n2. Your footage: in Finder select the folder, press Option + Command + C, and paste it into the box. Nothing uploads. It only saves the location.\n3. What do you want: say it the way you would to an editor. \"Cut the pauses, add captions, under 40 seconds.\"\n4. Pick a style.\n5. Leave HyperFrames selected and press \"Run it through Claude\". The edit appears under \"Your edits\" as waiting.\n6. Open Claude Code and say \"run CreatorHub\". It finds the footage, cuts it, builds the captions and graphics, checks its own frames and renders.\n7. CreatorHub shows each stage. When it reads Ready you get a summary and the location of the finished file.\n\nA talking-head clip under three minutes is the best first test. The first edit on a computer takes longer, because Claude Code sets up its tools once."},{"id":"h-05","title":"Your footage: folders, files and links","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub never uploads your footage. It only needs to know where it is.\n\n## Steps\n1. A whole shoot: select the folder in Finder, press Option + Command + C, paste.\n2. Specific clips: select them in Finder, press Option + Command + C, paste. Each one becomes its own line.\n3. Footage somewhere else: paste a Google Drive, Dropbox or YouTube link. Claude Code downloads it to your computer first.\n4. Remove a line with the x next to it.\n5. Leave it empty and Claude Code uses the folder it is open in.\n\nIf you drag a file onto the box, CreatorHub only gets its name. Paste the folder too, or Claude searches your computer for the name.\nA Drive link has to be set to \"anyone with the link\"."},{"id":"h-06","title":"Telling it what you want","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Three things make a good brief: what to cut, how long, and how it should open.\n\n## Steps\n1. Type it, or press Talk and say it. Press Talk again to stop.\n2. The buttons under the box add the common requests for you.\n3. Filmed from a script? Pick it, so Claude knows what you meant to say.\n4. Going for a specific look? Under the styles, paste a link to an edit you like or add screenshots. Claude studies them before it starts.\n\n\"Make it good\" gets you an average edit. \"Open on the line about the price, cut every pause, 30 seconds\" gets you yours."},{"id":"h-07","title":"Picking a style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Each style is a complete look: captions, graphics, pace and camera.\n\n## Steps\n1. Big Caps: the short-form standard. Opinions and myth-busting.\n2. Apple UI: everything on frosted glass. Calm and premium.\n3. Real Estate: property reels. Green numbers and location tags.\n4. Rating: a score card for everything you rate.\n5. Comparison: this against that, with a winner.\n6. Podcast: clips from long conversations, with a name tag.\n7. Tutorial: numbered steps and a progress bar.\n8. Clean, Editorial, Minimal: calmer looks for advice, stories and quiet brands.\n\nPick the closest one. Bend it in the brief, or make your own."},{"id":"h-08","title":"HyperFrames or Premiere Pro","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Claude does the editing either way. This decides where the video gets built.\n\n## Steps\n1. HyperFrames needs no editing program. You get a finished video file.\n2. Premiere Pro leaves a finished sequence in a copy of your project. You look it over and export. Premiere has to be open with its panel connected.\n3. Set your usual one under Settings. Change it for any single video on the Editor screen."},{"id":"h-09","title":"What happens in Claude Code","duration":"4 min","status":"coming","video":"","resources":[],"notes":"\"run CreatorHub\" is the only thing you ever type there.\n\n## Steps\n1. Claude Code asks before it runs things on your computer. Choose \"Yes, and don't ask again\" for the ones it repeats.\n2. The first edit takes longer, because it sets up its tools once.\n3. It works through everything you queued, one after the other.\n4. It never touches your original files. Everything it makes goes in a new folder next to them.\n5. Leave Claude Code open while it works. You can close CreatorHub; the result is there when you come back."},{"id":"h-10","title":"Your finished edit and asking for changes","duration":"3 min","status":"coming","video":"","resources":[],"notes":"The first version is close. This is how you get it right.\n\n## Steps\n1. A Ready card shows what was cut and what was added.\n2. Copy the location and open the video.\n3. Write what should change under the edit: \"Make the captions bigger.\" \"Cut the part about pricing.\" Press \"Send changes to Claude\".\n4. It picks up the same project and gives you version 2. The first one stays.\n\nOne change per sentence works best."},{"id":"h-11","title":"Create your own style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Describe your look once and pick it for any edit.\n\n## Steps\n1. Editor, \"Create a style\".\n2. Name it.\n3. Describe it the way you would to an editor: \"Big white captions, two words at a time. Green for numbers. Slow zoom on every key line.\"\n4. Optional: point it at videos you like. Paste a folder or links.\n5. Pick the closest starting look and press \"Save and use it\".\n\nYour styles sit first in the gallery, marked Yours. The pen on the card changes one."},{"id":"h-12","title":"When something goes wrong","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Most problems are one of these five.\n\n## Steps\n1. An edit sits on \"Waiting for Claude Code\": open Claude Code and say \"run CreatorHub\".\n2. \"Couldn't finish\": the card says why. Fix that and press \"Run it again\".\n3. The light reads \"Connect Claude Code\" on a new computer: paste the connect line again.\n4. A Premiere edit fails: open Premiere and connect its panel, or switch that edit to HyperFrames.\n5. \"Invite not valid\" or \"switched off\": ask for a new invite link.\n\nYou can stop or remove any edit. Your files are never deleted."}]},{"title":"The rest of the app","lessons":[{"id":"h-13","title":"Scripts","duration":"3 min","status":"coming","video":"","resources":[],"notes":"One line in, a full script out. Or write your own and keep it here.\n\n## Steps\n1. Sidebar, Scripts. Type what the video is about and pick the format.\n2. Press \"Write the script\", then say \"run CreatorHub\" in Claude Code.\n3. Pick the opening you would say.\n4. Press \"Make it sound like me\" if anything reads stiff.\n5. \"Write it myself\" keeps your own script here.\n6. \"Edit a video from it\" starts an edit with the script attached."},{"id":"h-14","title":"Planner","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Everything you are making and where each piece is.\n\n## Steps\n1. Type in any column and press Enter to add a card.\n2. Drag a card as it moves forward.\n3. Open a card for its date, your notes and its script.\n4. The calendar shows the same pieces by date. Tasks is a plain to-do list."},{"id":"h-15","title":"Performance","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Your numbers as charts, read for you.\n\n## Steps\n1. Sidebar, Performance. Press \"Load my Instagram numbers\".\n2. Claude Code opens Instagram in Chrome on your computer, where you are logged in, and reads your posts, their dates and their numbers. It never posts or changes anything.\n3. The first time: in Claude Code type /chrome and turn Chrome on, and allow instagram.com when it asks. Make sure you are logged in to Instagram in Chrome.\n4. Later, press \"Update now\" whenever you want fresh numbers. Posts you already have get their new numbers; new posts are added.\n5. The charts show views over time, which openings work, which format and which day. Press \"What's working\" for what to repeat next week."},{"id":"h-16","title":"Competitors","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Find out why their posts work before you guess.\n\n## Steps\n1. Sidebar, Competitors, \"Add competitor\". Type the handle of an account one step ahead of you.\n2. Add their best posts: paste the captions with their numbers.\n3. Press Analyze, then say \"run CreatorHub\" in Claude Code.\n4. Read what their openings have in common and the five ideas adapted for you."},{"id":"h-17","title":"Settings and your profile","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Everything Claude writes and edits starts from your profile. Keep it current.\n\n## Steps\n1. Settings, Profile: niche, audience, offer, tone.\n2. \"How your videos are made\": the style and the program every new edit starts with.\n3. Connections: reconnect Claude Code on a new computer.\n4. Your data: export everything you have made, or reset."}]}]}];
 const LIBRARY_SEED = [{"id":"myth-bust","name":"Myth-bust","kind":"hook","structure":"Name the belief everyone repeats → show the gap it hides → correct it honestly, costs included → one next step","bestFor":"Expert niches where misleading advice is common (tax, fitness, business, health)","hookLine":"This is what people don’t understand about…","example":"Everyone says you need to post every day. Here’s what actually moved the needle for me, and it wasn’t volume.","notes":"Works because the honesty is the sell. Say what it really costs and who it is not for. Face-to-camera beats text-only on the same idea by a wide margin.","order":1},{"id":"objection","name":"Objection-bust","kind":"hook","structure":"State the number-one fear out loud → disarm with an unexpected story or analogy → pivot: “but here’s the reality” → proof → normalize","bestFor":"Offers people hesitate on: money, relocation, big purchases, new tools","hookLine":"Do you think [the scary thing] is actually safe?","example":"Is it safe to let AI touch your footage? Here’s what happened the first time I let it cut a client reel.","notes":"Name the exact hesitation your DMs keep raising. Use a real historical fact as the proof beat, then land on “it’s just new, and new brings fear.”","order":2},{"id":"contrast","name":"Contrast / number","kind":"hook","structure":"Before number → after number in one breath → reframe the gap as a system change, not more work → CTA keyword","bestFor":"Any outcome you can put a number on: views, revenue, time saved, tax paid","hookLine":"Make X here, you keep Y. Make X there, you keep X.","example":"Last month this account did 280 views on a text reel and 5,900 on the same idea face to camera. Same topic. Different delivery.","notes":"The gap must be visceral. Pair it with a human on screen: pure text versions of this hook underperform the spoken version 5 to 10 times.","order":3},{"id":"story-analogy","name":"Story → analogy → point","kind":"hook","structure":"Open mid-story with something unexpected → the analogy lands the idea → self-correct (“that was a silly answer, right? but…”) → the real point → one proof","bestFor":"Dry topics that need a pattern interrupt before the lesson","hookLine":"I live down a private road with five houses…","example":"My neighbour parks two sports cars outside. I park a scooter. Guess whose house gets broken into. That’s how I think about where the attention goes on a feed.","notes":"Fast pace in the story, slow down on the point. The self-correction is the trust move: you show the audience you know it was a joke.","order":4},{"id":"proof-carousel","name":"Result proof carousel","kind":"format","structure":"Slide 1: the result and a date → slides 2–4: the system in numbers, a client case, the margin → slide 5: “I recorded a breakdown on…” → slide 6: comment keyword CTA","bestFor":"Carousels that turn proof into DMs","hookLine":"Bought my dream car at 21. Here’s the business behind it.","example":"75% of sales closed in DMs. No guarantees, all paid in full. A 4-person team at a 79% margin. Comment PIF and I’ll send the breakdown.","notes":"Every slide carries one number. The last slide is the only ask. Keep the photos candid, not stock.","order":5},{"id":"new-here","name":"“New here?” lesson series","kind":"format","structure":"Numbered lesson for new followers → “You might… you might have…” → “but you don’t have [the predictable thing]” → one principle in quotes","bestFor":"Stories and pinned posts that onboard new followers to your point of view","hookLine":"New here? Lesson 2: Predictability.","example":"You might run ads. You might have got a few clients from them. But you don’t have a way to predictably get 300 qualified followers a day. “When you can predict, you can scale.”","notes":"Keep each lesson to one idea. Number them so people binge. Reuse the frame weekly.","order":6},{"id":"comment-keyword","name":"Comment-keyword CTA","kind":"cta","structure":"Name one word → promise the exact thing they get → qualify who should comment","bestFor":"Every reel or carousel whose job is leads","hookLine":"Comment “WORD” and I’ll send you…","example":"Comment SYSTEM if you post more than twice a week and still can’t predict your views. I’ll send the exact weekly plan.","notes":"The word should match the thing (DUBAI, PIF, SYSTEM). Qualify the ask (“if you’re paying over £25K in tax”) to filter for intent. Pair with DM automation.","order":7},{"id":"documentary","name":"Documentary episode","kind":"format","structure":"Interview spine → real in-the-moment footage of the thing being built → one tension per episode → end on what happens next","bestFor":"Founder-led YouTube series; 10–20 minute standalone episodes","hookLine":"Episode 3: the week the deal nearly fell through","example":"Not vloggy, not staged. Capture what is actually happening while it happens, then cut it around one question per episode.","notes":"Shoot four episodes per trip. Keep one edited episode in the buffer before weekly releases start. Pull clips for short-form from every episode.","order":8},{"id":"story-funnel","name":"Live-session story funnel","kind":"format","structure":"Promise frame → remove the three objections in three frames (“you don’t need an audience / experience / to show your face”) → repeat the one thing → watch CTA with link","bestFor":"Selling a live session, a webinar or the next episode of a series through Stories","hookLine":"Today I’m sharing a new way to…","example":"You don’t need to build an audience. You don’t need experience. If you want to make this work without showing your face, you’ll love this one. Watch the live session →","notes":"One idea per frame, big text, high contrast. End on a frame that is only the CTA.","order":9},{"id":"lifestyle-curiosity","name":"Day-in-the-life curiosity","kind":"hook","structure":"Lifestyle visual → never say what the business is → let comments ask → answer in the DMs or a later reel","bestFor":"Lifestyle-led accounts building curiosity before a reveal","hookLine":"Day in the life on the coast. Morning missions first.","example":"Morning run, two calls, one shoot. Nobody in the comments knows what I actually do, and that is the point.","notes":"The curiosity is the asset. Monetize it later with a reveal series or a comment-keyword offer.","order":10}];
 
 /* Editing styles: how captions, the hook and the pacing look. The first is the house style. */
@@ -2273,8 +2283,8 @@ function renderRail(){
 }
 function renderTopbar(){ $("#topbar").replaceChildren(wsButton(true), apiOK() ? btn("", {class:"btn ghost icon", "aria-label":"Assistant", onclick:() => openAssistant()}, "message") : btn("", {class:"btn ghost icon", "aria-label":"Settings", onclick:() => go("settings", {settingsTab:"brand"})}, "settings")); }
 function renderTabbar(){
-  const tabs = [["home","Home","home"],["performance","Performance","chart"],["editor","Editor","film"],FEATURES.posts ? ["posts","Posts","layers"] : ["scripts","Scripts","pen"],["more","More","grid"]];
-  const moreViews = ["scripts","tracker","competitors","reports","academy","settings"].filter(v => !tabs.some(t => t[0] === v));
+  const tabs = [["home","Home","home"],["performance","Performance","chart"],["editor","AI Editor","film"],FEATURES.posts ? ["posts","Posts","layers"] : ["scripts","Scripts","pen"],["more","More","grid"]];
+  const moreViews = ["scripts","tracker","competitors","reports","academy","help","settings"].filter(v => !tabs.some(t => t[0] === v));
   $("#tabbar").replaceChildren(tabs.map(([v, l, ic]) => h("button", {type:"button", "aria-current":(S.view === v || (v === "more" && moreViews.includes(S.view))) ? "page" : null,
     onclick:() => v === "more" ? openSheet([...moreViews.map(mv => ({label:VIEW_META[mv].label, icon:VIEW_META[mv].icon, onClick:() => go(mv, viewSub(mv))})), ...(apiOK() ? [{label:"Assistant", icon:"message", onClick:() => openAssistant()}] : []), {label:getTheme() === "dark" ? "Light mode" : "Dark mode", icon:getTheme() === "dark" ? "sun" : "moon", onClick:() => setTheme(getTheme() === "dark" ? "light" : "dark")}, {label:"CreatorHub website", icon:"globe", onClick:() => { location.href = "../index.html"; }}]) : go(v, viewSub(v))},
     icon(ic), l)));
@@ -2599,10 +2609,10 @@ function startSteps(){
   const social = (S.profile && S.profile.social) || {};
   const steps = [
     {title:"Connect Claude Code", text:"One line, once. It runs on your own Claude plan.", done:claudeOK(), go:connectClaude},
-    {title:"Make your first edit", text:"Say what you want, pick a style, run it through Claude.", done:own("projects"), go:() => go("editor", {project:null})},
+    {title:"Make your first edit", text:"Say what you want, pick a style, run it.", done:own("projects"), go:() => go("editor", {project:null})},
     {title:"Create your own style", text:"Describe the look, or point it at videos you like.", done:listCol("styles").length > 0, go:() => openStyleBuilder(null)}];
   if (FEATURES.posts) steps.push({title:"Make your first post", text:"A story sequence or carousel in about a minute.", done:own("queue"), go:() => go("posts", {post:null})});
-  steps.push({title:"Bring in your numbers (optional)", text:"Drop screenshots of your insights. Claude reads the dates and the numbers.", done:own("posts"), go:() => go("performance")});
+  steps.push({title:"Bring in your numbers (optional)", text:"Load them from your Instagram. Nothing to upload or type.", done:own("posts"), go:() => go("performance")});
   if (!FEATURES.posts) steps.push({title:"Study a competitor", text:"Add a handle. Their patterns, and five hooks for you.", done:listCol("competitors").some(c => !c.example && c.analysis), go:() => go("competitors", {competitor:null})});
   steps.push({title:"Watch the first lesson", text:"Ten minutes on how it all fits together.", done:Object.keys((S.progress && S.progress.done) || {}).length > 0, go:() => { const nl = nextLesson(); if (nl) go("academy", {course:nl.course.id, lesson:nl.lesson.id}); else go("academy", {course:null, lesson:null}); }});
   return steps;
@@ -2674,8 +2684,8 @@ function recentFiles(){
    Claude Code on their computer, with HyperFrames or in Premiere Pro. This screen queues the job and shows how it goes. */
 const EDJ = {micMsg:"", draft:null, sending:false, err:"", watching:false, timer:0, loadedAt:0, change:{}, mounted:false, listening:false, rec:null};
 const ENGINES = [
-  {id:"hyperframes", name:"HyperFrames", short:"No editing program", desc:"No editing program needed. Claude builds the whole video and hands you the finished MP4."},
-  {id:"premiere", name:"Premiere Pro", short:"Inside your Premiere", desc:"Claude works inside your Premiere project. You look it over and export there."}];
+  {id:"hyperframes", name:"HyperFrames", short:"No editing program", desc:"No editing program needed. The AI builds the whole video and hands you the finished MP4."},
+  {id:"premiere", name:"Premiere Pro", short:"Inside your Premiere", desc:"The AI works inside your Premiere project. You look it over and export there."}];
 const FORMATS = [["9:16","9:16 vertical"],["1:1","1:1 square"],["4:5","4:5 feed"],["16:9","16:9 wide"]];
 const BRIEF_CHIPS = ["Cut every pause", "Add captions", "Keep it under 30 seconds", "Open on the strongest line", "Zoom in on the key lines", "Big text on the numbers"];
 
@@ -2726,8 +2736,8 @@ function openStyleBuilder(id, onSaved){
   };
   openModal({title:id ? "Change this style" : "Create a style", wide:true, body:h("div", {class:"sb"},
     h("div", {class:"stack-s"}, fld("Name", name, "sb-name"),
-      fld("Describe the look", desc, "sb-desc", "Say it the way you would to an editor. Claude follows this on every edit in this style."),
-      fld("Videos you like (optional)", refs, "sb-refs", "A folder on your computer, or links. Claude Code studies them before it edits. Nothing is uploaded."),
+      fld("Describe the look", desc, "sb-desc", "Say it the way you would to an editor. Every edit in this style follows it."),
+      fld("Videos you like (optional)", refs, "sb-refs", "A folder on your computer, or links. They are studied before each edit. Nothing is uploaded."),
       fld("Start from", base, "sb-base", "The closest look that ships with CreatorHub. Your description bends it."))),
     actions:[id ? btn("Delete", {class:"btn ghost danger", onclick:() => confirmModal("Delete this style", "Edits already made keep their look. This can’t be undone.", "Delete", () => { closeLayer(); if (S.profile && S.profile.editingStyle === id) setProfile({editingStyle:"bigcaps"}); if (EDJ.draft && EDJ.draft.styleId === id) EDJ.draft.styleId = "bigcaps"; remove("styles", id); })}) : null, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn(id ? "Save" : "Save and use it", {class:"btn primary", id:"sb-save", onclick:() => save(true)}, "check")]});
 }
@@ -2784,7 +2794,7 @@ function buildBrief(d){
   for (const [k] of EXTRAS) if (ex.has(k)) steps.push(extraLine(k, look, st.custom));
   const parts = [
     "WHAT I WANT\n" + (said || "The best short-form edit of this footage: one that holds attention to the end."),
-    "MY FOOTAGE\n" + (d.sources.length ? d.sources.map(x => "- " + (kinds[x.kind] || "Clip") + ": " + x.value + (x.kind === "name" && x.size ? " (" + clipSize(x.size) + ")" : "")).join("\n") : "- The folder this Claude Code session is open in."),
+    "MY FOOTAGE\n" + (d.sources.length ? d.sources.map(x => "- " + (kinds[x.kind] || "Clip") + ": " + x.value + (x.kind === "name" && x.size ? " (" + clipSize(x.size) + ")" : "")).join("\n") : "- The folder this session is open in."),
     "THE EDIT\n" + steps.map((x, i) => (i + 1) + ". " + x).join("\n"),
     "STYLE\n" + st.name + ": " + (st.custom ? (st.description || st.desc) : st.desc)];
   if (d.insp.length || d.shots.length) parts.push("INSPIRATION\nMake it feel like " + [...d.insp.map(x => x.value), d.shots.length ? "the " + d.shots.length + " screenshot" + (d.shots.length === 1 ? "" : "s") + " attached" : ""].filter(Boolean).join(" and ") + ". Borrow the feel, never their footage or words.");
@@ -2801,15 +2811,15 @@ function briefStep(d){
   const allRich = RICH.every(k => ex.has(k));
   const richer = btn(allRich ? "Rich already" : "Make it richer", {class:"btn sm", id:"ec-richer", disabled:allRich, onclick:() => { d.extras = EXTRAS.map(x => x[0]).filter(x => ex.has(x) || RICH.includes(x)); edRedraw(); }}, "wand");
   const view = d.finalEdited
-    ? bindText(h("textarea", {id:"ec-final", rows:"16", class:"brief-out edit", "aria-label":"Your brief for Claude"}), v => { d.final = v; }, 0)
-    : h("pre", {class:"brief-out", id:"ec-final-view", tabindex:"0", "aria-label":"Your brief for Claude"}, buildBrief(d));
+    ? bindText(h("textarea", {id:"ec-final", rows:"16", class:"brief-out edit", "aria-label":"Your brief"}), v => { d.final = v; }, 0)
+    : h("pre", {class:"brief-out", id:"ec-final-view", tabindex:"0", "aria-label":"Your brief"}, buildBrief(d));
   if (d.finalEdited) view.value = d.final;
   return [h("div", {class:"toolbar"}, toggles, richer),
     view,
     h("div", {class:"toolbar"}, d.finalEdited
         ? btn("Rebuild from my choices", {class:"btn sm ghost", id:"ec-rebuild", onclick:() => { d.finalEdited = false; d.final = ""; edRedraw(); }}, "refresh")
         : btn("Edit the brief", {class:"btn sm ghost", id:"ec-edit-brief", onclick:() => { d.final = buildBrief(d); d.finalEdited = true; edRedraw(); setTimeout(() => { const t = $("#ec-final"); if (t) t.focus(); }, 30); }}, "pen"),
-      h("span", {class:"meta", text:"CreatorHub adds its editing rules and the " + engineName(d.engine) + " steps when Claude Code picks this up."}))];
+      h("span", {class:"meta", text:"CreatorHub adds its editing rules and the " + engineName(d.engine) + " steps when the edit starts."}))];
 }
 Views.editor = {
   crumb(){ return ""; },
@@ -2819,16 +2829,16 @@ Views.editor = {
     const a = document.activeElement; const typing = a && root.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
     if ((typing || EDJ.listening) && !force){ const list = root.querySelector("#ed-list"); if (list && !list.contains(a)) list.replaceChildren(...editsList()); return; }
     root.replaceChildren(
-      pageHead("Editor", "Say what you want, pick a style, and Claude edits it on your computer with HyperFrames or in Premiere Pro. Your footage never leaves your machine."),
+      pageHead("AI Editor", "Say what you want, pick a style, and the AI edits it on your computer with HyperFrames or in Premiere Pro. Your footage never leaves your machine.", [btn("Ask AI", {class:"btn ghost", id:"ed-ask", onclick:() => go("help")}, "message")]),
       editorGate(), h("div", {id:"ed-list", class:"stack"}, ...editsList()), composer());
     if (S.ui.project){ const el = root.querySelector('[data-edit="' + S.ui.project + '"]'); S.ui.project = null; if (el) setTimeout(() => el.scrollIntoView({block:"center"}), 60); }
   }
 };
 function editorGate(){
   const st = S.claude.status;
-  if (st === "soon") return h("div", {class:"banner", id:"ed-soon"}, icon("info"), h("span", {class:"grow", text:"Running edits through Claude Code is being switched on. Set up your edit now; the Run button turns on by itself."}));
+  if (st === "soon") return h("div", {class:"banner", id:"ed-soon"}, icon("info"), h("span", {class:"grow", text:"The AI editor is being switched on. Set up your edit now; the Run button turns on by itself."}));
   if (st === "offline") return claudeGate("the editor");
-  if (st === "waiting" || (claudeOK() && !codeSeen())) return h("div", {class:"banner ai", id:"ed-connect"}, icon("info"), h("span", {class:"grow", text:"Edits run in Claude Code on your computer. Connect it once; it takes two minutes."}), btn("Connect Claude Code", {class:"btn sm primary", onclick:connectModal}));
+  if (st === "waiting" || (claudeOK() && !codeSeen())) return h("div", {class:"banner ai", id:"ed-connect"}, icon("info"), h("span", {class:"grow", text:"Edits run on your computer through Claude Code. Connect it once; it takes two minutes."}), btn("Connect Claude Code", {class:"btn sm primary", onclick:connectModal}));
   if (st === "nocode" || st === "denied") return claudeGate("the editor");
   return null;
 }
@@ -2902,7 +2912,7 @@ function composer(){
   const pick = h("input", {type:"file", accept:"video/*,audio/*,image/*", multiple:true, class:"sr", id:"ec-pick", onchange:e => { const n = addPicked(d.sources, e.target.files); e.target.value = ""; if (n){ clearErr(); edRedraw(); } }});
   const foot = h("div", {class:"ec-drop", id:"ec-drop"},
     h("div", {class:"ec-pickrow"}, h("label", {class:"btn primary", for:"ec-pick"}, icon("upload"), "Choose clips", pick), h("div", {class:"grow"}, src)),
-    h("span", {class:"help", text:"Choose clips from your Mac, drop them here, or paste a link. Nothing is uploaded: CreatorHub notes which clips you picked and Claude finds them on your computer."}));
+    h("span", {class:"help", text:"Choose clips from your Mac, drop them here, or paste a link. Nothing is uploaded: CreatorHub notes which clips you picked and the AI finds them on your computer."}));
   foot.addEventListener("dragover", e => { e.preventDefault(); foot.classList.add("over"); }); foot.addEventListener("dragleave", () => foot.classList.remove("over"));
   foot.addEventListener("drop", e => {
     e.preventDefault(); foot.classList.remove("over"); const dt = e.dataTransfer;
@@ -2933,9 +2943,9 @@ function composer(){
     step(4, "How should it be made?", null,
       h("div", {class:"engines", role:"group", "aria-label":"Made with"}, ENGINES.map(e => h("button", {type:"button", class:"engine", "data-engine":e.id, "aria-pressed":String(d.engine === e.id), onclick:() => { d.engine = e.id; render(); }}, h("b", {text:e.name}), h("span", {text:e.desc})))),
       h("div", {class:"toolbar"}, h("label", {class:"meta", for:"ec-format", text:"Format"}), fmt)),
-    step(5, "Your brief for Claude", "Built from everything above. Add more, or change any line.", ...briefStep(d)),
-    h("div", {class:"ec-run"}, h("span", {class:"meta", text:"Runs in Claude Code on your computer, on your own Claude plan."}), h("span", {class:"err", id:"ec-err", "aria-live":"polite", text:EDJ.err}),
-      btn(EDJ.sending ? "Sending…" : "Run it through Claude", {class:"btn ai lg", id:"ec-go", disabled:EDJ.sending || off, onclick:runEdit}, "play")));
+    step(5, "Your brief", "Built from everything above. Add more, or change any line.", ...briefStep(d)),
+    h("div", {class:"ec-run"}, h("span", {class:"meta", text:"Runs on your computer. Your footage never leaves it."}), h("span", {class:"err", id:"ec-err", "aria-live":"polite", text:EDJ.err}),
+      btn(EDJ.sending ? "Sending…" : "Run it", {class:"btn ai lg", id:"ec-go", disabled:EDJ.sending || off, onclick:runEdit}, "play")));
 }
 function editTitle(d){
   const first = (d.sources.find(x => x.kind === "file" || x.kind === "name") || d.sources.find(x => x.kind === "folder") || {}).label; const clean = first && first.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
@@ -2956,7 +2966,7 @@ async function runEdit(){
     const job = r.job;
     upsert("projects", job.id, {jobId:job.id, name:title, brief:d.brief.trim(), styleId:st.id, styleName:st.name, engine:d.engine, format:d.format, folder, sources:lite(d.sources), scriptId:d.scriptId || "", status:"queued", progress:"", summary:"", output:"", workFolder:"", createdAt:new Date().toISOString()});
     EDJ.draft = newDraft(); EDJ.draft.styleId = st.id; EDJ.draft.engine = d.engine;
-    S.ui.project = job.id; toast("Sent to Claude Code"); watchEdits(true);
+    S.ui.project = job.id; toast("Started. Follow it here."); watchEdits(true);
   } catch (e){ EDJ.err = claudeCopy(e); }
   finally { EDJ.sending = false; render(); }
 }
@@ -2984,7 +2994,7 @@ function editsList(){
     list.length > shown.length ? h("div", {class:"toolbar"}, btn("Show all " + list.length, {class:"btn sm ghost", id:"ed-all", onclick:() => { EDJ.all = true; render(); }})) : null].filter(Boolean);
 }
 function statusPill(p){
-  const m = {queued:["warn", "Waiting for Claude Code"], working:["ai", "Claude is editing"], done:["good", "Ready"], failed:["bad", "Couldn’t finish"], cancelled:["neutral", "Cancelled"]}[p.status] || ["neutral", p.status];
+  const m = {queued:["warn", "Waiting to start"], working:["ai", "Editing"], done:["good", "Ready"], failed:["bad", "Couldn’t finish"], cancelled:["neutral", "Cancelled"]}[p.status] || ["neutral", p.status];
   return h("span", {class:"pill " + m[0]}, p.status === "working" ? h("span", {class:"spin"}) : null, m[1]);
 }
 function pathBox(label, text){ return h("div", {class:"copybox"}, h("div", {class:"copybox-h"}, h("span", {class:"lbl", text:label}), btn("Copy", {class:"btn sm", onclick:async e => { try { await navigator.clipboard.writeText(text); toast("Copied"); } catch (err){ toast("Select the text and copy it."); } }}, "copy")), h("code", {tabindex:"0", text})); }
@@ -3002,9 +3012,9 @@ function editCard(p){
   } else if (p.status === "done"){
     const ta = bindText(h("textarea", {rows:"2", placeholder:"What should change? “Make the captions bigger.” “Cut the part about pricing.”", "aria-label":"Changes for " + p.name}), v => { EDJ.change[p.id] = v; }, 0); ta.value = EDJ.change[p.id] || "";
     body = [h("p", {class:"prose", text:p.summary || "Done."}), p.output ? pathBox(p.engine === "premiere" ? "Your project" : "Your video", p.output) : null,
-      h("div", {class:"ec-change"}, ta, btn("Send changes to Claude", {class:"btn ai", onclick:() => changeEdit(p)}, "send"))];
+      h("div", {class:"ec-change"}, ta, btn("Send changes", {class:"btn ai", onclick:() => changeEdit(p)}, "send"))];
   } else if (p.status === "failed"){
-    body = [h("p", {class:"prose", text:p.reason || "Claude Code couldn’t finish this one."}), h("div", {class:"toolbar"}, btn("Run it again", {class:"btn primary", onclick:again}, "refresh"))];
+    body = [h("p", {class:"prose", text:p.reason || "The AI couldn’t finish this one."}), h("div", {class:"toolbar"}, btn("Run it again", {class:"btn primary", onclick:again}, "refresh"))];
   } else body = [h("div", {class:"toolbar"}, btn("Run it again", {class:"btn", onclick:again}, "refresh"))];
   return h("article", {class:"card edit", "data-edit":p.id, "data-status":p.status},
     h("div", {class:"edit-h"}, h("div", {class:"grow", style:"min-width:0"}, h("h3", {text:p.name || "Untitled edit"}),
@@ -3018,7 +3028,7 @@ async function changeEdit(p){
     const n = (Number(p.version) || 1) + 1; const title = (p.name || "Edit").replace(/ v\d+$/, "") + " v" + n;
     const r = await brainPost("job_create", {kind:"edit", title, payload:{brief:text, engine:p.engine, format:p.format, styleId:p.styleId, styleName:p.styleName, style:stylePayload(p.styleId), footage:{sources:p.sources || (p.folder ? [{kind:"folder", value:p.folder}] : [])}, profile:profileBlock(), revisionOf:{id:p.jobId, summary:p.summary, workFolder:p.workFolder, output:p.output}}});
     upsert("projects", r.job.id, {jobId:r.job.id, name:title, version:n, brief:text, styleId:p.styleId, styleName:p.styleName, engine:p.engine, format:p.format, folder:p.folder || "", status:"queued", progress:"", summary:"", output:"", workFolder:"", createdAt:new Date().toISOString()});
-    delete EDJ.change[p.id]; S.ui.project = r.job.id; toast("Changes sent to Claude Code"); watchEdits(true); render();
+    delete EDJ.change[p.id]; S.ui.project = r.job.id; toast("Changes sent"); watchEdits(true); render();
   } catch (e){ toast(claudeCopy(e)); }
 }
 
@@ -3431,34 +3441,35 @@ function addPostsModal(cid){
 
 /* ---- 80-performance.js ---- */
 /* ===================== Performance: connections, numbers, what works ===================== */
-const PF = {range:30, platform:"all", sort:"views", busy:false, showAll:false, sync:{}};
+const PF = {range:30, platform:"all", sort:"views", busy:false, showAll:false, sync:{}, syncing:false, syncErr:""};
 const PLAT_ICON = {Instagram:"instagram", TikTok:"tiktok", YouTube:"youtube", LinkedIn:"globe", X:"globe"};
 Views.performance = {
   crumb(){ return ""; },
   mount(root){ this.update(root); },
   update(root){
     const all = listCol("posts"); const t = todayStr(); const untagged = all.filter(p => !p.hookType).length;
-    const actions = [btn("Add post", {class:"btn ghost", onclick:() => openPostForm(null, {date:t})}, "plus"), btn("Add screenshots", {class:"btn", onclick:() => importModal()}, "image"), untagged && claudeOK() ? btn("Tag hooks", {class:"btn", onclick:() => tagHooks()}, "wand") : null, btn(PF.busy ? "Reading…" : "What’s working?", {class:"btn ai", disabled:PF.busy || !claudeOK() || !all.length, onclick:() => readNumbers()}, "wand")];
+    const actions = [btn("Add post", {class:"btn ghost", onclick:() => openPostForm(null, {date:t})}, "plus"), untagged && claudeOK() ? btn("Tag hooks", {class:"btn", onclick:() => tagHooks()}, "wand") : null, btn(PF.busy ? "Reading…" : "What’s working?", {class:"btn ai", disabled:PF.busy || !claudeOK() || !all.length, onclick:() => readNumbers()}, "wand")];
     root.replaceChildren(
       pageHead("Performance", "Which openings work, which formats, which days, and what to make next.", all.length ? actions : null, h("div", {class:"sub"}, h("span", null, h("b", {text:String(all.length)}), " posts tracked"), untagged ? h("span", {class:"late"}, h("b", {text:String(untagged)}), " untagged") : null)),
       all.length ? connectCards(all) : null,
       all.length ? numbersSection(all) : blankDashboard());
   }
 };
-function connectCards(all){
-  return h("div", {class:"card pad-s connect connects"}, h("span", {class:"tile", style:"--hue:var(--h-performance)"}, icon("instagram")),
-    h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:all.length + " post" + (all.length === 1 ? "" : "s") + " tracked"}), h("div", {class:"meta", text:"Connect your profiles and new posts load by themselves. Until then, drop new screenshots and the numbers update."})),
-    btn("Connect Instagram", {class:"btn sm primary", onclick:connectProfile}, "instagram"), btn("Add screenshots", {class:"btn sm ghost", onclick:() => importModal()}, "image"));
+/* Numbers come from the creator's own Instagram: Claude Code opens it in their browser, where they are logged in, and reads it. */
+function igHandle(){ return String((S.profile && S.profile.handle) || "").trim().replace(/^@/, ""); }
+function syncPending(){ return [...QUEUE.pending.values()].find(x => x.title === TASKS.posts_sync); }
+function syncButton(label, cls, id){ return btn(PF.syncing ? "Reading your Instagram…" : label, {class:cls, id, disabled:PF.syncing || !claudeOK(), onclick:() => syncInstagram()}, PF.syncing ? null : "instagram"); }
+function syncNote(){
+  const p = syncPending(); if (PF.syncing) return h("p", {class:"meta", id:"perf-sync-msg", text:p && p.progress ? p.progress : p && p.status === "queued" ? "Waiting for Claude Code. Open it and say “run CreatorHub”." : "Starting…"});
+  return PF.syncErr ? h("p", {class:"err", id:"perf-sync-msg", text:PF.syncErr}) : null;
 }
-/* A box that takes screenshots: click to choose, or drop them on it. Hands the files on; nothing is uploaded until Claude is asked to read them. */
-function shotDrop(id, onFiles, big){
-  const input = h("input", {type:"file", accept:"image/*", multiple:true, id:id + "-files", class:"sr", "aria-label":"Choose screenshots", onchange:e => { const f = [...(e.target.files || [])]; e.target.value = ""; if (f.length) onFiles(f); }});
-  const zone = h("label", {class:"shot-drop" + (big ? " big" : ""), id, for:id + "-files"}, input, icon("image"),
-    h("span", {class:"grow"}, h("b", {text:"Drop screenshots of your insights"}), h("span", {class:"small muted", text:"Or click to choose them. Claude reads every post, its date and its numbers."})));
-  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("over"); });
-  zone.addEventListener("dragleave", () => zone.classList.remove("over"));
-  zone.addEventListener("drop", e => { e.preventDefault(); zone.classList.remove("over"); const f = [...(e.dataTransfer.files || [])].filter(x => /^image\//.test(x.type)); if (f.length) onFiles(f); });
-  return zone;
+const SYNC_HOW = "Claude Code opens Instagram in Chrome on your computer, where you are already logged in, and reads your posts, their dates and their numbers. It never posts or changes anything. The first time, type /chrome in Claude Code to turn Chrome on, and allow instagram.com when it asks.";
+function connectCards(all){
+  const p = S.profile || {};
+  return h("div", {class:"card pad-s connect connects", id:"perf-card"}, h("span", {class:"tile", style:"--hue:var(--h-performance)"}, icon("instagram")),
+    h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:(igHandle() ? "@" + igHandle() + " · " : "") + all.length + " post" + (all.length === 1 ? "" : "s") + (p.followers ? " · " + compact(p.followers) + " followers" : "")}),
+      h("div", {class:"meta", text:p.igSyncedAt ? "Updated " + ago(p.igSyncedAt) + " from your Instagram." : "Update from your Instagram whenever you like."}), syncNote()),
+    syncButton("Update now", "btn sm primary", "perf-sync"));
 }
 /* Before there are numbers: the charts are there, empty, and there is one obvious thing to do. */
 function blankDashboard(){
@@ -3469,17 +3480,29 @@ function blankDashboard(){
       h("div", {class:"row4"}, tile("Views"), tile("Average views per post"), tile("Engagement rate"), tile("Posts")),
       h("div", {class:"card ghost"}, h("div", {class:"card-h"}, h("h3", {text:"Views over time"})), h("div", {class:"gline"})),
       h("div", {class:"grid2"}, bars("By opening", 5), bars("By weekday", 7))),
-    h("div", {class:"blank-cta"}, h("h2", {text:"Connect your profiles"}), h("p", {text:"Log in once and your numbers load by themselves."}),
-      h("div", {class:"toolbar", style:"justify-content:center"}, btn("Connect Instagram", {class:"btn primary lg", id:"perf-connect", onclick:connectProfile}, "instagram")),
-      h("div", {class:"toolbar", style:"justify-content:center"}, h("span", {class:"chip"}, icon("tiktok"), "TikTok soon"), h("span", {class:"chip"}, icon("youtube"), "YouTube soon")),
-      h("div", {class:"or-line"}, h("span", {text:"or"})),
-      shotDrop("perf-drop", files => importModal({files}))));
+    h("div", {class:"blank-cta"}, h("h2", {text:"Connect your Instagram"}), h("p", {text:"Your numbers load from your own Instagram. Nothing to upload, nothing to type."}),
+      h("div", {class:"toolbar", style:"justify-content:center"}, syncButton("Load my Instagram numbers", "btn primary lg", "perf-sync")),
+      syncNote(),
+      claudeOK() ? h("p", {class:"small muted", text:SYNC_HOW}) : claudeGate("loading your numbers"),
+      h("div", {class:"toolbar", style:"justify-content:center"}, h("span", {class:"chip"}, icon("tiktok"), "TikTok soon"), h("span", {class:"chip"}, icon("youtube"), "YouTube soon"))));
 }
-/* Logging in to Instagram needs CreatorHub's app to be approved by Meta. Until the server says it is on, say so plainly. */
-function connectProfile(){
-  if (BRAIN.instagram){ location.href = BRAIN.url + "/ig/start?code=" + encodeURIComponent(BRAIN.code); return; }
-  openModal({title:"Instagram login is not switched on yet", body:h("div", {class:"stack-s"}, h("p", {class:"prose", text:"Logging in with Instagram needs CreatorHub to be approved by Meta first. That approval is in progress."}), h("p", {class:"prose", text:"Until then, take screenshots of your posts or your insights and drop them in. Claude reads every post, its date and its numbers, and fills the same charts."})),
-    actions:[btn("Close", {class:"btn ghost", onclick:() => closeLayer()}), btn("Add screenshots", {class:"btn primary", onclick:() => { closeLayer(); importModal(); }}, "image")]});
+async function syncInstagram(){
+  if (PF.syncing) return;
+  if (!igHandle()){ askHandle(); return; }
+  PF.syncing = true; PF.syncErr = ""; render();
+  try {
+    const r = (await queueCall("posts_sync", {handle:igHandle(), days:90, today:todayStr()}, {})).json || {};
+    const list = normalizePosts(Array.isArray(r) ? r : r.posts);
+    const res = savePosts(list, "Instagram");
+    if (Number(r.followers) > 0) setProfile({followers:Math.round(Number(r.followers)), igSyncedAt:new Date().toISOString()}); else setProfile({igSyncedAt:new Date().toISOString()});
+    toast(list.length ? [res.added ? res.added + " new post" + (res.added === 1 ? "" : "s") : "", res.updated ? res.updated + " updated" : ""].filter(Boolean).join(", ") + (claudeOK() && listCol("posts").some(p => !p.hookType) ? ". Press Tag hooks to sort the openings." : ".") : "No posts found in the last 90 days.");
+  } catch (e){ if (!e || e.code !== "cancelled") PF.syncErr = e && e.code === "job_failed" && e.message ? e.message : claudeCopy(e); }
+  finally { PF.syncing = false; render(); }
+}
+function askHandle(){
+  const inp = h("input", {id:"perf-handle", class:"in", placeholder:"@yourhandle", autocapitalize:"off"}); const err = h("span", {class:"err grow"});
+  openModal({title:"Your Instagram handle", body:h("div", {class:"stack-s"}, h("p", {class:"prose", text:"Which account should be read? It must be the one you are logged in to in Chrome."}), inp),
+    actions:[err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Load my numbers", {class:"btn primary", onclick:() => { const v = inp.value.trim().replace(/^@/, ""); if (!/^[A-Za-z0-9._]{1,30}$/.test(v)){ err.textContent = "Add your handle, like @yourname."; return; } setProfile({handle:"@" + v}); closeLayer(); syncInstagram(); }}, "instagram")]});
 }
 function rangeFilter(){
   const t = todayStr();
@@ -3576,7 +3599,7 @@ function openPostForm(id, preset){
 }
 
 function numOrNull(v){ if (v == null || v === "") return null; const n = Number(v); return Number.isFinite(n) ? Math.round(n) : parseNum(String(v)); }
-/* ---------- Screenshots in, posts out ---------- */
+/* ---------- Posts in: merged with what is already there ---------- */
 function parseNum(s){ if (s == null) return null; s = String(s).trim().replace(/,/g, ""); const m = s.match(/^(-?\d+(?:\.\d+)?)\s*([kKmM])?$/); if (!m) return null; let n = Number(m[1]); if (/k/i.test(m[2] || "")) n *= 1000; if (/m/i.test(m[2] || "")) n *= 1e6; return Math.round(n); }
 function normalizePosts(r){ return (Array.isArray(r) ? r : []).map(p => ({title:String((p && p.title) || "").slice(0, 200), type:TYPES.includes(p.type) ? p.type : "Reel", hookType:HOOK_TYPES.includes(p.hookType) ? p.hookType : "", views:numOrNull(p.views), likes:numOrNull(p.likes), comments:numOrNull(p.comments), saves:numOrNull(p.saves), shares:numOrNull(p.shares), date:/^\d{4}-\d{2}-\d{2}$/.test(p.date || "") ? p.date : "", url:String(p.url || "")})).filter(p => p.title); }
 function mergePosts(a, b){
@@ -3593,53 +3616,6 @@ function savePosts(list, platform){
     else { upsert("posts", uid("po"), {...q, platform}); added++; }
   }
   return {added, updated};
-}
-const SHOTS_MAX = 12, SHOTS_PER_READ = 4;
-function importModal(o){
-  o = o || {}; let platform = PLATFORMS.includes(o.platform) ? o.platform : "Instagram"; let busy = false; let ctl = null;
-  const shots = []; // {file, url}
-  const content = h("div", {class:"stack-s"});
-  const plat = h("select", {class:"ctl", "aria-label":"Platform", onchange:e => { platform = e.target.value; }}, PLATFORMS.map(x => opt(x, x))); plat.value = platform;
-  const add = files => { for (const f of files){ if (shots.length >= SHOTS_MAX) break; if (!/^image\//.test(f.type || "")) continue; shots.push({file:f, url:URL.createObjectURL(f)}); } build(); };
-  const drop = shotDrop("imp-drop", add, false);
-  // a screenshot on the clipboard (Cmd+Shift+Ctrl+4 on a Mac) can be pasted straight in
-  const onPaste = e => { const f = [...((e.clipboardData && e.clipboardData.files) || [])].filter(x => /^image\//.test(x.type)); if (f.length){ e.preventDefault(); add(f.map((x, i) => x.name && x.name !== "image.png" ? x : new File([x], "pasted-" + Date.now() + "-" + i + ".png", {type:x.type}))); } };
-  document.addEventListener("paste", onPaste);
-  const preview = (list, note) => {
-    const rows = list.map(p => h("div", {class:"lrow"}, h("span", {class:"t", text:p.title}), h("span", {class:"m" + (p.date ? "" : " late"), text:(p.views != null ? compact(p.views) + " views" : "no views") + " · " + (p.date || "no date")})));
-    content.replaceChildren(h("p", {class:"small muted", text:note}), h("div", {class:"list", id:"imp-list", style:"max-height:320px;overflow:auto"}, rows),
-      h("div", {class:"modal-f"}, btn("Back", {class:"btn ghost", onclick:build}), btn("Import " + list.length, {class:"btn primary", id:"imp-save", onclick:() => { const r = savePosts(list, platform); closeLayer(); toast([r.added ? r.added + " new post" + (r.added === 1 ? "" : "s") : "", r.updated ? r.updated + " updated" : ""].filter(Boolean).join(", ") + (claudeOK() && listCol("posts").some(p => !p.hookType) ? ". Press Tag hooks to sort the openings." : ".")); }})));
-  };
-  function build(){
-    const err = h("span", {class:"err grow", id:"imp-err"}); const status = h("span", {class:"small muted grow", id:"imp-status"});
-    const thumbs = shots.length ? h("div", {class:"shot-grid", id:"imp-thumbs"}, shots.map((x, i) => h("div", {class:"shot-th"}, h("img", {src:x.url, alt:x.file.name || "Screenshot " + (i + 1)}),
-      btn("", {class:"btn icon sm", "aria-label":"Remove this screenshot", disabled:busy, onclick:() => { URL.revokeObjectURL(x.url); shots.splice(i, 1); build(); }}, "close")))) : null;
-    const go = btn(busy ? "Reading…" : "Read " + (shots.length > 1 ? shots.length + " screenshots" : "screenshot"), {class:"btn ai", id:"imp-read", disabled:busy || !shots.length || !claudeOK(), onclick:read}, "wand");
-    content.replaceChildren(
-      claudeGate("reading screenshots") || h("span"),
-      shots.length < SHOTS_MAX ? drop : null,
-      thumbs,
-      h("p", {class:"small muted", text:"Screenshots of your posts grid with the view counts, your insights list, or single posts with their numbers. Up to " + SHOTS_MAX + " at a time. You can also paste one with \u2318V."}),
-      h("div", {class:"modal-f"}, busy ? status : err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), go));
-    async function read(){
-      busy = true; ctl = new AbortController(); build();
-      const batches = []; for (let i = 0; i < shots.length; i += SHOTS_PER_READ) batches.push(shots.slice(i, i + SHOTS_PER_READ).map(x => x.file));
-      let got = [];
-      try {
-        for (let i = 0; i < batches.length; i++){
-          const st = $("#imp-status"); if (st) st.textContent = batches.length > 1 ? "Claude is reading part " + (i + 1) + " of " + batches.length + "…" : "Claude is reading your screenshots…";
-          const r = await skillJSON("posts_extract", {today:todayStr()}, {images:batches[i], signal:ctl.signal});
-          got = mergePosts(got, normalizePosts(r));
-        }
-        busy = false;
-        if (!got.length){ build(); const e = $("#imp-err"); if (e) e.textContent = "Claude found no posts with numbers in those screenshots. Try screenshots that show the view counts."; return; }
-        preview(got, "Claude read " + got.length + " post" + (got.length === 1 ? "" : "s") + " from " + shots.length + " screenshot" + (shots.length === 1 ? "" : "s") + ". Check the numbers and the dates, then import.");
-      } catch (ex){ busy = false; if (ex && ex.code === "cancelled") return; build(); const e = $("#imp-err"); if (e) e.textContent = claudeCopy(ex); }
-    }
-  }
-  if (o.files) add(o.files); else build();
-  openModal({title:"Add your numbers from screenshots", body:h("div", {class:"stack-s"}, h("div", {class:"toolbar"}, h("span", {class:"muted small", text:"Platform"}), plat), content), wide:true,
-    onClose:() => { document.removeEventListener("paste", onPaste); if (ctl) ctl.abort(); shots.forEach(x => URL.revokeObjectURL(x.url)); }});
 }
 async function tagHooks(silent){
   const list = listCol("posts").filter(p => !p.hookType).slice(0, 60); if (!list.length || !claudeOK()) return; if (!silent) toast("Tagging " + list.length + " posts…");
@@ -3750,6 +3726,58 @@ function downloadCSV(name, rows){
   const a = h("a", {href:URL.createObjectURL(blob), download:name}); document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast("Saved " + name);
+}
+
+
+/* ---- 88-help.js ---- */
+/* ===================== Ask AI: questions about the footage, the edits and the app =====================
+   The answers come from the help desk on the CreatorHub server, which holds what the editor knows (grading, LUTs,
+   footage problems, the app). The page only sends the question, the conversation so far and a short list of recent edits. */
+const HP = {busy:false, err:"", ctl:null, msgs:null};
+const HELP_KEY = "ch-help";
+const HELP_STARTERS = ["My footage looks washed out after the grade", "Why does my footage look double graded?", "My edit is stuck on Waiting to start", "The captions have wrong words", "What export settings for Instagram?"];
+function helpMsgs(){
+  if (!HP.msgs){ try { HP.msgs = JSON.parse(localStorage.getItem(HELP_KEY) || "[]"); } catch (e) { HP.msgs = []; } if (!Array.isArray(HP.msgs)) HP.msgs = []; }
+  return HP.msgs;
+}
+function saveHelp(){ try { localStorage.setItem(HELP_KEY, JSON.stringify(HP.msgs.slice(-40))); } catch (e) {} }
+function recentEditsText(){
+  return edits().slice(0, 6).map(p => "- " + (p.name || "Untitled edit") + ": " + (p.status || "") + ", " + (p.styleName || "") + ", " + engineName(p.engine) + (p.summary ? ". " + trunc(p.summary, 240) : "") + (p.reason ? ". It failed: " + trunc(p.reason, 200) : "")).join("\n");
+}
+Views.help = {
+  crumb(){ return ""; },
+  mount(root){ this.update(root, true); },
+  update(root, force){
+    const a = document.activeElement; if (!force && a && root.contains(a) && a.id === "hp-q"){ const list = root.querySelector("#hp-msgs"); if (list) list.replaceChildren(...helpBubbles()); return; }
+    const msgs = helpMsgs();
+    const q = h("textarea", {id:"hp-q", rows:"2", class:"in", placeholder:"Ask anything about your footage, your edits or the app", onkeydown:e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); askHelp(e.target.value); } }});
+    root.replaceChildren(
+      pageHead("Ask AI", "Questions about your footage, your edits or the app. It knows the editor inside out.", msgs.length ? [btn("New conversation", {class:"btn ghost", id:"hp-new", disabled:HP.busy, onclick:() => { HP.msgs = []; saveHelp(); render(); }}, "plus")] : null),
+      claudeGate("Ask AI"),
+      h("div", {class:"card help-chat"},
+        h("div", {class:"msgs", id:"hp-msgs", "aria-live":"polite"}, ...helpBubbles()),
+        msgs.length ? null : h("div", {class:"help-start"}, h("p", {class:"muted small", text:"Try one of these"}), h("div", {class:"suggest"}, HELP_STARTERS.map(s => h("button", {type:"button", onclick:() => askHelp(s)}, s)))),
+        h("div", {class:"help-in"}, q, btn(HP.busy ? "Thinking…" : "Ask", {class:"btn primary", id:"hp-send", disabled:HP.busy || !claudeOK(), onclick:() => askHelp($("#hp-q").value)}, "message")),
+        HP.err ? h("p", {class:"err", id:"hp-err", text:HP.err}) : null));
+    const box = root.querySelector("#hp-msgs"); if (box) box.scrollTop = box.scrollHeight;
+  }
+};
+function helpBubbles(){
+  const out = helpMsgs().map(m => h("div", {class:"msg " + (m.role === "user" ? "user" : "ai"), text:m.content}));
+  if (HP.busy){ const p = [...QUEUE.pending.values()].find(x => x.title === TASKS.editor_help); out.push(h("div", {class:"msg ai typing"}, h("span", {class:"spin"}), p && p.status === "queued" ? " Waiting for Claude Code to pick this up…" : " Thinking…")); }
+  return out;
+}
+async function askHelp(text){
+  text = String(text || "").trim(); if (!text || HP.busy) return;
+  if (!claudeOK()){ HP.err = "Connect Claude Code to turn on Ask AI."; render(); return; }
+  const msgs = helpMsgs(); msgs.push({role:"user", content:text}); saveHelp();
+  HP.busy = true; HP.err = ""; HP.ctl = new AbortController(); render();
+  const ta = $("#hp-q"); if (ta) ta.value = "";
+  try {
+    const r = await skillText("editor_help", {profile:profileBlock(), edits:recentEditsText(), history:msgs.slice(-12)}, {signal:HP.ctl.signal});
+    msgs.push({role:"assistant", content:r.text.trim() || "I don’t have an answer for that one. Try asking it another way."}); saveHelp();
+  } catch (e){ if (!e || e.code !== "cancelled") HP.err = claudeCopy(e) || "That didn’t go through. Try again."; }
+  finally { HP.busy = false; HP.ctl = null; render(); setTimeout(() => { const t = $("#hp-q"); if (t) t.focus(); }, 30); }
 }
 
 
