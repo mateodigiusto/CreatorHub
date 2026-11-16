@@ -242,6 +242,21 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
 .fgrid a.wm{color:var(--ink);font-size:19px;padding:0}
 .legal{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:34px;padding-top:20px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;line-height:1.5}
 .legal span:last-child{max-width:52ch;text-align:right}
+.btn.head{padding:11px 20px;font-size:15px;background:var(--ink);color:#fff;box-shadow:0 0 0 4px rgba(12,16,24,.06),0 12px 26px -12px rgba(12,16,24,.6)}
+.btn.head:hover{transform:translateY(-1px)}
+.btn.head svg{width:16px;height:16px}
+.get{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:clamp(28px,4vw,44px);text-align:left}
+.gcard{padding:22px}
+.gcard .ic{width:40px;height:40px;border-radius:12px;background:var(--ink);color:#fff;display:grid;place-items:center;margin-bottom:14px}
+.gcard .ic svg{width:19px;height:19px}
+.gcard h3{font-size:18px;letter-spacing:-.03em}
+.gcard p{color:var(--muted);font-size:14px;line-height:1.5;margin-top:6px}
+.lessons{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow-x:auto;margin-top:16px;padding:4px 2px 10px;text-align:left;scroll-snap-type:x mandatory}
+.lthumb{scroll-snap-align:start;position:relative;aspect-ratio:16/10;border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;color:#fff;background:radial-gradient(80% 90% at 80% 10%,rgba(58,79,240,.45),transparent 60%),linear-gradient(160deg,#1d2535,#0c1018);overflow:hidden}
+.lthumb b{font-size:15px;letter-spacing:-.02em;line-height:1.25}
+.lt-n{font-size:12px;color:rgba(255,255,255,.65)}
+.lt-play{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.95);color:#0c1018;display:grid;place-items:center}
+.lt-play svg{width:13px;height:13px;margin-left:2px}
 dialog.win-dlg{border:0;padding:0;background:transparent;width:min(960px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:visible;color:var(--ink)}
 dialog.win-dlg::backdrop{background:rgba(12,16,24,.5);backdrop-filter:blur(6px)}
 dialog.win-dlg[open]{animation:dlgIn .24s cubic-bezier(.23,1,.32,1) both}
@@ -249,8 +264,6 @@ dialog.win-dlg[open]{animation:dlgIn .24s cubic-bezier(.23,1,.32,1) both}
 .dlg-in{position:relative;background:var(--bg);border-radius:30px;padding:clamp(26px,4vw,48px);max-height:calc(100dvh - 24px);overflow:auto;text-align:center;box-shadow:0 40px 100px -30px rgba(12,16,24,.6)}
 .dlg-x{position:absolute;right:16px;top:16px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line-2);background:#fff;display:grid;place-items:center;cursor:pointer}
 .dlg-x svg{width:16px;height:16px}
-#pricing-dlg .plans{margin-top:28px}
-#pricing-dlg .plan{min-height:0}
 dialog.ap{width:min(620px,calc(100vw - 24px))}
 .ap .dlg-in{text-align:left}
 .ap h2.display{font-size:clamp(28px,4vw,40px)}
@@ -277,14 +290,16 @@ dialog.ap{width:min(620px,calc(100vw - 24px))}
 @media (max-width:980px){
   header.nav nav{display:none}header.nav .login{margin-left:auto}
   .flow{grid-template-columns:1fr;margin-top:18px}.flow .left{order:1}.flow .mac{order:2}.flow .right{order:3}
-  .grid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid3,.get{grid-template-columns:repeat(2,minmax(0,1fr))}
   .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
   .row{grid-template-columns:repeat(2,minmax(0,1fr))}.row .col{grid-column:1 / -1;grid-template-columns:repeat(2,minmax(0,1fr))}
   .faq{grid-template-columns:1fr}
   .fgrid{grid-template-columns:1fr 1fr}
 }
 @media (max-width:640px){
-  .grid3,.plans{grid-template-columns:1fr}
+  .grid3,.plans,.get{grid-template-columns:1fr}
+  header.nav .login{display:none}
+  .btn.head{padding:9px 16px;font-size:14px}
   .strip{grid-template-columns:1fr}
   .row .col{grid-template-columns:1fr}
   .proj.tall .cap{flex-direction:column;gap:2px}
@@ -301,21 +316,21 @@ dialog.ap{width:min(620px,calc(100vw - 24px))}
 <body>
 <header class="nav"><div class="wrap">
   <a class="wm" href="#top" aria-label="CreatorHub, back to top"><b>Creator</b>Hub</a>
-  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#pricing" data-pricing>Pricing</a></nav>
+  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#projects">Real projects</a><a href="#pricing">Pricing</a><a href="#platform">Platform</a></nav>
   <a class="login" href="app/index.html">Log in</a>
-  <a class="btn sm" href="#pricing" data-pricing>Get access</a>
+  <a class="btn head" href="#pricing" id="head-access">Get access <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
 </div></header>
 
 <main>
 <section class="hero glowbg" id="top"><div class="wrap">
   <h1 class="display">The Most Advanced<br><span class="sel">AI Editor</span></h1>
-  <p class="sub">MDG Editor, your styles, your planner and the Academy. One platform, one login.</p>
+  <p class="sub">Raw footage in, a finished edit out. Made on your own computer, in your style.</p>
   <button type="button" class="film" id="film" data-video="https://www.mdgeditor.com/media/vsl.mp4" aria-label="Watch how it works">
     <img src="media/vsl-poster.jpg" width="1920" height="1080" alt="Mateo at a desk beside a laptop showing content numbers">
     <span class="pl"><i><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></i><span>Watch how it works</span></span>
   </button>
   <p class="under" id="film-msg" hidden>This video did not load here. <a href="https://www.mdgeditor.com/#top" rel="noopener">Watch it on mdgeditor.com</a></p>
-  <div class="cta"><a class="btn glow" href="#pricing" data-pricing>Get access to the app <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><button type="button" class="btn line" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> See how it would work for your content</button></div>
+  <div class="cta"><a class="btn glow" href="#pricing">Get access to the app <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><button type="button" class="btn line" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> See how it would work for your content</button></div>
   <p class="under">Includes a 1:1 onboarding. Already have access? <a href="app/index.html">Log in</a></p>
 </div></section>
 
@@ -340,31 +355,6 @@ dialog.ap{width:min(620px,calc(100vw - 24px))}
   <div class="strip" style="text-align:left"><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div><b>Runs on your computer</b><p>Your footage is edited on your machine, never uploaded to us.</p></div></div><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span><div><b>Your style, saved</b><p>Saved once, used on every video.</p></div></div><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="m16 10 5-3v10l-5-3"/></svg></span><div><b>1:1 onboarding</b><p>We install it with you and get your first edit out.</p></div></div><div><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/></svg></span><div><b>Lifetime access</b><p>One payment, every future update included.</p></div></div></div>
 </div></section>
 
-<section class="sec center" id="platform" style="padding-top:0"><div class="wrap">
-  <span class="chip"><i></i>The platform</span>
-  <h2 class="display" style="margin-top:18px">One login.<br>Everything in one place.</h2>
-  <p class="lede" style="margin-top:18px">CreatorHub is where you run MDG Editor. Queue an edit, keep your styles, plan the week and learn the system.</p>
-  <div class="tabs" role="tablist" aria-label="Parts of the platform"><button type="button" role="tab" aria-selected="true" data-shot="editor" data-note="Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.">Editor</button><button type="button" role="tab" aria-selected="false" data-shot="edits" data-note="Watch each stage as it happens. When it is ready, ask for changes in plain words.">Your edits</button><button type="button" role="tab" aria-selected="false" data-shot="styles" data-note="Start from a ready style or describe your own. It is saved once and any edit can use it.">Styles</button><button type="button" role="tab" aria-selected="false" data-shot="scripts" data-note="One line in, a full script out: three openings, the beats, the caption.">Scripts</button><button type="button" role="tab" aria-selected="false" data-shot="planner" data-note="Everything you are making, on one board. Type in any column to add to it.">Planner</button><button type="button" role="tab" aria-selected="false" data-shot="performance" data-note="Your numbers as charts, and a plain read of what to repeat next week.">Performance</button><button type="button" role="tab" aria-selected="false" data-shot="academy" data-note="Every screen explained, click by click.">Academy</button></div>
-  <p class="tabnote" id="tabnote">Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.</p>
-  <figure class="win" style="margin-bottom:0"><div class="bar"><i></i><i></i><i></i><span>CreatorHub</span></div><img id="shot" src="img/app-editor.jpg" width="1440" height="900" loading="lazy" alt="Editor"></figure>
-  <div class="cta"><a class="btn glow" href="app/index.html">Log in <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="#pricing" data-pricing>Get access to the app</a></div>
-</div></section>
-
-<section class="sec center" id="styles" style="padding-top:0"><div class="wrap">
-  <h2 class="display">Pre-built styles.<br>Or build your own.</h2>
-  <p class="lede" style="margin-top:18px">Pick a look and every edit follows it: the captions, the graphics, the pace and the camera.</p>
-  <div class="sgrid"><div class="card scard"><span class="n">01</span><h3>Big Caps</h3><p>Heavy white caps, one word lit, big words on the points that matter. The short-form standard.</p></div><div class="card scard"><span class="n">02</span><h3>Apple UI</h3><p>Frosted glass captions, pills and number cards. Soft, app-like motion.</p></div><div class="card scard"><span class="n">03</span><h3>Real Estate</h3><p>Property reels: big white caps, green numbers, glass location tags, a cinematic push.</p></div><div class="card scard"><span class="n">04</span><h3>Rating</h3><p>A score card for everything you rate, and a running list of the results.</p></div><div class="card scard"><span class="n">05</span><h3>Comparison</h3><p>This against that: two sides, ticks and crosses, and a winner.</p></div><div class="card scard"><span class="n">06</span><h3>Podcast</h3><p>Quote captions with a speaker tag. Built for clips from long conversations.</p></div><div class="card scard"><span class="n">07</span><h3>Tutorial</h3><p>Numbered steps, a progress bar and the thing you are showing, up close.</p></div><div class="card scard"><span class="n">08</span><h3>Clean</h3><p>Sentence case on a soft dark box, lower third. Calm and readable.</p></div><div class="card scard"><span class="n">09</span><h3>Editorial</h3><p>Serif captions and slow moves for story-led and documentary pieces.</p></div><div class="card scard"><span class="n">10</span><h3>Minimal</h3><p>Small, light captions with lots of air. For quiet, premium brands.</p></div>
-    <div class="card scard own"><span class="n">+</span><h3>Build your own</h3><p>Describe the look the way you would to an editor, or point it at videos you like. It is saved under your name and any edit can use it.</p></div></div>
-</div></section>
-
-<section class="sec center" id="academy" style="padding-top:0"><div class="wrap">
-  <span class="chip"><i></i>Academy</span>
-  <h2 class="display" style="margin-top:18px">Learn to edit with AI.</h2>
-  <p class="lede" style="margin-top:18px">22 short lessons inside the platform, from your first login to a finished video.</p>
-  <div class="mods" style="text-align:left"><div class="card mod"><h3>Getting in</h3><p class="cnt">3 lessons</p><ol><li>Welcome and a quick tour<span>3 min</span></li><li>Connecting Claude Code<span>5 min</span></li><li>Setting up your workspace<span>3 min</span></li></ol></div><div class="card mod"><h3>Claude Code basics</h3><p class="cnt">5 lessons</p><ol><li>What Claude Code is, and the plan you need<span>2 min</span></li><li>Installing it and signing in<span>3 min</span></li><li>Your first conversation, and the questions it asks<span>3 min</span></li><li>Where your files go, and what to do when it stops<span>3 min</span></li><li>Quick start: invite to finished video in 10 minutes<span>10 min</span></li></ol></div><div class="card mod"><h3>The editor</h3><p class="cnt">9 lessons</p><ol><li>Your first edit, start to finish<span>6 min</span></li><li>Your footage: folders, files and links<span>3 min</span></li><li>Telling it what you want<span>4 min</span></li><li>Picking a style<span>4 min</span></li><li>HyperFrames or Premiere Pro<span>3 min</span></li><li>What happens in Claude Code<span>4 min</span></li><li>Your finished edit and asking for changes<span>3 min</span></li><li>Create your own style<span>4 min</span></li><li>When something goes wrong<span>3 min</span></li></ol></div><div class="card mod"><h3>The rest of the app</h3><p class="cnt">5 lessons</p><ol><li>Scripts<span>3 min</span></li><li>Planner<span>3 min</span></li><li>Performance<span>3 min</span></li><li>Competitors<span>3 min</span></li><li>Settings and your profile<span>2 min</span></li></ol></div></div>
-  <p class="note">Each lesson has its steps written out inside the platform. The videos are being recorded.</p>
-</div></section>
-
 <section class="dark" id="projects"><div class="wrap">
   <span class="chip"><i></i>Made with MDG Editor</span>
   <h2 class="display">Real projects.<br>Made with <em>AI.</em></h2>
@@ -373,30 +363,8 @@ dialog.ap{width:min(620px,calc(100vw - 24px))}
     <div class="row"><button type="button" class="proj tall" data-video="https://www.mdgeditor.com/media/projects/car.mp4" data-title="Reel"><span class="pic"><img src="media/p-car.jpg" width="540" height="960" loading="lazy" alt="Reel, personal brand"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>Reel</b><span>Personal brand</span></span></button><button type="button" class="proj tall" data-video="https://www.mdgeditor.com/media/projects/bakery.mp4" data-title="Real estate ad"><span class="pic"><img src="media/p-bakery.jpg" width="540" height="960" loading="lazy" alt="Real estate ad, property developer"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>Real estate ad</b><span>Property developer</span></span></button><div class="col"><button type="button" class="proj land" data-video="https://www.mdgeditor.com/media/full/james.mp4" data-title="VSL"><span class="pic"><img src="media/p-james.jpg" width="1280" height="720" loading="lazy" alt="VSL, paid-ads offer"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>VSL</b><span>Paid-ads offer</span></span></button><button type="button" class="proj land" data-video="https://www.mdgeditor.com/media/full/serge.mp4" data-title="VSL"><span class="pic"><img src="media/p-serge.jpg" width="1280" height="720" loading="lazy" alt="VSL, ai automation"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>VSL</b><span>AI automation</span></span></button></div></div></div>
 </div></section>
 
-<section class="sec" id="book"><div class="wrap">
-  <div class="book"><div><h2>Want to see how it would work for you?</h2><p>Answer five quick questions and pick a time for a demo call on your kind of footage.</p></div><button type="button" class="btn light" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a demo call</button></div>
-</div></section>
-
-<section class="sec" id="faq" style="padding-top:0"><div class="wrap faq">
-  <div class="left"><h2 class="display">Questions,<br>answered.</h2><p>Something else on your mind?</p><button type="button" class="btn ghost" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a demo call</button></div>
-  <div><details><summary>What does the onboarding look like?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Right after you pay, you book your 1:1 call. On the call we install MDG Editor on your computer with you, connect it to your editing app and make your first edit together, so you leave with a finished video and a setup ready for the next one.</p></details><details><summary>How much does it cost to run?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>MDG Editor is one payment of €997, with lifetime access. There are no credits and no monthly fee from us. It runs inside Claude, and the $20 a month Claude Pro plan is enough to run it. If you edit several videos every day, a bigger Claude plan gives you more room.</p></details><details><summary>Do I need to know how to edit?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>No. You tell it what you want in plain words, the way you would brief an editor, and it does the edit. If you do edit, every cut is a real clip on your timeline, so you can change anything by hand.</p></details><details><summary>What do I need to run it?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>A Mac or a Windows computer, Claude Code (free to install) and a paid Claude plan. It works with Premiere Pro, DaVinci Resolve, Final Cut Pro and CapCut, or with no editing app at all. We set it all up with you on the onboarding call.</p></details><details><summary>Can it edit in my style?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Yes. Your style (fonts, colours, captions and the way you like your cuts) is saved once and used on every video.</p></details><details><summary>How do I log in?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Open your invite link once and you are in. After that, Log in on this page takes you back to your workspace in the same browser.</p></details></div>
-</div></section>
-</main>
-
-<footer><div class="wrap">
-  <div class="fgrid">
-    <div><a class="wm" href="#top"><b>Creator</b>Hub</a><p>The most advanced AI video editor, produced by MDG.</p></div>
-    <div><h4>Product</h4><a href="#top">Watch the film</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#projects">Real projects</a><a href="#pricing" data-pricing>Pricing</a><a href="#faq">FAQ</a></div>
-    <div><h4>Get started</h4><a href="#book" data-apply>Book a demo call</a><a href="#pricing" data-pricing>Get access to the app</a><a href="app/index.html">Log in</a></div>
-    <div><h4>Contact</h4><a href="mailto:mateo@mdg-growth.com">mateo@mdg-growth.com</a><a href="https://instagram.com/MateoDiGiusto" rel="noopener">Instagram</a><a href="https://www.mdgeditor.com" rel="noopener">mdgeditor.com</a></div>
-  </div>
-  <div class="legal"><span>© 2026 MDG Growth LLC. MDG Editor runs in Claude Code and needs a paid Claude plan.</span><span>Claude and Claude Code are trademarks of Anthropic, PBC. MDG Editor is an independent product and is not affiliated with or endorsed by Anthropic.</span></div>
-</div></footer>
-
-<dialog class="win-dlg" id="pricing-dlg" aria-labelledby="pricing-t"><div class="dlg-in">
-  <button type="button" class="x dlg-x" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-  <h2 class="display" id="pricing-t">Get access to the app.</h2>
-  <p class="lede" style="margin:12px auto 0">MDG Editor runs inside CreatorHub: your edits, your styles, your planner and the Academy behind one login.</p>
+<section class="sec center" id="pricing"><div class="wrap">
+  <h2 class="display">Get MDG Editor.</h2>
   <div class="plans">
     <div class="plan dk"><div class="top"><span>AI editor</span><span class="pop"><i></i>Most popular</span></div>
       <div class="nm">MDG Editor</div><div class="pr">€997</div><div class="sm">One payment. Lifetime access.</div>
@@ -409,7 +377,36 @@ dialog.ap{width:min(620px,calc(100vw - 24px))}
       <div class="acts"><button type="button" class="btn ghost wide" data-apply="Brand or company">Talk to our team</button></div></div>
   </div>
   <p class="fine">Runs in Claude Code. Needs a paid Claude plan, billed separately by Anthropic.</p>
-</div></dialog>
+  <div class="book" id="book"><div><h2>Want to see how it would work for you?</h2><p>Answer five quick questions and pick a time on your kind of footage.</p></div><button type="button" class="btn light" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a call</button></div>
+</div></section>
+
+<section class="sec center" id="platform" style="padding-top:0"><div class="wrap">
+  <span class="chip"><i></i>Inside the app</span>
+  <h2 class="display" style="margin-top:18px">Everything you get.</h2>
+  <p class="lede" style="margin-top:18px">The AI Editor and everything around it, behind one login.</p>
+  <div class="tabs" role="tablist" aria-label="Inside the app"><button type="button" role="tab" aria-selected="true" data-shot="editor" data-note="Choose your clips or paste a link, say what you want, pick a style. The edit runs on your own computer.">AI Editor</button><button type="button" role="tab" aria-selected="false" data-shot="brief" data-note="A short request becomes a full plan: the cut, the captions, the graphics, the camera and the sound.">Your brief</button><button type="button" role="tab" aria-selected="false" data-shot="edits" data-note="Watch each stage as it happens. When it is ready, ask for changes in plain words.">Your edits</button><button type="button" role="tab" aria-selected="false" data-shot="performance" data-note="Your Instagram numbers as charts, and a plain read of what to post next.">Performance</button><button type="button" role="tab" aria-selected="false" data-shot="ask" data-note="Footage looks wrong after the grade? Edit stuck? Ask, and get the fix.">Ask AI</button></div>
+  <p class="tabnote" id="tabnote">Choose your clips or paste a link, say what you want, pick a style. The edit runs on your own computer.</p>
+  <figure class="win" style="margin-bottom:0"><div class="bar"><i></i><i></i><i></i><span>CreatorHub</span></div><img id="shot" src="img/app-editor.jpg" width="1440" height="900" loading="lazy" alt="AI Editor"></figure>
+  <div class="get"><div class="card gcard"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg></span><h3>The AI Editor</h3><p>Raw footage in, a finished edit out, made on your own computer with HyperFrames or in Premiere Pro.</p></div><div class="card gcard"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span><h3>Pre-built styles</h3><p>Ten ready looks, from Big Caps to Apple UI, Real Estate and Podcast. Or describe your own once and every edit follows it.</p></div><div class="card gcard"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><h3>The Academy</h3><p>22 short lessons, from your first login to a finished video.</p></div><div class="card gcard"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></span><h3>Ask AI</h3><p>Questions about your footage, grading, LUTs or the app, answered on the spot.</p></div><div class="card gcard"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><h3>Performance and reports</h3><p>Your Instagram numbers, what is working, and a report you can save as a PDF.</p></div><div class="card gcard"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="m16 10 5-3v10l-5-3"/></svg></span><h3>1:1 onboarding</h3><p>We install it with you and get your first edit out together.</p></div></div>
+  <div class="lessons" aria-label="Some of the Academy lessons"><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 1 · 3 min</span><b>Welcome and a quick tour</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 2 · 5 min</span><b>Connecting Claude Code</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 3 · 3 min</span><b>Setting up your workspace</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 4 · 2 min</span><b>What Claude Code is, and the plan you need</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 5 · 3 min</span><b>Installing it and signing in</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 6 · 3 min</span><b>Your first conversation, and the questions it asks</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 7 · 3 min</span><b>Where your files go, and what to do when it stops</b></div><div class="lthumb"><span class="lt-play"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="lt-n">Lesson 8 · 10 min</span><b>Quick start: invite to finished video in 10 minutes</b></div></div>
+  <div class="cta"><a class="btn glow" href="#pricing">Get access to the app <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="app/index.html">Log in</a></div>
+</div></section>
+
+<section class="sec" id="faq" style="padding-top:0"><div class="wrap faq">
+  <div class="left"><h2 class="display">Questions,<br>answered.</h2><p>Something else on your mind?</p><button type="button" class="btn ghost" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a call</button></div>
+  <div><details><summary>What does the onboarding look like?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Right after you pay, you book your 1:1 call. On the call we install MDG Editor on your computer with you, connect it to your editing app and make your first edit together, so you leave with a finished video and a setup ready for the next one.</p></details><details><summary>How much does it cost to run?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>MDG Editor is one payment of €997, with lifetime access. There are no credits and no monthly fee from us. It runs inside Claude, and the $20 a month Claude Pro plan is enough to run it. If you edit several videos every day, a bigger Claude plan gives you more room.</p></details><details><summary>Do I need to know how to edit?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>No. You tell it what you want in plain words, the way you would brief an editor, and it does the edit. If you do edit, every cut is a real clip on your timeline, so you can change anything by hand.</p></details><details><summary>What do I need to run it?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>A Mac or a Windows computer, Claude Code (free to install) and a paid Claude plan. It works with Premiere Pro, DaVinci Resolve, Final Cut Pro and CapCut, or with no editing app at all. We set it all up with you on the onboarding call.</p></details><details><summary>Can it edit in my style?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Yes. Your style (fonts, colours, captions and the way you like your cuts) is saved once and used on every video.</p></details><details><summary>How do I log in?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Open your invite link once and you are in. After that, Log in on this page takes you back to your workspace in the same browser.</p></details></div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <div class="fgrid">
+    <div><a class="wm" href="#top"><b>Creator</b>Hub</a><p>The most advanced AI video editor, produced by MDG.</p></div>
+    <div><h4>Product</h4><a href="#top">Watch the film</a><a href="#how">How it works</a><a href="#projects">Real projects</a><a href="#pricing">Pricing</a><a href="#platform">Inside the app</a><a href="#faq">FAQ</a></div>
+    <div><h4>Get started</h4><a href="#pricing">Get access to the app</a><a href="#book" data-apply>Book a call</a><a href="app/index.html">Log in</a></div>
+    <div><h4>Contact</h4><a href="mailto:mateo@mdg-growth.com">mateo@mdg-growth.com</a><a href="https://instagram.com/MateoDiGiusto" rel="noopener">Instagram</a><a href="https://www.mdgeditor.com" rel="noopener">mdgeditor.com</a></div>
+  </div>
+  <div class="legal"><span>© 2026 MDG Growth LLC. MDG Editor runs in Claude Code and needs a paid Claude plan.</span><span>Claude and Claude Code are trademarks of Anthropic, PBC. MDG Editor is an independent product and is not affiliated with or endorsed by Anthropic.</span></div>
+</div></footer>
 
 <dialog class="win-dlg ap" id="apply-dlg" aria-labelledby="ap-t"><div class="dlg-in">
   <button type="button" class="x dlg-x" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -455,12 +452,9 @@ dialog.ap{width:min(620px,calc(100vw - 24px))}
   lb.addEventListener("click", function (e) { if (e.target === lb) shut(); });
   lb.addEventListener("close", function () { lv.pause(); });
 
-  // pricing opens in a window from every "Get access"
-  var pd = document.getElementById("pricing-dlg"), ad = document.getElementById("apply-dlg");
+  var ad = document.getElementById("apply-dlg");
   function openDlg(d){ document.querySelectorAll("dialog[open]").forEach(function (x) { if (x !== d) x.close(); }); if (!d.open) d.showModal(); }
-  document.querySelectorAll("[data-pricing]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); openDlg(pd); }); });
-  [pd, ad].forEach(function (d) { d.addEventListener("click", function (e) { if (e.target === d || e.target.closest("[data-close]")) { if (d === ad) later(); d.close(); } }); });
-  if (location.hash === "#pricing") openDlg(pd);
+  ad.addEventListener("click", function (e) { if (e.target === ad || e.target.closest("[data-close]")) { later(); ad.close(); } });
 
   // the demo call: five taps, a name and an email, then the calendar
   var KEY = "ch-demo", answers = {}, preset = "";
