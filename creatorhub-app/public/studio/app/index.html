@@ -1253,6 +1253,84 @@ body.gated .app,body.gated .tabbar,body.gated #toast{display:none!important}
 .ak-row input{flex:1;min-width:200px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
 .ak .err{font-size:12.5px;color:var(--bad);margin:0}
 
+/* writing a script: what is being worked on, then the script written out */
+.sc-think{display:grid;gap:7px}
+.sc-think .ln{display:flex;gap:8px;align-items:center;color:var(--ink-3);font-size:14px}
+.sc-think .ln svg{width:14px;height:14px;flex:none;color:var(--ok)}
+.sc-think .ln.cur{color:var(--ink);font-weight:600}
+.caret::after{content:"";display:inline-block;width:2px;height:1em;margin-left:2px;background:currentColor;vertical-align:-2px;animation:caret-blink 1s steps(1) infinite}
+@keyframes caret-blink{50%{opacity:0}}
+.sc-wait{display:none!important}
+.sc-typing .eyebrow:empty,.sc-typing .pill:empty{display:none}
+@media (prefers-reduced-motion:reduce){.caret::after{animation:none}}
+
+/* a script, big enough to read out loud */
+.sc-body{gap:18px}
+.sc-body .eyebrow{font-size:12px}
+.sc-body .hook{padding:16px 18px;gap:10px}
+.sc-body .hook .line{font-size:20px;line-height:1.3}
+.sc-body .hook .os{font-size:14.5px}
+.sc-body .hook .why{font-size:14px;line-height:1.45}
+.sc-body .beats{gap:16px}
+.sc-body .beat{grid-template-columns:6ch minmax(0,1fr);gap:14px}
+.sc-body .beat .at{font-size:13.5px;padding-top:4px}
+.sc-body .beat .line{font-size:17.5px;line-height:1.45;font-weight:500}
+.sc-body .beat .os{font-size:14px;margin-top:4px}
+.sc-body .beat .br{font-size:14px;margin-top:3px}
+.sc-body .prose{font-size:16.5px;line-height:1.55}
+#sc-live{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+#sc-live .card-h h2{font-size:24px}
+.sc-think{padding:22px 24px;gap:10px}
+.sc-think .eyebrow{font-size:12px}
+.sc-think .ln{font-size:17px}
+.sc-think .ln svg{width:16px;height:16px}
+@media (max-width:640px){.sc-body .hook .line{font-size:18px}.sc-body .beat .line{font-size:16px}.sc-body .beat{grid-template-columns:minmax(0,1fr);gap:2px}}
+/* Your Brain */
+.br-hero{padding:18px 18px 16px;display:grid;gap:10px;overflow:hidden;background:radial-gradient(700px 320px at 50% 46%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%),var(--card-bg)}
+.br-map{width:100%;height:auto;display:block;max-height:520px}
+.br-line{fill:none;stroke:var(--line);stroke-width:1.6;stroke-dasharray:3 7}
+.br-line.on{stroke:var(--accent);stroke-width:2;stroke-dasharray:10 8;animation:br-flow 2.6s linear infinite;opacity:.85}
+@keyframes br-flow{to{stroke-dashoffset:-36}}
+.br-node{cursor:pointer;outline:none}
+.br-node rect{fill:var(--card-solid);stroke:var(--line);stroke-width:1.2;transition:stroke .15s,fill .15s}
+.br-node text{font:600 14.5px var(--f-ui,inherit);fill:var(--ink-3)}
+.br-node .dot{fill:var(--line)}
+.br-node.on rect{stroke:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.br-node.on text{fill:var(--ink)}
+.br-node.on .dot{fill:var(--accent)}
+.br-node:hover rect,.br-node:focus-visible rect{stroke:var(--ink);fill:var(--btn-hover,var(--card-solid))}
+.br-core .halo{fill:color-mix(in srgb,var(--accent) 10%,transparent);animation:br-pulse 3.2s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes br-pulse{50%{transform:scale(1.07);opacity:.55}}
+.br-core .body{fill:var(--ink)}
+.br-core .track{fill:none;stroke:color-mix(in srgb,var(--page) 22%,transparent);stroke-width:5}
+.br-core .ring{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round}
+.br-core .pct{font:700 34px var(--f-display,inherit);fill:var(--page);letter-spacing:-.03em}
+.br-core .lbl{font:600 12px var(--f-ui,inherit);fill:color-mix(in srgb,var(--page) 70%,transparent);letter-spacing:.04em;text-transform:uppercase}
+.br-meter{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.br-meter>div{flex:1;min-width:200px}
+.br-meter b{font-size:17px}
+.bar{display:block;height:8px;border-radius:99px;background:var(--line);overflow:hidden;flex:0 0 180px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.br-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.br-card{display:grid;gap:8px;text-align:left;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--card-bg);cursor:pointer;color:inherit;font:inherit;box-shadow:var(--card-shadow)}
+.br-card:hover{border-color:var(--ink)}
+.br-card .hd{display:flex;gap:8px;align-items:center}
+.br-card .hd b{font-size:15.5px;flex:1}
+.br-card .dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none}
+.br-card.on .dot{background:var(--accent)}
+.br-card .act{font-size:12.5px;color:var(--accent-text);font-weight:600}
+.br-card .tx{font-size:14px;line-height:1.45;color:var(--ink-3)}
+.br-card.on .tx{color:var(--ink-2)}
+.br-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.br-auto .stat{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.br-strip{display:flex;gap:10px;align-items:center;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--field-bg,transparent);cursor:pointer;color:inherit;font:inherit;text-align:left}
+.br-strip:hover{border-color:var(--ink)}
+.br-strip svg{width:17px;height:17px;flex:none}
+.br-strip .bar{flex:0 0 90px;height:6px}
+#br-text{font-size:16px;line-height:1.5}
+@media (max-width:760px){.br-map{display:none}.br-strip .bar{display:none}}
+@media (prefers-reduced-motion:reduce){.br-line.on,.br-core .halo{animation:none}}
+
 </style>
 </head>
 <body>
@@ -1272,9 +1350,10 @@ body.gated .app,body.gated .tabbar,body.gated #toast{display:none!important}
 /* ---- 00-core.js ---- */
 /* ===================== Core: vocabulary, state, helpers ===================== */
 const FEATURES = {posts:false};
-const VIEWS = ["home","performance","posts","editor","scripts","tracker","competitors","reports","academy","help","settings"].filter(v => v !== "posts" || FEATURES.posts);
+const VIEWS = ["home","brain","performance","posts","editor","scripts","tracker","competitors","reports","academy","help","settings"].filter(v => v !== "posts" || FEATURES.posts);
 const VIEW_META = {
   home:{label:"Home", icon:"home", hint:"Today at a glance"},
+  brain:{label:"Your Brain", icon:"brain", hint:"What the AI knows about you"},
   performance:{label:"Performance", icon:"chart", hint:"Your numbers and what works"},
   posts:{label:"Posts", icon:"layers", beta:true, hint:"Autopilot makes your posts"},
   editor:{label:"AI Editor", icon:"film", hint:"Auto-edit your videos"},
@@ -1286,7 +1365,7 @@ const VIEW_META = {
   help:{label:"Ask AI", icon:"message", hint:"Questions about your footage, your edits or the app"},
   settings:{label:"Settings", icon:"settings", hint:"Profile, style, connections"},
 };
-const NAV_GROUPS = [["", ["home","performance","posts","editor","scripts","tracker","competitors","reports"].filter(v => VIEWS.includes(v))], ["", ["academy","help"]]];
+const NAV_GROUPS = [["", ["home","brain","performance","posts","editor","scripts","tracker","competitors","reports"].filter(v => VIEWS.includes(v))], ["", ["academy","help"]]];
 const STAGES = [
   {id:"idea", label:"Idea", v:"--s-idea"},
   {id:"script", label:"Scripting", v:"--s-script"},
@@ -1319,6 +1398,7 @@ const ICONS = {
   columns:"M4 4h4v16H4z M10 4h4v10h-4z M16 4h4v13h-4z",
   users:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.9 M16 3.1a4 4 0 0 1 0 7.8",
   chart:"M3 20h18 M6 16v-5 M11 16V8 M16 16v-3 M21 16V5",
+  brain:"M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6z M12 9.2V5 M9.9 13.9l-3.6 3.6 M14.1 13.9l3.6 3.6 M12 5a1.4 1.4 0 1 0 0-2.8A1.4 1.4 0 0 0 12 5z M5.3 21a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8z M18.7 21a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8z",
   book:"M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z",
   settings:"M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1",
   sparkle:"M5 12h14 M12 5l7 7-7 7", terminal:"M4 17l6-5-6-5 M12 19h8",
@@ -1675,7 +1755,7 @@ function profileBlock(){
     "Posting cadence: " + (p.cadence ? p.cadence + " posts per week" : "not set"),
     es ? "Editing style: " + es.name + " (" + es.desc + ")" : "",
     (p.admired || []).filter(Boolean).length ? "Creators they admire or compete with: " + p.admired.filter(Boolean).join(", ") : "",
-    p.notes ? "Notes: " + p.notes : ""].filter(Boolean).join("\n");
+    p.notes ? "Notes: " + p.notes : "", ...brainContext()].filter(Boolean).join("\n");
 }
 function libraryBlock(ids){
   const list = ids && ids.length ? ids.map(id => S.shared.library.get(id)).filter(Boolean) : [];
@@ -2510,7 +2590,7 @@ function renderRail(){
 function renderTopbar(){ $("#topbar").replaceChildren(wsButton(true), apiOK() ? btn("", {class:"btn ghost icon", "aria-label":"Assistant", onclick:() => openAssistant()}, "message") : btn("", {class:"btn ghost icon", "aria-label":"Settings", onclick:() => go("settings", {settingsTab:"brand"})}, "settings")); }
 function renderTabbar(){
   const tabs = [["home","Home","home"],["performance","Performance","chart"],["editor","AI Editor","film"],FEATURES.posts ? ["posts","Posts","layers"] : ["scripts","Scripts","pen"],["more","More","grid"]];
-  const moreViews = ["scripts","tracker","competitors","reports","academy","help","settings"].filter(v => !tabs.some(t => t[0] === v));
+  const moreViews = ["brain","scripts","tracker","competitors","reports","academy","help","settings"].filter(v => !tabs.some(t => t[0] === v));
   $("#tabbar").replaceChildren(tabs.map(([v, l, ic]) => h("button", {type:"button", "aria-current":(S.view === v || (v === "more" && moreViews.includes(S.view))) ? "page" : null,
     onclick:() => v === "more" ? openSheet([...moreViews.map(mv => ({label:VIEW_META[mv].label, icon:VIEW_META[mv].icon, onClick:() => go(mv, viewSub(mv))})), ...(apiOK() ? [{label:"Assistant", icon:"message", onClick:() => openAssistant()}] : []), {label:getTheme() === "dark" ? "Light mode" : "Dark mode", icon:getTheme() === "dark" ? "sun" : "moon", onClick:() => setTheme(getTheme() === "dark" ? "light" : "dark")}, {label:"CreatorHub website", icon:"globe", onClick:() => { location.href = "../index.html"; }}]) : go(v, viewSub(v))},
     icon(ic), l)));
@@ -3271,11 +3351,52 @@ function fillQueue(){} function newPostModal(){} function plannedDates(){ return
 
 /* ---- 50-scripts.js ---- */
 /* ===================== Scripts ===================== */
-const HK = {form:{topic:"", type:"Reel", cta:"", framework:"", useTop:true}, busy:false, result:null};
+const HK = {form:{topic:"", type:"Reel", cta:"", framework:"", useTop:true}, busy:false, result:null, thinkAt:0, thinkT:0, typing:null, typingOn:false, typeStop:null};
+/* While a script is being written the page shows what is being worked on, and the finished script is written out
+   line by line instead of landing all at once. People who ask their device for less motion get it straight away. */
+const THINK_STEPS = [[0, "Reading your Brain and your topic"], [1600, "Looking at what your audience responds to"], [3600, "Trying three ways to open"], [6200, "Laying out the beats"], [9400, "Writing the call to action and the caption"]];
+function calmMotion(){ try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e){ return false; } }
+function thinkStart(){ HK.thinkAt = Date.now(); clearInterval(HK.thinkT); HK.thinkT = setInterval(() => { if (!HK.busy){ clearInterval(HK.thinkT); return; } if (S.view === "scripts") scheduleRender(); }, 700); }
+function thinkCard(){
+  if (!HK.busy || !HK.thinkAt) return null;
+  const el = Date.now() - HK.thinkAt; const shown = THINK_STEPS.filter(([t]) => t <= el); const waiting = !apiOK() && !codeActive();
+  return h("div", {class:"card sc-think", id:"sc-think", "aria-live":"polite"}, h("div", {class:"eyebrow", text:"Writing your script"}),
+    waiting ? h("div", {class:"ln", text:"Waiting for Claude Code on your computer"}) : null,
+    shown.map(([, t], i) => h("div", {class:"ln" + (i === shown.length - 1 ? " cur caret" : "")}, i === shown.length - 1 ? null : icon("check"), h("span", {text:t}))));
+}
+/* Write a finished card out: every piece of text is emptied, then filled in order, a few letters a frame. */
+function typeOut(card, done){
+  const finish = () => { HK.typing = null; HK.typingOn = false; HK.typeStop = null; if (done) done(); };
+  if (!card || calmMotion()){ finish(); return; }
+  const body = card.querySelector(".sc-body"); if (!body){ finish(); return; }
+  const leaves = [...body.querySelectorAll("*")].filter(el => !el.children.length && el.textContent.trim() && !el.closest("svg"));
+  if (!leaves.length){ finish(); return; }
+  const items = leaves.map(el => ({el, text:el.textContent, box:el.closest(".hook, .beat")}));
+  const total = items.reduce((n, it) => n + it.text.length, 0);
+  const perFrame = Math.max(1.2, total / (Math.min(9000, Math.max(3500, total * 11)) / 16));
+  for (const it of items){ it.el.textContent = ""; if (it.box) it.box.classList.add("sc-wait"); }
+  body.classList.add("sc-typing"); HK.typingOn = true;
+  let i = 0, n = 0, raf = 0, hold = 0, stopped = false;
+  const end = () => { if (stopped) return; stopped = true; cancelAnimationFrame(raf); for (const it of items){ it.el.textContent = it.text; it.el.classList.remove("caret"); if (it.box) it.box.classList.remove("sc-wait"); } body.classList.remove("sc-typing"); finish(); };
+  HK.typeStop = end;
+  const tick = () => {
+    if (stopped) return;
+    if (!document.body.contains(card)){ stopped = true; finish(); return; }
+    if (hold > 0){ hold--; raf = requestAnimationFrame(tick); return; }
+    const it = items[i]; if (!it){ end(); return; }
+    if (n === 0){ if (it.box) it.box.classList.remove("sc-wait"); it.el.classList.add("caret"); }
+    n = Math.min(it.text.length, n + perFrame); it.el.textContent = it.text.slice(0, Math.floor(n));
+    if (n >= it.text.length){ it.el.textContent = it.text; it.el.classList.remove("caret"); i++; n = 0; hold = it.el.classList.contains("line") ? 5 : 1; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+function typeResult(id){ HK.typing = id; render(); typeOut($("#sc-live"), () => render()); }
 
 Views.scripts = {
   mount(root){ this.update(root); },
   update(root){
+    if (HK.typingOn && root.querySelector("#sc-live")) return;   // a script is being written out: leave the page alone until it is done
     const a = document.activeElement; if (a && root.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !HK.busy) return;
     const f = HK.form; const lib = [...S.shared.library.values()].sort((x, y) => (x.order || 0) - (y.order || 0));
     const topic = bindText(h("textarea", {id:"sc-topic", rows:"2", placeholder:"Why your reels die after 3 seconds"}), v => { f.topic = v; }, 0); topic.value = f.topic;
@@ -3291,14 +3412,15 @@ Views.scripts = {
     const form = h("div", {class:"card stack sc-form", style:"gap:12px"},
       claudeGate("script writing"),
       h("div", {class:"f"}, h("label", {for:"sc-topic", class:"big", text:"What is the video about?"}), topic),
-      types, more,
+      types, more, brainStrip(),
       h("div", {class:"toolbar"}, err, h("span", {class:"meta", text:HK.busy && !apiOK() ? "Claude Code is writing it on your computer." : "Three hooks, the beats, the call to action and the caption."}), h("span", {class:"grow"}),
         btn("Write it myself", {class:"btn ghost", id:"sc-blank", onclick:blankScript}, "pen"), btn(HK.busy ? "Writing…" : "Write the script", {class:"btn ai", id:"sc-go", disabled:HK.busy || !claudeOK(), onclick:() => generateScript(err)}, "wand")));
     const saved = listCol("scripts").sort((x, y) => (y.updatedAt || "").localeCompare(x.updatedAt || ""));
     root.replaceChildren(
       pageHead("Scripts", "One line in, a full script out, written the way you talk. Or write your own and keep it here."),
       form,
-      HK.result ? scriptCard(HK.result, true) : null,
+      thinkCard(),
+      HK.result && !(HK.busy && HK.thinkAt) ? scriptCard(HK.result, true) : null,
       saved.length ? h("div", null, h("div", {class:"card-h"}, h("h2", {text:"Your scripts"}), h("span", {class:"muted small", text:saved.length + ""})), h("div", {class:"list"}, saved.map(sc => h("button", {type:"button", class:"lrow", onclick:() => openScriptDrawer(sc.id)}, tile("scripts", "sm"), h("span", {class:"t"}, sc.title, exTag(sc)), sc.hookType ? h("span", {class:"chip", text:sc.hookType}) : sc.manual ? h("span", {class:"chip", text:"Your own"}) : null, h("span", {class:"m", text:(sc.type || "") + " · " + ago(sc.updatedAt)}))))) : null);
   }
 };
@@ -3309,7 +3431,8 @@ function blankScript(){
 }
 async function generateScript(err){
   const f = HK.form; if (!f.topic.trim()){ if (err) err.textContent = "Add a topic first."; return; } if (HK.busy || !claudeOK()) return;
-  HK.busy = true; if (err) err.textContent = ""; render();
+  HK.busy = true; if (err) err.textContent = ""; thinkStart(); render();
+  let made = null;
   const top = f.useTop ? listCol("posts").sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6) : [];
   try {
     const r = await skillJSON("script_write", {profile:profileBlock(), type:f.type, topic:f.topic.trim(), cta:f.cta || "", framework:libraryBlock(f.framework ? [f.framework] : []) || "", top:top.map(p => `- ${p.title} (${p.hookType || "untagged"}, ${compact(p.views)} views)`).join("\n")}) || {};
@@ -3319,9 +3442,9 @@ async function generateScript(err){
     upsert("scripts", id, {kind:"script", title:String(r.title || f.topic.trim()), type:f.type, topic:f.topic.trim(), hooks, hookIndex:0, hookType:hooks[0].type, hook:{spoken:hooks[0].spoken, onScreen:hooks[0].onScreen},
       beats:(r.beats || []).map(b => ({at:String(b.at || ""), line:String(b.line || ""), onScreen:String(b.onScreen || ""), bRoll:String(b.bRoll || "")})).slice(0, 24),
       cta:{spoken:String((r.cta && r.cta.spoken) || ""), onScreen:String((r.cta && r.cta.onScreen) || ""), keyword:String((r.cta && r.cta.keyword) || f.cta || "")}, caption:String(r.caption || ""), runtime:String(r.runtime || "")});
-    HK.result = id;
+    HK.result = id; made = id;
   } catch (e){ if (err) err.textContent = claudeCopy(e); else toast(claudeCopy(e)); }
-  finally { HK.busy = false; render(); }
+  finally { HK.busy = false; HK.thinkAt = 0; clearInterval(HK.thinkT); if (made && S.view === "scripts") typeResult(made); else render(); }
 }
 async function humanizeScript(id){
   const sc = getDoc("scripts", id); if (!sc || HK.busy || !claudeOK()) return; HK.busy = true; render(); toast(apiOK() ? "Making it sound like you…" : "Sent to Claude Code");
@@ -3334,13 +3457,14 @@ async function humanizeScript(id){
       beats:(Array.isArray(r.beats) && r.beats.length ? r.beats : sc.beats || []).map(b => ({at:String(b.at || ""), line:String(b.line || ""), onScreen:String(b.onScreen || ""), bRoll:String(b.bRoll || "")})).slice(0, 24),
       cta:{spoken:String((r.cta && r.cta.spoken) || (sc.cta && sc.cta.spoken) || ""), onScreen:String((r.cta && r.cta.onScreen) || (sc.cta && sc.cta.onScreen) || ""), keyword:String((r.cta && r.cta.keyword) || (sc.cta && sc.cta.keyword) || "")}, caption:String(r.caption || sc.caption || ""), humanized:true});
     toast("Done. It reads like you now.");
-  } catch (e){ toast(claudeCopy(e)); } finally { HK.busy = false; render(); }
+    if (HK.result === id && S.view === "scripts"){ HK.busy = false; typeResult(id); return; }
+  } catch (e){ toast(claudeCopy(e)); } finally { HK.busy = false; if (!HK.typingOn) render(); }
 }
 function pickHook(sc, i){ const hk = (sc.hooks || [])[i]; if (!hk) return; upsert("scripts", sc.id, {hookIndex:i, hookType:hk.type, hook:{spoken:hk.spoken, onScreen:hk.onScreen}}); }
 function scriptBody(sc, inline){
   const hooks = sc.hooks && sc.hooks.length ? sc.hooks : (sc.hook ? [{...sc.hook, type:sc.hookType || "", why:""}] : []);
   const idx = sc.hookIndex || 0;
-  return h("div", {class:"stack-s"},
+  return h("div", {class:"stack-s sc-body"},
     hooks.length ? h("div", null, h("div", {class:"eyebrow", style:"margin-bottom:8px", text:"Hook · pick one"}), h("div", {class:"stack-s"}, hooks.map((hk, i) => h("button", {type:"button", class:"hook", style:"text-align:left;cursor:pointer;border-color:" + (i === idx ? "var(--ink)" : "var(--line)"), onclick:() => pickHook(sc, i)},
       h("div", {class:"line", text:hk.spoken}), hk.onScreen ? h("div", {class:"os", text:"On screen: " + hk.onScreen}) : null, hk.why ? h("div", {class:"why", text:hk.why}) : null, h("div", {class:"foot"}, hk.type ? h("span", {class:"pill neutral", text:hk.type}) : null, i === idx ? h("span", {class:"pill good", text:"chosen"}) : null))))) : null,
     (sc.beats || []).length ? h("div", null, h("div", {class:"eyebrow", style:"margin:6px 0 8px", text:"Beats"}), h("div", {class:"beats"}, sc.beats.map(b => h("div", {class:"beat"}, h("span", {class:"at", text:b.at}), h("div", null, h("div", {class:"line", text:b.line}), b.onScreen ? h("div", {class:"os", text:"On screen: " + b.onScreen}) : null, b.bRoll ? h("div", {class:"br", text:"B-roll: " + b.bRoll}) : null))))) : null,
@@ -3349,7 +3473,9 @@ function scriptBody(sc, inline){
 }
 function scriptCard(id, inline){
   const sc = getDoc("scripts", id); if (!sc) return null;
-  return h("div", {class:"card"}, h("div", {class:"card-h"}, h("h2", {text:sc.title}), h("span", {class:"chip", text:(sc.type || "Reel") + (sc.runtime ? " · " + sc.runtime : "")}), h("span", {style:"flex:1"}),
+  const live = inline && HK.typing === id;
+  return h("div", Object.assign({class:"card"}, live ? {id:"sc-live"} : {}), h("div", {class:"card-h"}, h("h2", {text:sc.title}), h("span", {class:"chip", text:(sc.type || "Reel") + (sc.runtime ? " · " + sc.runtime : "")}), h("span", {style:"flex:1"}),
+      live ? btn("Show it all", {class:"btn sm ghost", id:"sc-skip", onclick:() => { if (HK.typeStop) HK.typeStop(); }}) : null,
       btn(HK.busy ? "Working…" : "Make it sound like me", {class:"btn sm ai", disabled:HK.busy || !claudeOK(), title:"Rewrites anything that sounds generated, generic or salesy, in your voice", onclick:() => humanizeScript(sc.id)}, "wand"), sc.humanized ? h("span", {class:"pill good", text:"sounds like you"}) : null,
       btn("Copy", {class:"btn sm", onclick:() => copyScript(sc)}, "copy"), btn("Add to planner", {class:"btn sm", onclick:() => openItemDrawer(null, {title:sc.title, type:sc.type || "Reel", hookType:sc.hookType || "", cta:(sc.cta && sc.cta.keyword) || "", scriptId:sc.id, notes:sc.hook && sc.hook.spoken ? "Hook: " + sc.hook.spoken : ""})}, "columns"),
       btn("Edit a video from it", {class:"btn sm", onclick:() => { S.ui.useScript = sc.id; go("editor", {project:null}); }}, "film"), FEATURES.posts ? btn("Make a post from it", {class:"btn sm", onclick:() => newPostModal({topic:sc.title, goal:"lesson"})}, "layers") : null),
@@ -4002,11 +4128,93 @@ function downloadCSV(name, rows){
 }
 
 
+/* ---- 87-brain.js ---- */
+/* ===================== Your Brain: what the AI knows about you =====================
+   One place for everything a creator tells CreatorHub about themselves. Every script, answer and analysis starts from it,
+   so the more is in here, the closer the writing gets to how they talk and what they have lived. */
+const BR_NODES = [
+  {id:"who", label:"Who you are", field:"niche", ask:"Who are you and what do you do? Say it the way you would to someone you just met.", ph:"I help coaches turn one filming day into a month of content."},
+  {id:"audience", label:"Your audience", field:"audience", ask:"Who watches you, and what do they want? What are they stuck on right now?", ph:"Coaches doing 5 to 20K a month who film on their phone and never post what they film."},
+  {id:"offer", label:"Your offer", field:"offer", ask:"What do you sell, and what should a viewer do next?", ph:"A 6 week content system. They comment SYSTEM and get the outline."},
+  {id:"topics", label:"Your topics", field:"pillars", list:true, ask:"What do you keep coming back to? One topic per line.", ph:"Batching\nHooks\nEditing fast\nGetting clients from content"},
+  {id:"voice", label:"How you talk", brain:"voice", ask:"How do you talk on camera? Phrases you always use, how you open, words you would never say.", ph:"I say “here’s the play” a lot. Short sentences. I never say “game changer” or “hack”. I swear a little."},
+  {id:"stories", label:"Your stories", brain:"stories", ask:"Moments from your own life and work that you tell again and again. The more specific, the better.", ph:"In 2023 I posted every day for 90 days and got 400 followers. Then I changed one thing…"},
+  {id:"proof", label:"Results and numbers", brain:"proof", ask:"Results you can stand behind: yours and your clients’. Real numbers only.", ph:"1.2M views on the batching reel. Ana went from 2 to 11 calls a week in 30 days."},
+  {id:"beliefs", label:"What you believe", brain:"beliefs", ask:"What do you believe that others in your space get wrong? What do you argue about?", ph:"Posting daily is bad advice for anyone with a real business."},
+  {id:"examples", label:"Writing that sounds like you", brain:"examples", ask:"Paste a script, a caption or a post you wrote that sounds exactly like you.", ph:"Paste one or two here."},
+];
+function brainValue(n){ const p = S.profile || {}; if (n.brain) return String((p.brain || {})[n.brain] || ""); const v = p[n.field]; return Array.isArray(v) ? v.filter(Boolean).join("\n") : String(v || ""); }
+function brainFilled(){ return BR_NODES.filter(n => brainValue(n).trim().length >= 12 || (n.list && brainValue(n).trim())).length; }
+function brainStrength(){ return Math.round(brainFilled() / BR_NODES.length * 100); }
+function brainWord(pct){ return pct >= 100 ? "Complete" : pct >= 67 ? "Strong" : pct >= 34 ? "Getting sharper" : "Just getting started"; }
+function brainContext(){
+  const b = (S.profile && S.profile.brain) || {}; const cut = (s, n) => String(s || "").trim().slice(0, n);
+  return [b.voice ? "How they talk (phrases they use, words they never say): " + cut(b.voice, 700) : "",
+    b.stories ? "Their own stories (use these when they fit; never invent a story): " + cut(b.stories, 1200) : "",
+    b.proof ? "Results and numbers they can stand behind (use only these): " + cut(b.proof, 700) : "",
+    b.beliefs ? "What they believe and argue for: " + cut(b.beliefs, 700) : "",
+    b.examples ? "Writing that sounds like them (match the rhythm, never copy a line): " + cut(b.examples, 1200) : ""].filter(Boolean);
+}
+function brainEdit(n){
+  const ta = h("textarea", {id:"br-text", class:"in", rows:n.list ? "5" : "7", placeholder:n.ph}); ta.value = brainValue(n);
+  const save = () => {
+    const v = ta.value.trim();
+    if (n.brain) setProfile({brain:{...((S.profile && S.profile.brain) || {}), [n.brain]:v.slice(0, 4000)}});
+    else setProfile({[n.field]:n.list ? v.split(/\n|,/).map(x => x.trim()).filter(Boolean).slice(0, 8) : v.slice(0, 600)});
+    closeLayer(); toast("Saved to your Brain");
+  };
+  openModal({title:n.label, body:h("div", {class:"stack-s"}, h("p", {class:"prose", text:n.ask}), ta, h("p", {class:"meta", style:"margin:0", text:"Write it the way you would say it. Rough is fine."})),
+    actions:[btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Save", {class:"btn primary", id:"br-save", onclick:save})]});
+  setTimeout(() => ta.focus(), 40);
+}
+/* The picture: you in the middle, what the AI knows around you. Lit lines are what it can draw on. */
+function brainMap(){
+  const NS = "http://www.w3.org/2000/svg"; const W = 860, H = 470, cx = W / 2, cy = H / 2, rx = 318, ry = 172;
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  const svg = el("svg", {viewBox:`0 0 ${W} ${H}`, class:"br-map", role:"group", "aria-label":"Your Brain: what the AI knows about you"});
+  const pct = brainStrength(); const lines = el("g", {}), nodes = el("g", {});
+  BR_NODES.forEach((n, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / BR_NODES.length; const x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
+    const on = brainValue(n).trim().length > 0; const w = Math.max(118, n.label.length * 8.6 + 44), hgt = 44;
+    lines.append(el("path", {d:`M${cx} ${cy} Q ${(cx + x) / 2} ${(cy + y) / 2 - (y < cy ? -18 : 18)} ${x} ${y}`, class:"br-line" + (on ? " on" : ""), style:`animation-delay:${-i * .6}s`}));
+    const g = el("g", {class:"br-node" + (on ? " on" : ""), tabindex:"0", role:"button", "aria-label":n.label + (on ? ", filled in. Change it." : ", empty. Add it."), "data-node":n.id});
+    g.append(el("rect", {x:x - w / 2, y:y - hgt / 2, width:w, height:hgt, rx:hgt / 2}), el("circle", {cx:x - w / 2 + 20, cy:y, r:5, class:"dot"}), el("text", {x:x - w / 2 + 34, y:y + 5}, n.label));
+    g.addEventListener("click", () => brainEdit(n)); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); brainEdit(n); } });
+    nodes.append(g);
+  });
+  const R = 74, C = 2 * Math.PI * (R - 7);
+  const core = el("g", {class:"br-core"});
+  core.append(el("circle", {cx, cy, r:R + 16, class:"halo"}), el("circle", {cx, cy, r:R, class:"body"}), el("circle", {cx, cy, r:R - 7, class:"track"}),
+    el("circle", {cx, cy, r:R - 7, class:"ring", "stroke-dasharray":`${C * pct / 100} ${C}`, transform:`rotate(-90 ${cx} ${cy})`}),
+    el("text", {x:cx, y:cy + 2, class:"pct", "text-anchor":"middle"}, pct + "%"), el("text", {x:cx, y:cy + 26, class:"lbl", "text-anchor":"middle"}, "Your Brain"));
+  svg.append(lines, core, nodes);
+  return svg;
+}
+function brainStrip(){
+  const n = brainFilled(), t = BR_NODES.length;
+  return h("button", {type:"button", class:"br-strip", id:"br-strip", onclick:() => go("brain")}, icon("brain"), h("span", {class:"grow"}, h("b", {text:"Written from your Brain"}), h("span", {class:"meta", text:" · " + n + " of " + t + " filled in" + (n < t ? ". Add more and scripts get closer to you." : ".")})), h("span", {class:"bar"}, h("i", {style:"width:" + Math.round(n / t * 100) + "%"})), icon("chevR"));
+}
+Views.brain = {
+  crumb(){ return ""; },
+  mount(root){ this.update(root); },
+  update(root){
+    const pct = brainStrength(); const auto = [["Your top posts", listCol("posts").length, "performance"], ["Competitors studied", listCol("competitors").length, "competitors"], ["Scripts written", listCol("scripts").length, "scripts"], ["Editing styles", listCol("styles").length, "editor"]];
+    root.replaceChildren(
+      pageHead("Your Brain", "Everything the AI knows about you. Every script, answer and analysis starts here, so the more you give it, the more it sounds like you."),
+      h("div", {class:"card br-hero"}, brainMap(),
+        h("div", {class:"br-meter"}, h("div", null, h("b", {id:"br-pct", text:pct + "% · " + brainWord(pct)}), h("div", {class:"meta", text:brainFilled() + " of " + BR_NODES.length + " filled in. Tap anything to add or change it."})), h("span", {class:"bar"}, h("i", {style:"width:" + pct + "%"})))),
+      h("div", {class:"br-grid"}, BR_NODES.map(n => { const v = brainValue(n).trim(); return h("button", {type:"button", class:"br-card" + (v ? " on" : ""), "data-node":n.id, onclick:() => brainEdit(n)}, h("span", {class:"hd"}, h("span", {class:"dot"}), h("b", {text:n.label}), h("span", {class:"act", text:v ? "Change" : "Add"})), h("span", {class:"tx", text:v ? trunc(v.replace(/\n/g, " · "), 150) : n.ask})); })),
+      h("div", null, h("div", {class:"card-h"}, h("h2", {text:"Picked up by itself"}), h("span", {class:"muted small", text:"from what you do in CreatorHub"})),
+        h("div", {class:"br-auto"}, auto.map(([l, c, v]) => h("button", {type:"button", class:"stat", onclick:() => go(v)}, h("span", {class:"l", text:l}), h("span", {class:"v", text:String(c)}))))));
+  }
+};
+
+
 /* ---- 88-help.js ---- */
 /* ===================== Ask AI: questions about the footage, the edits and the app =====================
    The answers come from the help desk on the CreatorHub server, which holds what the editor knows (grading, LUTs,
    footage problems, the app). The page only sends the question, the conversation so far and a short list of recent edits. */
-const HP = {busy:false, err:"", ctl:null, msgs:null};
+const HP = {busy:false, err:"", ctl:null, msgs:null, typing:null};
 const HELP_KEY = "ch-help";
 const HELP_STARTERS = ["My footage looks washed out after the grade", "Why does my footage look double graded?", "My edit is stuck on Waiting to start", "The captions have wrong words", "What export settings for Instagram?"];
 function helpMsgs(){
@@ -4031,6 +4239,7 @@ Views.help = {
   crumb(){ return ""; },
   mount(root){ this.update(root, true); },
   update(root, force){
+    if (HP.typing && root.contains(HP.typing)) return;   // an answer is being written out
     const a = document.activeElement; if (!force && a && root.contains(a) && a.id === "hp-q"){ const list = root.querySelector("#hp-msgs"); if (list) list.replaceChildren(...helpBubbles()); return; }
     const msgs = helpMsgs();
     const q = h("textarea", {id:"hp-q", rows:"2", class:"in", placeholder:"Ask anything about your footage, your edits or the app", onkeydown:e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); askHelp(e.target.value); } }});
@@ -4060,7 +4269,21 @@ async function askHelp(text){
     const r = await skillText("editor_help", {profile:profileBlock(), edits:recentEditsText(), history:msgs.slice(-12)}, {signal:HP.ctl.signal});
     msgs.push({role:"assistant", content:r.text.trim() || "I don’t have an answer for that one. Try asking it another way."}); saveHelp();
   } catch (e){ if (!e || e.code !== "cancelled") HP.err = claudeCopy(e) || "That didn’t go through. Try again."; }
-  finally { HP.busy = false; HP.ctl = null; render(); setTimeout(() => { const t = $("#hp-q"); if (t) t.focus(); }, 30); }
+  finally { const got = !HP.err && helpMsgs().length && helpMsgs()[helpMsgs().length - 1].role === "assistant"; HP.busy = false; HP.ctl = null; render(); if (got) typeAnswer(); setTimeout(() => { const t = $("#hp-q"); if (t) t.focus(); }, 30); }
+}
+/* The answer is written out a few letters at a time, the way it would be said. */
+function typeAnswer(){
+  const list = document.querySelectorAll("#hp-msgs .msg.ai:not(.typing)"); const el = list[list.length - 1]; if (!el || calmMotion()) return;
+  const text = el.textContent; const per = Math.max(1.5, text.length / (Math.min(6000, Math.max(1200, text.length * 9)) / 16)); let n = 0;
+  el.textContent = ""; el.classList.add("caret"); HP.typing = el; const box = el.parentElement;
+  const tick = () => {
+    if (HP.typing !== el) return;
+    if (!document.body.contains(el)){ HP.typing = null; return; }
+    n = Math.min(text.length, n + per); el.textContent = text.slice(0, Math.floor(n)); if (box) box.scrollTop = box.scrollHeight;
+    if (n >= text.length){ el.textContent = text; el.classList.remove("caret"); HP.typing = null; return; }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 
 
