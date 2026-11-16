@@ -242,6 +242,39 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
 .fgrid a.wm{color:var(--ink);font-size:19px;padding:0}
 .legal{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:34px;padding-top:20px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;line-height:1.5}
 .legal span:last-child{max-width:52ch;text-align:right}
+dialog.win-dlg{border:0;padding:0;background:transparent;width:min(960px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:visible;color:var(--ink)}
+dialog.win-dlg::backdrop{background:rgba(12,16,24,.5);backdrop-filter:blur(6px)}
+dialog.win-dlg[open]{animation:dlgIn .24s cubic-bezier(.23,1,.32,1) both}
+@keyframes dlgIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.dlg-in{position:relative;background:var(--bg);border-radius:30px;padding:clamp(26px,4vw,48px);max-height:calc(100dvh - 24px);overflow:auto;text-align:center;box-shadow:0 40px 100px -30px rgba(12,16,24,.6)}
+.dlg-x{position:absolute;right:16px;top:16px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line-2);background:#fff;display:grid;place-items:center;cursor:pointer}
+.dlg-x svg{width:16px;height:16px}
+#pricing-dlg .plans{margin-top:28px}
+#pricing-dlg .plan{min-height:0}
+dialog.ap{width:min(620px,calc(100vw - 24px))}
+.ap .dlg-in{text-align:left}
+.ap .chip{margin-bottom:16px}
+.ap h2.display{font-size:clamp(28px,4vw,40px)}
+.ap .lede{margin-top:14px}
+.ap .cta{justify-content:flex-start;margin-top:26px}
+.ap-n{font-size:13px;color:var(--faint);margin:0 0 8px}
+.ap-q{font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-.035em;line-height:1.1;margin:0 0 18px}
+.ap-opts{display:grid;gap:8px}
+.ap-o{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:52px;padding:12px 18px;border:1px solid var(--line-2);border-radius:16px;background:#fff;font-size:15.5px;transition:border-color .15s,background .15s}
+.ap-o:hover{border-color:var(--ink)}
+.ap-o[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ap-o:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.ap-back{all:unset;cursor:pointer;margin-top:16px;font-size:14px;color:var(--muted);text-decoration:underline;text-underline-offset:4px}
+.ap-f{display:grid;gap:6px;font-size:13.5px;font-weight:700;margin-bottom:12px}
+.ap-f small{font-weight:400;color:var(--faint)}
+.ap-f input{font:inherit;font-weight:400;font-size:16px;padding:13px 16px;border:1px solid var(--line-2);border-radius:14px;background:#fff;color:var(--ink)}
+.ap-f input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 4px rgba(12,16,24,.06)}
+.ap-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.ap-err{color:#c62828;font-size:14px;min-height:20px;margin:0}
+.ap-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ap-row .ap-back{margin-top:0}
+.ap-cal{height:min(680px,calc(100dvh - 200px));border-radius:16px;overflow:hidden;background:#fff;border:1px solid var(--line)}
+.ap-cal iframe{width:100%;height:100%;border:0}
 @media (max-width:980px){
   header.nav nav{display:none}header.nav .login{margin-left:auto}
   .flow{grid-template-columns:1fr;margin-top:18px}.flow .left{order:1}.flow .mac{order:2}.flow .right{order:3}
@@ -269,9 +302,9 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
 <body>
 <header class="nav"><div class="wrap">
   <a class="wm" href="#top" aria-label="CreatorHub, back to top"><b>Creator</b>Hub</a>
-  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#pricing">Pricing</a></nav>
+  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#pricing" data-pricing>Pricing</a></nav>
   <a class="login" href="app/index.html">Log in</a>
-  <a class="btn sm" href="#pricing">Get access</a>
+  <a class="btn sm" href="#pricing" data-pricing>Get access</a>
 </div></header>
 
 <main>
@@ -283,7 +316,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
     <span class="pl"><i><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></i><span>Watch how it works</span></span>
   </button>
   <p class="under" id="film-msg" hidden>This video did not load here. <a href="https://www.mdgeditor.com/#top" rel="noopener">Watch it on mdgeditor.com</a></p>
-  <div class="cta"><a class="btn glow" href="#pricing">Get access to MDG Editor <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="https://www.mdgeditor.com/book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> See how it would work for your content</a></div>
+  <div class="cta"><a class="btn glow" href="#pricing" data-pricing>Get access to the app <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><button type="button" class="btn line" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> See how it would work for your content</button></div>
   <p class="under">Includes a 1:1 onboarding. Already have access? <a href="app/index.html">Log in</a></p>
 </div></section>
 
@@ -315,7 +348,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
   <div class="tabs" role="tablist" aria-label="Parts of the platform"><button type="button" role="tab" aria-selected="true" data-shot="editor" data-note="Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.">Editor</button><button type="button" role="tab" aria-selected="false" data-shot="edits" data-note="Watch each stage as it happens. When it is ready, ask for changes in plain words.">Your edits</button><button type="button" role="tab" aria-selected="false" data-shot="styles" data-note="Start from a ready style or describe your own. It is saved once and any edit can use it.">Styles</button><button type="button" role="tab" aria-selected="false" data-shot="scripts" data-note="One line in, a full script out: three openings, the beats, the caption.">Scripts</button><button type="button" role="tab" aria-selected="false" data-shot="planner" data-note="Everything you are making, on one board. Type in any column to add to it.">Planner</button><button type="button" role="tab" aria-selected="false" data-shot="performance" data-note="Your numbers as charts, and a plain read of what to repeat next week.">Performance</button><button type="button" role="tab" aria-selected="false" data-shot="academy" data-note="Every screen explained, click by click.">Academy</button></div>
   <p class="tabnote" id="tabnote">Choose your clips or paste a link, say what you want, pick a style. Claude edits it on your own computer.</p>
   <figure class="win" style="margin-bottom:0"><div class="bar"><i></i><i></i><i></i><span>CreatorHub</span></div><img id="shot" src="img/app-editor.jpg" width="1440" height="900" loading="lazy" alt="Editor"></figure>
-  <div class="cta"><a class="btn glow" href="app/index.html">Log in <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="#pricing">Get access</a></div>
+  <div class="cta"><a class="btn glow" href="app/index.html">Log in <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn line" href="#pricing" data-pricing>Get access to the app</a></div>
 </div></section>
 
 <section class="sec center" id="styles" style="padding-top:0"><div class="wrap">
@@ -341,25 +374,12 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
     <div class="row"><button type="button" class="proj tall" data-video="https://www.mdgeditor.com/media/projects/car.mp4" data-title="Reel"><span class="pic"><img src="media/p-car.jpg" width="540" height="960" loading="lazy" alt="Reel, personal brand"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>Reel</b><span>Personal brand</span></span></button><button type="button" class="proj tall" data-video="https://www.mdgeditor.com/media/projects/bakery.mp4" data-title="Real estate ad"><span class="pic"><img src="media/p-bakery.jpg" width="540" height="960" loading="lazy" alt="Real estate ad, property developer"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>Real estate ad</b><span>Property developer</span></span></button><div class="col"><button type="button" class="proj land" data-video="https://www.mdgeditor.com/media/full/james.mp4" data-title="VSL"><span class="pic"><img src="media/p-james.jpg" width="1280" height="720" loading="lazy" alt="VSL, paid-ads offer"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>VSL</b><span>Paid-ads offer</span></span></button><button type="button" class="proj land" data-video="https://www.mdgeditor.com/media/full/serge.mp4" data-title="VSL"><span class="pic"><img src="media/p-serge.jpg" width="1280" height="720" loading="lazy" alt="VSL, ai automation"><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M8 5.5v13l11-6.5z"/></svg></span></span><span class="cap"><b>VSL</b><span>AI automation</span></span></button></div></div></div>
 </div></section>
 
-<section class="sec center" id="pricing"><div class="wrap">
-  <h2 class="display">Get MDG Editor.</h2>
-  <div class="plans">
-    <div class="plan dk"><div class="top"><span>AI editor</span><span class="pop"><i></i>Most popular</span></div>
-      <div class="nm">MDG Editor</div><div class="pr">€997</div><div class="sm">One payment. Lifetime access.</div>
-      <ul><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Edits long-form: VSLs, YouTube videos, podcasts</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Cuts reels and short-form from the videos you already have</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Motion graphics, sound effects and music</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Edits in your style</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>1:1 onboarding call</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>All future updates</span></li></ul>
-      <div class="acts"><a class="btn light wide" href="https://buy.stripe.com/8x2cMZ2iXdGV6Qi3931oI0i">Get access to MDG Editor <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn dline wide" href="https://www.mdgeditor.com/book">See how it works for you</a></div></div>
-    <div class="plan lt"><div class="top"><span>MDG for brands</span></div>
-      <div class="nm">Brands &amp; Companies</div><div class="pr">Enterprise</div><div class="sm">Pricing on a call with our team.</div>
-      <div class="plus">Everything in MDG Editor, plus:</div>
-      <ul style="margin-top:12px"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>We build your styles and set up everything for you</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>We onboard and train your team</span></li></ul>
-      <div class="acts"><a class="btn ghost wide" href="https://www.mdgeditor.com/brands">Talk to our team</a></div></div>
-  </div>
-  <p class="fine">Runs in Claude Code. Needs a paid Claude plan, billed separately by Anthropic.</p>
-  <div class="book" id="book"><div><h2>Want to see how it would work for you?</h2><p>Book a short call and see how it would work for your content.</p></div><a class="btn light" href="https://www.mdgeditor.com/book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Pick a time</a></div>
+<section class="sec" id="book"><div class="wrap">
+  <div class="book"><div><h2>Want to see how it would work for you?</h2><p>Answer five quick questions and pick a time for a demo call on your kind of footage.</p></div><button type="button" class="btn light" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a demo call</button></div>
 </div></section>
 
 <section class="sec" id="faq" style="padding-top:0"><div class="wrap faq">
-  <div class="left"><h2 class="display">Questions,<br>answered.</h2><p>Something else on your mind?</p><a class="btn ghost" href="https://www.mdgeditor.com/book"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a call</a></div>
+  <div class="left"><h2 class="display">Questions,<br>answered.</h2><p>Something else on your mind?</p><button type="button" class="btn ghost" data-apply><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a demo call</button></div>
   <div><details><summary>What does the onboarding look like?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Right after you pay, you book your 1:1 call. On the call we install MDG Editor on your computer with you, connect it to your editing app and make your first edit together, so you leave with a finished video and a setup ready for the next one.</p></details><details><summary>How much does it cost to run?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>MDG Editor is one payment of €997, with lifetime access. There are no credits and no monthly fee from us. It runs inside Claude, and the $20 a month Claude Pro plan is enough to run it. If you edit several videos every day, a bigger Claude plan gives you more room.</p></details><details><summary>Do I need to know how to edit?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>No. You tell it what you want in plain words, the way you would brief an editor, and it does the edit. If you do edit, every cut is a real clip on your timeline, so you can change anything by hand.</p></details><details><summary>What do I need to run it?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>A Mac or a Windows computer, Claude Code (free to install) and a paid Claude plan. It works with Premiere Pro, DaVinci Resolve, Final Cut Pro and CapCut, or with no editing app at all. We set it all up with you on the onboarding call.</p></details><details><summary>Can it edit in my style?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Yes. Your style (fonts, colours, captions and the way you like your cuts) is saved once and used on every video.</p></details><details><summary>How do I log in?<i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></i></summary><p>Open your invite link once and you are in. After that, Log in on this page takes you back to your workspace in the same browser.</p></details></div>
 </div></section>
 </main>
@@ -367,12 +387,46 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
 <footer><div class="wrap">
   <div class="fgrid">
     <div><a class="wm" href="#top"><b>Creator</b>Hub</a><p>The most advanced AI video editor, produced by MDG.</p></div>
-    <div><h4>Product</h4><a href="#top">Watch the film</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#projects">Real projects</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
-    <div><h4>Get started</h4><a href="https://www.mdgeditor.com/book">See how it works for you</a><a href="#pricing">Get access</a><a href="app/index.html">Log in</a></div>
+    <div><h4>Product</h4><a href="#top">Watch the film</a><a href="#platform">Platform</a><a href="#styles">Styles</a><a href="#academy">Academy</a><a href="#projects">Real projects</a><a href="#pricing" data-pricing>Pricing</a><a href="#faq">FAQ</a></div>
+    <div><h4>Get started</h4><a href="#book" data-apply>Book a demo call</a><a href="#pricing" data-pricing>Get access to the app</a><a href="app/index.html">Log in</a></div>
     <div><h4>Contact</h4><a href="mailto:mateo@mdg-growth.com">mateo@mdg-growth.com</a><a href="https://instagram.com/MateoDiGiusto" rel="noopener">Instagram</a><a href="https://www.mdgeditor.com" rel="noopener">mdgeditor.com</a></div>
   </div>
   <div class="legal"><span>© 2026 MDG Growth LLC. MDG Editor runs in Claude Code and needs a paid Claude plan.</span><span>Claude and Claude Code are trademarks of Anthropic, PBC. MDG Editor is an independent product and is not affiliated with or endorsed by Anthropic.</span></div>
 </div></footer>
+
+<dialog class="win-dlg" id="pricing-dlg" aria-labelledby="pricing-t"><div class="dlg-in">
+  <button type="button" class="x dlg-x" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <h2 class="display" id="pricing-t">Get access to the app.</h2>
+  <p class="lede" style="margin:12px auto 0">MDG Editor runs inside CreatorHub: your edits, your styles, your planner and the Academy behind one login.</p>
+  <div class="plans">
+    <div class="plan dk"><div class="top"><span>AI editor</span><span class="pop"><i></i>Most popular</span></div>
+      <div class="nm">MDG Editor</div><div class="pr">€997</div><div class="sm">One payment. Lifetime access.</div>
+      <ul><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Edits long-form: VSLs, YouTube videos, podcasts</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Cuts reels and short-form from the videos you already have</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Motion graphics, sound effects and music</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>Edits in your style</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>1:1 onboarding call</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.5-1.5 2.5 2.5 5.4-5.4 1.5 1.5-6.9 6.9Z"/></svg><span>All future updates</span></li></ul>
+      <div class="acts"><a class="btn light wide" href="https://buy.stripe.com/8x2cMZ2iXdGV6Qi3931oI0i">Get access to the app <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><button type="button" class="btn dline wide" data-apply>See how it works for you</button></div></div>
+    <div class="plan lt"><div class="top"><span>MDG for brands</span></div>
+      <div class="nm">Brands &amp; Companies</div><div class="pr">Enterprise</div><div class="sm">Pricing on a call with our team.</div>
+      <div class="plus">Everything in MDG Editor, plus:</div>
+      <ul style="margin-top:12px"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>We build your styles and set up everything for you</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>We onboard and train your team</span></li></ul>
+      <div class="acts"><button type="button" class="btn ghost wide" data-apply="Brand or company">Talk to our team</button></div></div>
+  </div>
+  <p class="fine">Runs in Claude Code. Needs a paid Claude plan, billed separately by Anthropic.</p>
+</div></dialog>
+
+<dialog class="win-dlg ap" id="apply-dlg" aria-labelledby="ap-t"><div class="dlg-in">
+  <button type="button" class="x dlg-x" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div class="ap-step" data-step="intro"><span class="chip"><i></i>Free demo call</span><h2 class="display" id="ap-t">Want to see how this works for your content?</h2><p class="lede">Answer five quick questions, then pick a time. We show you MDG Editor on your kind of footage.</p>
+    <div class="cta"><button type="button" class="btn glow" data-go="0">Book a demo call <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button type="button" class="btn ghost" data-close>Not now</button></div></div>
+  <div class="ap-step" data-step="0" hidden><p class="ap-n">Question 1 of 6</p><h2 class="ap-q">Which fits you best?</h2><div class="ap-opts"><button type="button" class="ap-o" data-key="who" data-val="Creator or personal brand">Creator or personal brand</button><button type="button" class="ap-o" data-key="who" data-val="Business owner">Business owner</button><button type="button" class="ap-o" data-key="who" data-val="Agency or editor">Agency or editor</button><button type="button" class="ap-o" data-key="who" data-val="Brand or company">Brand or company</button></div></div><div class="ap-step" data-step="1" hidden><p class="ap-n">Question 2 of 6</p><h2 class="ap-q">What do you make most?</h2><div class="ap-opts"><button type="button" class="ap-o" data-key="makes" data-val="Talking-head reels">Talking-head reels</button><button type="button" class="ap-o" data-key="makes" data-val="YouTube videos">YouTube videos</button><button type="button" class="ap-o" data-key="makes" data-val="Podcasts">Podcasts</button><button type="button" class="ap-o" data-key="makes" data-val="Ads and VSLs">Ads and VSLs</button><button type="button" class="ap-o" data-key="makes" data-val="Something else">Something else</button></div><button type="button" class="ap-back" data-go="0">Back</button></div><div class="ap-step" data-step="2" hidden><p class="ap-n">Question 3 of 6</p><h2 class="ap-q">How many videos a week?</h2><div class="ap-opts"><button type="button" class="ap-o" data-key="volume" data-val="1 to 2">1 to 2</button><button type="button" class="ap-o" data-key="volume" data-val="3 to 5">3 to 5</button><button type="button" class="ap-o" data-key="volume" data-val="6 to 10">6 to 10</button><button type="button" class="ap-o" data-key="volume" data-val="More than 10">More than 10</button></div><button type="button" class="ap-back" data-go="1">Back</button></div><div class="ap-step" data-step="3" hidden><p class="ap-n">Question 4 of 6</p><h2 class="ap-q">Who edits them now?</h2><div class="ap-opts"><button type="button" class="ap-o" data-key="editor" data-val="I do it myself">I do it myself</button><button type="button" class="ap-o" data-key="editor" data-val="An editor">An editor</button><button type="button" class="ap-o" data-key="editor" data-val="An agency">An agency</button><button type="button" class="ap-o" data-key="editor" data-val="Nobody yet">Nobody yet</button></div><button type="button" class="ap-back" data-go="2">Back</button></div><div class="ap-step" data-step="4" hidden><p class="ap-n">Question 5 of 6</p><h2 class="ap-q">What do you want most?</h2><div class="ap-opts"><button type="button" class="ap-o" data-key="goal" data-val="Save time">Save time</button><button type="button" class="ap-o" data-key="goal" data-val="Better quality">Better quality</button><button type="button" class="ap-o" data-key="goal" data-val="More videos">More videos</button><button type="button" class="ap-o" data-key="goal" data-val="More leads and sales">More leads and sales</button></div><button type="button" class="ap-back" data-go="3">Back</button></div>
+  <form class="ap-step" data-step="5" id="ap-form" hidden novalidate><p class="ap-n">Last step</p><h2 class="ap-q">Where do we send the invite?</h2>
+    <label class="ap-f">Your name<input name="name" autocomplete="name" required maxlength="120"></label>
+    <label class="ap-f">Email<input name="email" type="email" autocomplete="email" required maxlength="200"></label>
+    <label class="ap-f">Instagram <small>(optional)</small><input name="instagram" placeholder="@yourhandle" maxlength="60" autocapitalize="off"></label>
+    <label class="ap-hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+    <p class="ap-err" id="ap-err" role="alert"></p>
+    <div class="ap-row"><button type="button" class="ap-back" data-go="4">Back</button><button type="submit" class="btn glow" id="ap-send">See the times <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <p class="fine" style="margin-top:12px">Your answers go to the MDG team only, to prepare the call.</p></form>
+  <div class="ap-step" data-step="cal" hidden><h2 class="ap-q" style="margin-bottom:4px">Pick a time that suits you.</h2><p class="fine" style="margin:0 0 12px">Your name and email are filled in. <a id="ap-cal-link" href="https://calendly.com/mateo-digiusto1/30min" target="_blank" rel="noopener">Open the calendar in a new tab</a></p><div class="ap-cal" id="ap-cal"></div></div>
+</div></dialog>
 
 <dialog class="lb" id="lb" aria-label="Video"><button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button><video controls playsinline preload="none"></video><p hidden>This video did not load here. <a href="https://www.mdgeditor.com/#projects" rel="noopener">Watch it on mdgeditor.com</a></p></dialog>
 <script>
@@ -401,6 +455,51 @@ footer{border-top:1px solid var(--line);padding:44px 0 36px;background:rgba(255,
   lb.querySelector(".x").addEventListener("click", shut);
   lb.addEventListener("click", function (e) { if (e.target === lb) shut(); });
   lb.addEventListener("close", function () { lv.pause(); });
+
+  // pricing opens in a window from every "Get access"
+  var pd = document.getElementById("pricing-dlg"), ad = document.getElementById("apply-dlg");
+  function openDlg(d){ document.querySelectorAll("dialog[open]").forEach(function (x) { if (x !== d) x.close(); }); if (!d.open) d.showModal(); }
+  document.querySelectorAll("[data-pricing]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); openDlg(pd); }); });
+  [pd, ad].forEach(function (d) { d.addEventListener("click", function (e) { if (e.target === d || e.target.closest("[data-close]")) { if (d === ad) later(); d.close(); } }); });
+  if (location.hash === "#pricing") openDlg(pd);
+
+  // the demo call: five taps, a name and an email, then the calendar
+  var KEY = "ch-demo", answers = {}, preset = "";
+  function mem(v){ try { if (v === undefined) return localStorage.getItem(KEY) || ""; localStorage.setItem(KEY, v); } catch (e) { return ""; } }
+  function later(){ if (mem() !== "applied") mem("later:" + Date.now()); }
+  function step(n){ ad.querySelectorAll(".ap-step").forEach(function (x) { x.hidden = x.dataset.step !== String(n); }); var f = ad.querySelector('.ap-step[data-step="' + n + '"] button, .ap-step[data-step="' + n + '"] input'); if (f) f.focus(); }
+  function startApply(who, intro){ answers = {}; preset = who || ""; if (preset) answers.who = preset; ad.querySelectorAll(".ap-o").forEach(function (o) { o.setAttribute("aria-pressed", String(answers[o.dataset.key] === o.dataset.val)); }); openDlg(ad); step(intro ? "intro" : (preset ? 1 : 0)); }
+  document.querySelectorAll("[data-apply]").forEach(function (b) { b.addEventListener("click", function (e) { e.preventDefault(); startApply(b.dataset.apply, false); }); });
+  ad.querySelectorAll("[data-go]").forEach(function (b) { b.addEventListener("click", function () { var n = Number(b.dataset.go); if (n === 0 && preset) n = 1; step(n); }); });
+  ad.querySelectorAll(".ap-o").forEach(function (o) { o.addEventListener("click", function () {
+    answers[o.dataset.key] = o.dataset.val; o.parentNode.querySelectorAll(".ap-o").forEach(function (x) { x.setAttribute("aria-pressed", String(x === o)); });
+    var i = Number(o.closest(".ap-step").dataset.step); setTimeout(function () { step(i + 1); }, 140);
+  }); });
+  var form = document.getElementById("ap-form"), err = document.getElementById("ap-err"), send = document.getElementById("ap-send");
+  form.addEventListener("submit", function (e) {
+    e.preventDefault(); err.textContent = "";
+    var fd = new FormData(form), name = String(fd.get("name") || "").trim(), email = String(fd.get("email") || "").trim(), ig = String(fd.get("instagram") || "").trim();
+    if (!name){ err.textContent = "Add your name."; form.elements.namedItem("name").focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ err.textContent = "Add an email address we can reach you on."; form.elements.namedItem("email").focus(); return; }
+    send.disabled = true;
+    var done = function () { mem("applied"); send.disabled = false; showCal(name, email, ig); };
+    if (String(fd.get("website") || "").trim()) { done(); return; }
+    fetch("https://knlkkdabdhficbzxtffb.supabase.co/rest/v1/studio_applications", {method:"POST", headers:{apikey:"sb_publishable_I1FTk_MHQquyqGofxlCM3Q_Znk5FWCQ", "content-type":"application/json", prefer:"return=minimal"}, body:JSON.stringify({name:name, email:email, instagram:ig, answers:answers, page:location.href.slice(0, 300), user_agent:navigator.userAgent.slice(0, 400)})})
+      .then(done, done);
+  });
+  function showCal(name, email, ig){
+    var a1 = ["who", "makes", "volume", "editor", "goal"].map(function (k) { return answers[k]; }).filter(Boolean).join(" · ") + (ig ? " · " + ig : "");
+    var q = "?name=" + encodeURIComponent(name) + "&email=" + encodeURIComponent(email) + "&a1=" + encodeURIComponent(a1);
+    document.getElementById("ap-cal-link").href = "https://calendly.com/mateo-digiusto1/30min" + q;
+    var box = document.getElementById("ap-cal"); box.innerHTML = "";
+    var f = document.createElement("iframe"); f.title = "Book a demo call"; f.src = "https://calendly.com/mateo-digiusto1/30min" + q + "&embed_type=Inline&hide_gdpr_banner=1&embed_domain=" + encodeURIComponent(location.hostname || "creatorhub");
+    box.appendChild(f); step("cal");
+  }
+  // after a few seconds on the page, ask once; a "Not now" waits a week
+  var seen = mem(), wait = /^later:(\d+)$/.exec(seen), quiet = seen === "applied" || (wait && Date.now() - Number(wait[1]) < 7 * 864e5);
+  ad.addEventListener("close", later);
+  function pop(){ if (document.querySelector("dialog[open]") || document.hidden) { setTimeout(pop, 8000); return; } startApply("", true); }
+  if (!quiet) setTimeout(pop, 12000);
 })();
 </script>
 </body>

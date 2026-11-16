@@ -1213,6 +1213,16 @@ h3,.h3{font-weight:700;letter-spacing:-.02em}
   .rail,.tabbar,#toast{display:none!important}
 }
 a.tree-item{text-decoration:none}
+/* the brief Claude gets */
+.brief-out{margin:0;white-space:pre-wrap;word-break:break-word;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink-2);background:var(--glass-2);border:1px solid var(--line);border-radius:16px;padding:16px 18px;max-height:440px;overflow:auto}
+textarea.brief-out.edit{width:100%;min-height:320px;resize:vertical;color:var(--ink);background:var(--field-bg);border-color:var(--line-2)}
+textarea.brief-out.edit:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.seg.extras button{font-size:12.5px}
+.crumbs .path a.home{color:var(--ink-3);text-decoration:none;border-radius:6px;padding:2px 4px;margin:-2px -4px}
+.crumbs .path a.home:hover{color:var(--ink);background:var(--hover)}
+.crumbs .path button.up{all:unset;cursor:pointer;color:var(--ink-3);border-radius:6px;padding:2px 4px;margin:-2px -4px}
+.crumbs .path button.up:hover{color:var(--ink);background:var(--hover)}
+.crumbs .path button.up:focus-visible{outline:2px solid var(--accent)}
 
 </style>
 </head>
@@ -2290,7 +2300,7 @@ function renderCrumbs(){
   const c = $("#crumbs"); const m = VIEW_META[S.view];
   const V = Views[S.view]; const sub = (V && V.crumb && V.crumb()) || (m.subs && m.tabKey ? ((m.subs.find(s => s[0] === S.ui[m.tabKey]) || [])[1] || "") : "");
   const q = h("input", {class:"ctl search", type:"search", placeholder:"Search or ask the assistant…", "aria-label":"Search or ask", onkeydown:e => { if (e.key === "Enter" && e.target.value.trim()){ openAssistant(e.target.value.trim()); e.target.value = ""; } }});
-  c.replaceChildren(h("div", {class:"path"}, h("span", {text:"CreatorHub"}), icon("chevR"), sub ? h("span", {text:m.label}) : h("b", {text:m.label}), sub ? icon("chevR") : null, sub ? h("b", {text:sub}) : null),
+  c.replaceChildren(h("div", {class:"path"}, h("a", {class:"home", href:"../index.html", title:"Go to the CreatorHub website", text:"CreatorHub"}), icon("chevR"), sub ? h("button", {type:"button", class:"up", title:"Back to " + m.label, onclick:() => go(S.view, viewSub(S.view))}, m.label) : h("b", {text:m.label}), sub ? icon("chevR") : null, sub ? h("b", {text:sub}) : null),
     h("span", {class:"grow"}), apiOK() ? q : null, apiOK() ? btn("Assistant", {class:"btn sm", onclick:() => openAssistant()}, "message") : null);
 }
 function renderBanners(){
@@ -2725,7 +2735,82 @@ function openStyleBuilder(id, onSaved){
 /* ---------- The screen ---------- */
 function edits(){ return listCol("projects").filter(p => p.jobId).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")); }
 function editOpen(p){ return p.status === "queued" || p.status === "working"; }
-function newDraft(){ return {title:"", sources:[], brief:"", insp:[], shots:[], styleId:defaultStyleId(), engine:defaultEngine(), format:"9:16", scriptId:""}; }
+function newDraft(){ return {title:"", sources:[], brief:"", insp:[], shots:[], styleId:defaultStyleId(), engine:defaultEngine(), format:"9:16", scriptId:"", extras:null, final:"", finalEdited:false}; }
+
+/* ---------- The brief Claude gets ----------
+   Built from everything on this screen, and richer than what was typed: a short "cut it and add captions" becomes a
+   numbered plan with the cut, the opening, the length, the captions, the graphics, the camera, the transitions, the sound
+   and the grade, in the words of the chosen style. The creator sees it and can change it. The server adds its own editing
+   rules and the HyperFrames or Premiere playbook on top when Claude Code picks the job up; those never come to the page. */
+const EXTRAS = [["captions", "Captions"], ["bigwords", "Big words"], ["graphics", "Motion graphics"], ["zooms", "Smooth zooms"], ["blur", "Blur transitions"], ["sfx", "Sound effects"], ["music", "Music"], ["grade", "Colour grade"]];
+const RICH = ["captions", "bigwords", "graphics", "zooms", "blur", "sfx", "grade"];
+const STYLE_EXTRAS = {bigcaps:["captions", "bigwords", "zooms", "sfx"], glass:["captions", "graphics", "zooms", "blur", "sfx"], realestate:["captions", "bigwords", "graphics", "zooms", "sfx", "music", "grade"], rating:["captions", "graphics", "sfx"], versus:["captions", "graphics", "sfx"], podcast:["captions", "zooms"], tutorial:["captions", "graphics", "zooms", "sfx"], clean:["captions"], editorial:["captions", "blur", "music", "grade"], minimal:["captions"]};
+const STYLE_LOOK = {
+  bigcaps:{captions:"white, heavy, all caps, two or three words at a time, the key word lit", graphics:"one to three huge words on the claim, the pain point and the numbers"},
+  glass:{captions:"sentence case in a frosted glass capsule, the spoken word brighter", graphics:"glass pills for names and places, glass cards for numbers, soft spring motion"},
+  realestate:{captions:"white and bold, just below the middle of the frame", graphics:"big white caps on the claim, red for problems, green for numbers, a glass tag on each place"},
+  rating:{captions:"white and bold in the lower third", graphics:"a score card for each thing rated, a running list of scores, the full ranking at the verdict"},
+  versus:{captions:"white and bold in the lower third", graphics:"a this-versus-that bar at the top, ticks and crosses per point, a winner tag at the verdict"},
+  podcast:{captions:"quote captions on a soft dark box, a name tag for whoever speaks", graphics:"a cold open on the strongest line and a thin progress bar"},
+  tutorial:{captions:"sentence case on a dark box, the key word in green", graphics:"a step counter, a title for each step and a recap card at the end"},
+  clean:{captions:"sentence case on a soft dark box in the lower third", graphics:"one hook line at the top for the first three seconds"},
+  editorial:{captions:"serif, warm white, fading in", graphics:"serif title lines with a thin rule, held for two seconds"},
+  minimal:{captions:"small and light, low in the frame", graphics:"at most one line of text, for the single most important claim"}};
+function styleBase(styleId){ const st = styleById(styleId); return st.custom ? st.base : st.id; }
+function draftExtras(d){ return d.extras || STYLE_EXTRAS[styleBase(d.styleId)] || ["captions"]; }
+function extraLine(k, look, custom){
+  return {
+    captions:"Captions: " + (custom ? "as my style describes them" : look.captions) + ", timed to each word, inside the safe area.",
+    bigwords:"Big words: the hook claim, the key numbers and the call to action as large text on screen, only on the words that carry the point. Hide the caption while a big word is up.",
+    graphics:"Motion graphics: " + (custom ? "as my style describes them" : look.graphics) + ". One graphic per idea; take one away before adding another.",
+    zooms:"Camera: a smooth push-in through the video and a punch-in on a claim or a number, then back. Never on every line.",
+    blur:"Transitions: a soft blur or whip between sections, so it flows. No hard jumps inside a graphic.",
+    sfx:"Sound effects: a soft whoosh on each transition and a light pop on each graphic, well under the voice.",
+    music:"Music: a bed from my own music files, well under the voice, fading out at the end.",
+    grade:"Colour: an even, clean grade, with the clips matched to each other."}[k];
+}
+function lengthAsked(text){
+  const t = String(text || ""); const m = /(\d{1,3})\s*(?:-|\s)?(s|sec|secs|seconds?|min|mins|minutes?)\b/i.exec(t); if (!m) return "";
+  const n = Number(m[1]); return /^m/i.test(m[2]) ? n + " minute" + (n === 1 ? "" : "s") : n + " seconds";
+}
+function buildBrief(d){
+  const st = styleById(d.styleId); const look = STYLE_LOOK[styleBase(d.styleId)] || STYLE_LOOK.bigcaps; const ex = new Set(draftExtras(d));
+  const said = String(d.brief || "").trim(); const len = lengthAsked(said); const sc = d.scriptId && getDoc("scripts", d.scriptId);
+  const kinds = {folder:"Folder on my computer", file:"File on my computer", link:"Link, download it first", name:"Clip on my computer"};
+  const fmt = (FORMATS.find(f => f[0] === d.format) || FORMATS[0])[1];
+  const steps = ["Cut: remove the pauses, false starts and repeated takes. Keep the best take of each line and cut on the word, so nothing is clipped.",
+    "Opening: start on the strongest line. The first three seconds carry the hook.",
+    "Length: " + (len ? "under " + len + ". Cut whole ideas to get there; never speed up the voice." : "as tight as the story allows. Cut whole ideas, never speed up the voice.")];
+  for (const [k] of EXTRAS) if (ex.has(k)) steps.push(extraLine(k, look, st.custom));
+  const parts = [
+    "WHAT I WANT\n" + (said || "The best short-form edit of this footage: one that holds attention to the end."),
+    "MY FOOTAGE\n" + (d.sources.length ? d.sources.map(x => "- " + (kinds[x.kind] || "Clip") + ": " + x.value + (x.kind === "name" && x.size ? " (" + clipSize(x.size) + ")" : "")).join("\n") : "- The folder this Claude Code session is open in."),
+    "THE EDIT\n" + steps.map((x, i) => (i + 1) + ". " + x).join("\n"),
+    "STYLE\n" + st.name + ": " + (st.custom ? (st.description || st.desc) : st.desc)];
+  if (d.insp.length || d.shots.length) parts.push("INSPIRATION\nMake it feel like " + [...d.insp.map(x => x.value), d.shots.length ? "the " + d.shots.length + " screenshot" + (d.shots.length === 1 ? "" : "s") + " attached" : ""].filter(Boolean).join(" and ") + ". Borrow the feel, never their footage or words.");
+  if (sc) parts.push("SCRIPT\nFilmed from my script \u201c" + (sc.title || "Untitled") + "\u201d. Where the footage differs, the footage wins.");
+  parts.push("MADE WITH\n" + (d.engine === "premiere" ? "Premiere Pro. Work in a copy of my project; I look it over and export it myself." : "HyperFrames, no editing program. Hand me the finished MP4.") + " Format: " + fmt + ".");
+  parts.push("WHEN IT IS DONE\nTell me where the file is, what you cut and added, and how long it runs.");
+  return parts.join("\n\n");
+}
+function finalBrief(d){ return d.finalEdited && d.final.trim() ? d.final.trim() : buildBrief(d); }
+function refreshBrief(){ const d = EDJ.draft; const el = $("#ec-final-view"); if (d && el && !d.finalEdited) el.textContent = buildBrief(d); }
+function briefStep(d){
+  const ex = new Set(draftExtras(d));
+  const toggles = h("div", {class:"seg extras", role:"group", "aria-label":"What to add"}, EXTRAS.map(([k, l]) => h("button", {type:"button", "data-extra":k, "aria-pressed":String(ex.has(k)), onclick:() => { const s = new Set(draftExtras(d)); s.has(k) ? s.delete(k) : s.add(k); d.extras = EXTRAS.map(x => x[0]).filter(x => s.has(x)); edRedraw(); }}, l)));
+  const allRich = RICH.every(k => ex.has(k));
+  const richer = btn(allRich ? "Rich already" : "Make it richer", {class:"btn sm", id:"ec-richer", disabled:allRich, onclick:() => { d.extras = EXTRAS.map(x => x[0]).filter(x => ex.has(x) || RICH.includes(x)); edRedraw(); }}, "wand");
+  const view = d.finalEdited
+    ? bindText(h("textarea", {id:"ec-final", rows:"16", class:"brief-out edit", "aria-label":"Your brief for Claude"}), v => { d.final = v; }, 0)
+    : h("pre", {class:"brief-out", id:"ec-final-view", tabindex:"0", "aria-label":"Your brief for Claude"}, buildBrief(d));
+  if (d.finalEdited) view.value = d.final;
+  return [h("div", {class:"toolbar"}, toggles, richer),
+    view,
+    h("div", {class:"toolbar"}, d.finalEdited
+        ? btn("Rebuild from my choices", {class:"btn sm ghost", id:"ec-rebuild", onclick:() => { d.finalEdited = false; d.final = ""; edRedraw(); }}, "refresh")
+        : btn("Edit the brief", {class:"btn sm ghost", id:"ec-edit-brief", onclick:() => { d.final = buildBrief(d); d.finalEdited = true; edRedraw(); setTimeout(() => { const t = $("#ec-final"); if (t) t.focus(); }, 30); }}, "pen"),
+      h("span", {class:"meta", text:"CreatorHub adds its editing rules and the " + engineName(d.engine) + " steps when Claude Code picks this up."}))];
+}
 Views.editor = {
   crumb(){ return ""; },
   mount(root){ EDJ.mounted = true; if (!EDJ.draft) EDJ.draft = newDraft(); if (S.ui.useScript){ EDJ.draft.scriptId = S.ui.useScript; S.ui.useScript = null; } this.update(root, true); syncEdits(); },
@@ -2825,10 +2910,10 @@ function composer(){
     const n = addSources(d.sources, dt.getData("text/uri-list") || dt.getData("text/plain")) + addPicked(d.sources, dt.files);
     if (n){ clearErr(); edRedraw(); }
   });
-  const brief = bindText(h("textarea", {id:"ec-brief", rows:"3", placeholder:"Cut the pauses and keep the best take of each line. Add captions. Make it under 40 seconds and open on the strongest line."}), v => { d.brief = v; clearErr(); }, 0); brief.value = d.brief;
-  const mic = micButton(t => { d.brief = t; const ta = $("#ec-brief"); if (ta) ta.value = t; clearErr(); });
-  const sel = h("select", {id:"ec-script", class:"ctl", "aria-label":"Script", onchange:e => { d.scriptId = e.target.value; }}, opt("", "No script"), scripts.map(sc => opt(sc.id, sc.title || "Untitled"))); sel.value = d.scriptId; if (sel.value !== d.scriptId) d.scriptId = "";
-  const fmt = h("select", {id:"ec-format", class:"ctl", "aria-label":"Format", onchange:e => { d.format = e.target.value; }}, FORMATS.map(([v, l]) => opt(v, l))); fmt.value = d.format;
+  const brief = bindText(h("textarea", {id:"ec-brief", rows:"3", placeholder:"Cut the pauses and keep the best take of each line. Add captions. Make it under 40 seconds and open on the strongest line."}), v => { d.brief = v; clearErr(); refreshBrief(); }, 0); brief.value = d.brief;
+  const mic = micButton(t => { d.brief = t; const ta = $("#ec-brief"); if (ta) ta.value = t; clearErr(); refreshBrief(); });
+  const sel = h("select", {id:"ec-script", class:"ctl", "aria-label":"Script", onchange:e => { d.scriptId = e.target.value; refreshBrief(); }}, opt("", "No script"), scripts.map(sc => opt(sc.id, sc.title || "Untitled"))); sel.value = d.scriptId; if (sel.value !== d.scriptId) d.scriptId = "";
+  const fmt = h("select", {id:"ec-format", class:"ctl", "aria-label":"Format", onchange:e => { d.format = e.target.value; refreshBrief(); }}, FORMATS.map(([v, l]) => opt(v, l))); fmt.value = d.format;
   const insp = sourceInput("ec-insp", d.insp, "Paste a link to an edit you like", null);
   const shots = h("input", {type:"file", accept:"image/*", multiple:true, class:"sr", id:"ec-shots", onchange:e => { for (const f of [...e.target.files]) if (d.shots.length < 4) d.shots.push(f); e.target.value = ""; edRedraw(); }});
   const off = S.claude.status === "soon" || S.claude.status === "nocode" || S.claude.status === "denied" || S.claude.status === "offline" || S.claude.status === "absent";
@@ -2838,9 +2923,9 @@ function composer(){
       foot, sourceChips(d.sources)),
     step(2, "What do you want?", "Type it or say it",
       h("div", {class:"ec-brief"}, brief, mic, h("p", {class:"err", id:"ec-mic-msg", "aria-live":"polite", hidden:!EDJ.micMsg, text:EDJ.micMsg || ""})),
-      h("div", {class:"suggest"}, BRIEF_CHIPS.map(c => h("button", {type:"button", onclick:() => { d.brief = (d.brief.trim() ? d.brief.trim().replace(/[.]?$/, ". ") : "") + c + "."; brief.value = d.brief; clearErr(); brief.focus(); }}, c))),
+      h("div", {class:"suggest"}, BRIEF_CHIPS.map(c => h("button", {type:"button", onclick:() => { d.brief = (d.brief.trim() ? d.brief.trim().replace(/[.]?$/, ". ") : "") + c + "."; brief.value = d.brief; clearErr(); refreshBrief(); brief.focus(); }}, c))),
       scripts.length ? h("div", {class:"toolbar"}, h("label", {class:"meta", for:"ec-script", text:"Filmed from a script?"}), sel) : null),
-    step(3, "Pick a style", "Or create your own", styleGallery(d.styleId, sid => { d.styleId = sid; render(); }),
+    step(3, "Pick a style", "Or create your own", styleGallery(d.styleId, sid => { d.styleId = sid; d.extras = null; render(); }),
       h("div", {class:"ec-insp"}, h("label", {for:"ec-insp", text:"Going for a specific look? Show it an edit you like."}),
         h("div", {class:"toolbar"}, h("div", {class:"grow"}, insp), h("label", {class:"btn", for:"ec-shots"}, icon("image"), "Add screenshots", shots)),
         sourceChips(d.insp),
@@ -2848,6 +2933,7 @@ function composer(){
     step(4, "How should it be made?", null,
       h("div", {class:"engines", role:"group", "aria-label":"Made with"}, ENGINES.map(e => h("button", {type:"button", class:"engine", "data-engine":e.id, "aria-pressed":String(d.engine === e.id), onclick:() => { d.engine = e.id; render(); }}, h("b", {text:e.name}), h("span", {text:e.desc})))),
       h("div", {class:"toolbar"}, h("label", {class:"meta", for:"ec-format", text:"Format"}), fmt)),
+    step(5, "Your brief for Claude", "Built from everything above. Add more, or change any line.", ...briefStep(d)),
     h("div", {class:"ec-run"}, h("span", {class:"meta", text:"Runs in Claude Code on your computer, on your own Claude plan."}), h("span", {class:"err", id:"ec-err", "aria-live":"polite", text:EDJ.err}),
       btn(EDJ.sending ? "Sending…" : "Run it through Claude", {class:"btn ai lg", id:"ec-go", disabled:EDJ.sending || off, onclick:runEdit}, "play")));
 }
@@ -2866,7 +2952,7 @@ async function runEdit(){
   const st = styleById(d.styleId); const sc = d.scriptId && getDoc("scripts", d.scriptId); const title = editTitle(d); const folder = sourceFolder(d.sources);
   const lite = list => list.map(x => ({kind:x.kind, value:x.value, ...(x.size ? {size:x.size} : {}), ...(x.modified ? {modified:new Date(x.modified).toISOString().slice(0, 10)} : {})}));
   try {
-    const r = await brainPost("job_create", {kind:"edit", title, payload:{brief:d.brief.trim(), engine:d.engine, format:d.format, styleId:st.id, styleName:st.name, style:stylePayload(st.id), footage:{sources:lite(d.sources)}, inspiration:{refs:lite(d.insp)}, script:sc ? scriptText(sc) : "", profile:profileBlock()}}, {images:d.shots, small:true});
+    const r = await brainPost("job_create", {kind:"edit", title, payload:{brief:finalBrief(d), engine:d.engine, format:d.format, styleId:st.id, styleName:st.name, style:stylePayload(st.id), footage:{sources:lite(d.sources)}, inspiration:{refs:lite(d.insp)}, script:sc ? scriptText(sc) : "", profile:profileBlock()}}, {images:d.shots, small:true});
     const job = r.job;
     upsert("projects", job.id, {jobId:job.id, name:title, brief:d.brief.trim(), styleId:st.id, styleName:st.name, engine:d.engine, format:d.format, folder, sources:lite(d.sources), scriptId:d.scriptId || "", status:"queued", progress:"", summary:"", output:"", workFolder:"", createdAt:new Date().toISOString()});
     EDJ.draft = newDraft(); EDJ.draft.styleId = st.id; EDJ.draft.engine = d.engine;
