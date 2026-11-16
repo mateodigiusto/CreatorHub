@@ -1787,7 +1787,7 @@ function onRender(fn){ RenderSubs.add(fn); return () => RenderSubs.delete(fn); }
 const BRAIN = {url:String((window.CH_CONFIG && window.CH_CONFIG.brain) || "").replace(/\/$/, ""), code:"", key:"", serverKey:null, allowance:null, worker:null, queue:null};
 const BRAIN_LIMITS = {status:8000, job_get:15000, job_list:15000, job_create:60000, job_cancel:15000, job_retry:15000, job_delete:15000};
 const DIRECT = new Set(Object.keys(BRAIN_LIMITS));
-const TASKS = {script_write:"Write a script", script_humanize:"Make a script sound like you", competitor_analyze:"Study a competitor", competitor_extract:"Read a competitor’s posts", posts_extract:"Read your posts", hooks_tag:"Tag your hooks", numbers_read:"Read your numbers", lesson_teacher:"Answer a lesson question", profile_scan:"Read your profile", posts_sync:"Update your Instagram numbers", editor_help:"Answer a question"};
+const TASKS = {script_write:"Write a script", script_humanize:"Make a script sound like you", competitor_analyze:"Study a competitor", competitor_extract:"Read a competitor’s posts", posts_extract:"Read your posts", hooks_tag:"Tag your hooks", numbers_read:"Read your numbers", lesson_teacher:"Answer a lesson question", profile_scan:"Read your profile", posts_sync:"Update your Instagram numbers", competitor_sync:"Read a competitor’s Instagram", editor_help:"Answer a question"};
 function brainLoad(){ const b = pref("brain", null) || {}; BRAIN.code = String(b.code || ""); BRAIN.key = String(b.key || ""); BRAIN.serverKey = typeof b.serverKey === "boolean" ? b.serverKey : null; BRAIN.queue = typeof b.queue === "boolean" ? b.queue : null; BRAIN.worker = b.seen ? {seenAt:String(b.seen), active:false} : null; }
 function brainSave(){ setPref("brain", {code:BRAIN.code, key:BRAIN.key, serverKey:BRAIN.serverKey, queue:BRAIN.queue, seen:(BRAIN.worker && BRAIN.worker.seenAt) || ""}); }
 function apiOK(){ return !!(BRAIN.key || BRAIN.serverKey); }
@@ -2038,12 +2038,17 @@ function localDb(){
     } catch (e){ res(); }
   });
   const sub = (path, isCol, fn) => { const l = {path, isCol, fn}; listeners.push(l); ready.then(() => { if (listeners.includes(l)) fn(isCol ? snapCol(path) : snapDoc(path)); }); return () => { const i = listeners.indexOf(l); if (i >= 0) listeners.splice(i, 1); }; };
+  const changed = p => { if (db.onChange){ try { db.onChange(p); } catch (e){} } };
   const db = {
-    ready,
+    ready, onChange:null,
+    // What the account sends down: written here without counting as a change to send back up.
+    applyRemote(p, v){ if (v === undefined){ docs.delete(p); store(p, undefined); } else { const c = JSON.parse(JSON.stringify(v)); docs.set(p, c); store(p, c); } notify(p); },
+    read(p){ return docs.get(p); }, paths(){ return [...docs.keys()]; },
+    clearAll(){ for (const p of [...docs.keys()]){ docs.delete(p); store(p, undefined); notify(p); } },
     doc(p){ return {id:p.split("/").pop(), path:p, get:async () => { await ready; return snapDoc(p); },
-      set:async d => { const v = JSON.parse(JSON.stringify(d)); docs.set(p, v); store(p, v); notify(p); },
-      update:async d => { const v = {...(docs.get(p) || {}), ...JSON.parse(JSON.stringify(d))}; docs.set(p, v); store(p, v); notify(p); },
-      delete:async () => { docs.delete(p); store(p, undefined); notify(p); },
+      set:async d => { const v = JSON.parse(JSON.stringify(d)); docs.set(p, v); store(p, v); notify(p); changed(p); },
+      update:async d => { const v = {...(docs.get(p) || {}), ...JSON.parse(JSON.stringify(d))}; docs.set(p, v); store(p, v); notify(p); changed(p); },
+      delete:async () => { docs.delete(p); store(p, undefined); notify(p); changed(p); },
       onSnapshot:fn => sub(p, false, fn)}; },
     collection(c){ return {path:c, doc:id => db.doc(c + "/" + (id || uid("d"))), get:async () => { await ready; return snapCol(c); }, onSnapshot:fn => sub(c, true, fn)}; },
   };
@@ -2131,7 +2136,10 @@ const GATE = {prefill:"", msg:""};
 function loginInfo(){ const l = pref("login", null); return l && l.username && BRAIN.code && l.code === BRAIN.code ? l : null; }
 function signedIn(){ return !!loginInfo(); }
 function gated(){ return document.body.classList.contains("gated"); }
-function signOut(msg){
+async function signOut(msg){
+  // Anything not saved to the account yet goes up first; the key is needed for that.
+  if (SYNC.on && SYNC.dirty.size){ try { await Promise.race([syncQueue(syncPush), new Promise(r => setTimeout(r, 4000))]); } catch (e){} }
+  syncStop();
   setPref("login", null); setInvite(""); GATE.prefill = ""; GATE.msg = msg || "";
   try { history.replaceState(null, "", location.pathname); } catch (e){}
   closeAllLayers();
@@ -2172,12 +2180,114 @@ async function signIn(username, key, go, err){
     if (!r.ok || !j.ok) throw j;
     setInvite(key); setPref("login", {username:j.username, code:key, at:new Date().toISOString()});
     GATE.prefill = ""; GATE.msg = "";
-    hideGate(); render(); brainCheck(); pulse();
+    hideGate(); render(); brainCheck(); pulse(); await syncStart();
     if (j.first) toast("Welcome, " + j.username + ". That is your username from now on.");
   } catch (e){
     const c = e && e.code;
     err.textContent = c === "no_access" ? "That key is not in the system. Check it, or get access on the website." : c === "invite_off" ? "This key has been switched off." : c && e.message ? e.message : "Couldn’t reach CreatorHub. Check your connection and try again.";
   } finally { clearTimeout(t); go.disabled = false; go.textContent = "Sign in"; }
+}
+
+
+/* ---- 08-sync.js ---- */
+/* ===================== Your workspace, saved to your CreatorHub account =====================
+   Everything a creator makes is written to this browser first, so the app is instant and works offline, and is then
+   saved to the CreatorHub server under their key. Signing in on another device, clearing the browser or a new version
+   of the app all load the same workspace back. One thing runs at a time (a save or a load), so the two never cross. */
+const SYNC = {db:null, on:false, loading:false, owner:"", dirty:new Set(), cursor:"", chain:Promise.resolve(), pushT:0, retryT:0, savedAt:null, err:"", skipped:new Set()};
+const WS_ROOT = "data/users/me/";
+function wsRel(p){ return p.startsWith(WS_ROOT) ? p.slice(WS_ROOT.length) : null; }
+function stableJSON(v){ return JSON.stringify(v, (k, x) => x && typeof x === "object" && !Array.isArray(x) ? Object.keys(x).sort().reduce((o, key) => { o[key] = x[key]; return o; }, {}) : x); }
+function dirtySave(){ setPref("wsDirty", [...SYNC.dirty]); }
+function syncQueue(fn){ const run = SYNC.chain.then(fn, fn); SYNC.chain = run.catch(() => {}); return run; }
+function syncAttach(db){
+  SYNC.db = db;
+  db.onChange = p => { if (!signedIn()) return; const r = wsRel(p); if (r === null) return; SYNC.dirty.add(r); dirtySave(); if (!SYNC.on) return; clearTimeout(SYNC.pushT); SYNC.pushT = setTimeout(() => syncQueue(syncPush), 1200); };
+}
+async function wsPost(skill, vars, keepalive){
+  let res, j = null;
+  try { res = await fetch(BRAIN.url + "/", {method:"POST", headers:{"content-type":"application/json", "x-studio-code":BRAIN.code}, body:JSON.stringify({skill, vars}), keepalive:!!keepalive}); j = await res.json(); }
+  catch (e){ throw {code:"network"}; }
+  if (!j || !j.ok) throw {code:(j && j.code) || "upstream", message:(j && j.message) || ""};
+  return j;
+}
+/* Sign-in or opening the app: make this browser hold this person's workspace, and nobody else's. */
+async function syncStart(){
+  const me = loginInfo(); if (!me || !SYNC.db || !BRAIN.url) return;
+  try {
+    await SYNC.db.ready;
+    const prev = pref("wsOwner", "");
+    if (prev && prev !== me.username){ SYNC.on = false; SYNC.dirty = new Set(); setPref("wsDirty", []); setPref("wsCursor", ""); HP.msgs = []; SYNC.db.clearAll(); }
+    setPref("wsOwner", me.username);
+    SYNC.owner = me.username; SYNC.dirty = new Set([...pref("wsDirty", []), ...SYNC.dirty]); SYNC.cursor = pref("wsCursor", ""); SYNC.skipped = new Set(); SYNC.on = true;
+    // A browser that already holds this workspace opens straight away; an empty one waits for the account to load.
+    if (SYNC.db.read(WS_ROOT + "profile") === undefined){ SYNC.loading = true; render(); }
+    await Promise.race([syncQueue(syncPull), new Promise(r => setTimeout(r, 12000))]);
+  } catch (e){}
+  finally { SYNC.loading = false; render(); }
+  syncQueue(syncPush);
+}
+async function syncPull(){
+  if (!SYNC.on) return;
+  const owner = SYNC.owner; const full = !SYNC.cursor; const got = new Set();
+  // Ask again for the last few seconds before the cursor: a save that landed late is not missed, and applying one twice changes nothing.
+  let since = SYNC.cursor ? new Date(Date.parse(SYNC.cursor) - 5000).toISOString() : ""; let last = "";
+  try {
+    for (let i = 0; i < 80; i++){
+      const r = await wsPost("ws_pull", {since});
+      if (!SYNC.on || SYNC.owner !== owner) return;
+      for (const d of r.docs || []){
+        got.add(d.path); if (SYNC.dirty.has(d.path)) continue;
+        const p = WS_ROOT + d.path; const have = SYNC.db.read(p);
+        if (d.deleted || d.body === null){ if (have !== undefined) SYNC.db.applyRemote(p, undefined); }
+        else if (have === undefined || stableJSON(have) !== stableJSON(d.body)) SYNC.db.applyRemote(p, d.body);
+      }
+      if (r.docs && r.docs.length){ last = r.docs[r.docs.length - 1].at; since = last; }
+      if (!r.more) break;
+    }
+    if (last){ SYNC.cursor = last; setPref("wsCursor", last); }
+    // The first load on this browser: whatever was made here before and is not in the account yet goes up.
+    if (full){ for (const p of SYNC.db.paths()){ const rel = wsRel(p); if (rel !== null && !got.has(rel)) SYNC.dirty.add(rel); } dirtySave(); if (!last){ SYNC.cursor = new Date(Date.now() - 60000).toISOString(); setPref("wsCursor", SYNC.cursor); } }
+    SYNC.err = ""; if (!SYNC.savedAt) SYNC.savedAt = Date.now();
+  } catch (e){ SYNC.err = (e && e.code) || "network"; }
+  scheduleRender();
+}
+async function syncPush(keepalive){
+  if (!SYNC.on || !SYNC.dirty.size) return;
+  const owner = SYNC.owner;
+  try {
+    while (SYNC.dirty.size && SYNC.on && SYNC.owner === owner){
+      const batch = []; let size = 0;
+      for (const rel of SYNC.dirty){
+        const v = SYNC.db.read(WS_ROOT + rel); const body = v === undefined ? null : v; const js = JSON.stringify(body);
+        if (js.length > 290000){ SYNC.dirty.delete(rel); SYNC.skipped.add(rel); continue; }
+        if (batch.length && size + js.length > (keepalive ? 55000 : 1500000)) break;
+        batch.push({path:rel, body, js}); size += js.length; if (batch.length >= 40) break;
+      }
+      if (!batch.length) break;
+      if (keepalive && size > 55000) return;
+      await wsPost("ws_push", {docs:batch.map(b => ({path:b.path, body:b.body}))}, keepalive);
+      // Only what has not changed again while it was on its way counts as saved.
+      for (const b of batch){ const now = SYNC.db.read(WS_ROOT + b.path); if (JSON.stringify(now === undefined ? null : now) === b.js) SYNC.dirty.delete(b.path); }
+      dirtySave(); SYNC.savedAt = Date.now(); SYNC.err = "";
+      if (keepalive) break;
+    }
+  } catch (e){ SYNC.err = (e && e.code) || "network"; clearTimeout(SYNC.retryT); SYNC.retryT = setTimeout(() => syncQueue(syncPush), 15000); }
+  scheduleRender();
+}
+function syncNow(){ if (!SYNC.on) return Promise.resolve(); syncQueue(syncPush); return syncQueue(syncPull); }
+function syncStop(){ SYNC.on = false; clearTimeout(SYNC.pushT); clearTimeout(SYNC.retryT); }
+function syncWatch(){
+  setInterval(() => { if (SYNC.on && document.visibilityState === "visible") syncNow(); }, 45000);
+  document.addEventListener("visibilitychange", () => { if (!SYNC.on) return; if (document.visibilityState === "visible") syncNow(); else if (SYNC.dirty.size){ clearTimeout(SYNC.pushT); syncPush(true); } });
+  window.addEventListener("pagehide", () => { if (SYNC.on && SYNC.dirty.size) syncPush(true); });
+  window.addEventListener("online", () => { if (SYNC.on) syncNow(); });
+}
+function syncLine(){
+  if (!SYNC.on) return "";
+  if (SYNC.err && SYNC.dirty.size) return "Not saved to your account yet. It is kept in this browser and saves as soon as the connection is back.";
+  if (SYNC.dirty.size) return "Saving…";
+  return "Everything is saved to your account" + (SYNC.savedAt ? "." : ". It loads on any device you sign in on.");
 }
 
 
@@ -2325,7 +2435,8 @@ function wsButton(compact){
 function aiStatus(){
   const st = S.claude.status, why = S.claude.why;
   const map = {absent:["", "Claude not set up"], unknown:["", "Checking…"], offline:["off", "Can’t reach the server"], nocode:["wait", "Add your invite"], soon:["", "Claude Code: switching on"], waiting:["wait", "Connect Claude Code"], ready:["", "Claude Code is set up"], connected:["on", "Claude Code connected"], denied:["off", why === "off" ? "Invite switched off" : "Invite not valid"]}[st] || ["", "Claude Code"];
-  if (st === "ready" && !codeSeen()) return h("button", {type:"button", class:"status wait", onclick:connectModal}, h("span", {class:"led"}), h("span", {text:"Connect Claude Code"}));
+  // With AI running on the CreatorHub server, writing and questions work right here; Claude Code is only for edits and reading Instagram.
+  if (st === "ready" && !codeSeen()) return apiOK() ? h("button", {type:"button", class:"status on", id:"ai-on", onclick:() => go("settings", {settingsTab:"integrations"})}, h("span", {class:"led"}), h("span", {text:"AI is on"})) : h("button", {type:"button", class:"status wait", onclick:connectModal}, h("span", {class:"led"}), h("span", {text:"Connect Claude Code"}));
   return h("button", {type:"button", class:"status " + map[0], onclick:() => st === "connected" || st === "ready" ? go("settings", {settingsTab:"integrations"}) : connectModal()}, h("span", {class:"led"}), h("span", {text:map[1]}));
 }
 function navCounts(){
@@ -2371,6 +2482,7 @@ function renderMain(){
   if (!main.firstChild) main.append(h("div", {class:"crumbs", id:"crumbs"}), h("div", {id:"banners", class:"stack-s"}), h("div", {id:"view", class:"stack", style:"gap:18px"}));
   renderCrumbs(); renderBanners();
   const root = $("#view");
+  if (SYNC.loading){ S.mountedView = null; root.replaceChildren(h("div", {class:"loading", id:"ws-loading"}, h("span", {class:"spin"}), "Loading your workspace…")); return; }
   if (S.mode === "loading"){ S.mountedView = null; root.replaceChildren(h("div", {class:"loading"}, h("span", {class:"spin"}), S.slow ? "Still opening your workspace. The connection is slow; this keeps trying." : "Opening your workspace…")); return; }
   const key = S.view + (!S.profile && S.view === "home" ? ":wizard" : "");
   if (!S.profile && S.view === "home"){ if (S.mountedView !== key){ root.replaceChildren(wizard()); enterAnim(root); } else wizardUpdate(root); S.mountedView = key; return; }
@@ -3403,7 +3515,10 @@ function openItemDrawer(id, preset){
 
 /* ---- 70-competitors.js ---- */
 /* ===================== Competitors ===================== */
-const CP = {busy:false, sort:"views", reading:null};
+const CP = {busy:false, sort:"views", reading:null, pick:"recent", count:5, err:"", errFor:null};
+const CP_PICKS = [["recent", "Their latest posts"], ["week", "Best of this week"], ["month", "Best of this month"], ["alltime", "Best of all time"]];
+function cpHandle(c){ return String((c && c.handle) || "").trim().replace(/^@/, ""); }
+function cpPending(){ return [...QUEUE.pending.values()].find(x => x.title === TASKS.competitor_sync); }
 
 Views.competitors = {
   crumb(){ const c = S.ui.competitor && getDoc("competitors", S.ui.competitor); return c ? c.name : ""; },
@@ -3413,15 +3528,15 @@ Views.competitors = {
 function renderCompetitorList(root){
   const list = listCol("competitors").sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
   root.replaceChildren(
-    pageHead("Competitors", "Study the accounts one step ahead of you. Add their posts (screenshots are enough) and get the patterns: hook types ranked by views, frameworks, the CTA, the cadence, and five hooks adapted to your niche.", [btn("Add competitor", {class:"btn primary", onclick:() => competitorDrawer(null)}, "plus")]),
+    pageHead("Competitors", "Study the accounts one step ahead of you. Add a handle and their Instagram is read for you: what is working for them, why, and how to use it in your own niche.", [btn("Add competitor", {class:"btn primary", onclick:() => competitorDrawer(null)}, "plus")]),
     list.length ? h("div", {class:"grid-auto"}, list.map(c => {
       const best = (c.posts || []).reduce((m, p) => Math.max(m, Number(p.views) || 0), 0); const top = c.analysis && c.analysis.hookTypes && c.analysis.hookTypes[0];
       return h("button", {type:"button", class:"course", onclick:() => { S.ui.competitor = c.id; render(); }},
         h("div", {style:"display:flex;gap:10px;align-items:center"}, h("span", {class:"avi", style:"width:40px;height:40px;border-radius:11px;font-size:14px", text:initials(c.name)}), h("div", {style:"min-width:0"}, h("b", {text:c.name}), h("div", {class:"m"}, h("span", {text:c.handle || ""}), h("span", {text:c.platform || ""}), c.followers ? h("span", {text:compact(c.followers) + " followers"}) : null)), exTag(c)),
         c.niche ? h("p", {text:c.niche}) : (c.bio ? h("p", {text:c.bio}) : null),
         h("div", {class:"m"}, h("span", {text:(c.posts || []).length + " posts"}), best ? h("span", {text:"best " + compact(best)}) : null, top ? h("span", {text:"top hook: " + top.type}) : null, c.analysis ? h("span", {text:"analyzed " + fmtStamp(c.analysis.at)}) : h("span", {text:"not analyzed yet"})));
-    })) : emptyState("No competitors yet", "Add three accounts in your niche. Then add their best posts of the week and press Analyze.", [btn("Add competitor", {class:"btn primary", onclick:() => competitorDrawer(null)}, "plus")],
-      [["Add the account", "Name, handle, platform, niche."], ["Add posts", "By hand, pasted text, or screenshots of their grid and insights."], ["Analyze", "Patterns, what to steal, and hooks for you."]]));
+    })) : emptyState("No competitors yet", "Add three accounts in your niche. Their posts are read from Instagram for you.", [btn("Add competitor", {class:"btn primary", onclick:() => competitorDrawer(null)}, "plus")],
+      [["Add the handle", "Just their @handle."], ["Their Instagram is read", "Their latest posts, or their best of the week, the month or all time."], ["What works and how to use it", "The hooks they use, why they work, and ideas for you."]]));
 }
 function competitorDrawer(id){
   const c = id ? {...getDoc("competitors", id)} : {name:"", handle:"", platform:"Instagram", niche:"", notes:"", posts:[]};
@@ -3432,40 +3547,46 @@ function competitorDrawer(id){
     const err = h("span", {class:"err grow"});
     const save = () => { const handle = String(c.handle || "").trim().replace(/^@/, ""); const name = String(c.name || "").trim() || handle; if (!name){ err.textContent = "Add their handle."; return null; } const cid = id || uid("cp"); upsert("competitors", cid, {...c, name, handle:handle ? "@" + handle : ""}); return cid; };
     body.append(
-      id ? null : h("p", {class:"prose small", text:"Add the handle. Then add their best posts (paste or screenshots) and press Analyze."}),
+      id ? null : h("p", {class:"prose small", text:"Add their Instagram handle. Their posts are read for you, then you get what works for them and how to use it."}),
       h("div", {class:"row2"}, f("handle", "Handle", "@handle"), fld("Platform", plat, "cp-plat")),
       h("div", {class:"row2"}, f("name", "Name (optional)", "Sam Rivera"), f("niche", "Niche (optional)", "Content systems for coaches")),
       fld("Notes", notes, "cp-notes"),
       h("div", {class:"dr-actions"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}),
         id ? btn("Save", {class:"btn primary", onclick:() => { if (save()){ closeLayer(); } }}) :
         [btn("Add", {class:"btn", onclick:() => { const cid = save(); if (cid){ closeLayer(); S.ui.competitor = cid; render(); } }}),
-         btn("Add and add their posts", {class:"btn primary", onclick:() => { const cid = save(); if (cid){ closeLayer(); S.ui.competitor = cid; render(); addPostsModal(cid); } }}, "plus")]));
+         btn("Add and read their Instagram", {class:"btn primary", id:"cp-add-read", onclick:() => { const cid = save(); if (cid){ closeLayer(); S.ui.competitor = cid; render(); readCompetitor(cid); } }}, "instagram")]));
   }});
 }
 function renderCompetitor(root, c){
   const posts = [...(c.posts || [])].sort((a, b) => CP.sort === "views" ? (Number(b.views) || 0) - (Number(a.views) || 0) : (b.date || "").localeCompare(a.date || ""));
-  const an = c.analysis;
+  const an = c.analysis; const reading = CP.reading === c.id;
   root.replaceChildren(
     h("div", {class:"head"}, h("div", null, h("div", {class:"toolbar", style:"margin-bottom:6px"}, btn("All competitors", {class:"btn sm ghost", onclick:() => { S.ui.competitor = null; render(); }}, "chevL"), exTag(c)),
         h("h1", {text:c.name}), h("div", {class:"sub"}, h("span", {text:c.handle || ""}), h("span", {text:c.platform || ""}), c.followers ? h("span", null, h("b", {text:compact(c.followers)}), " followers") : null, c.niche ? h("span", {text:c.niche}) : null, c.lastRead ? h("span", {text:"read " + ago(c.lastRead)}) : null)),
-      h("div", {class:"toolbar"}, btn("Add posts", {class:"btn", onclick:() => addPostsModal(c.id)}, "plus"), btn(CP.busy ? "Analyzing…" : "Analyze", {class:"btn ai", disabled:CP.busy || !claudeOK() || !(c.posts || []).length, onclick:() => analyzeCompetitor(c.id)}, "wand"), btn("Edit", {class:"btn ghost", onclick:() => competitorDrawer(c.id)}), btn("", {class:"btn ghost icon danger", "aria-label":"Delete competitor", onclick:() => confirmModal("Delete " + c.name, "Their posts and analysis go with them.", "Delete", () => { remove("competitors", c.id); S.ui.competitor = null; render(); })}, "trash"))),
+      h("div", {class:"toolbar"}, cpPickSelect(), btn(reading ? "Reading their Instagram…" : "Read their Instagram", {class:"btn primary", id:"cp-read", disabled:!!CP.reading || !claudeOK(), onclick:() => readCompetitor(c.id)}, reading ? null : "instagram"), btn(CP.busy ? "Analyzing…" : "Analyze", {class:"btn ai", disabled:CP.busy || !claudeOK() || !(c.posts || []).length, onclick:() => analyzeCompetitor(c.id)}, "wand"), btn("Edit", {class:"btn ghost", onclick:() => competitorDrawer(c.id)}), btn("", {class:"btn ghost icon danger", "aria-label":"Delete competitor", onclick:() => confirmModal("Delete " + c.name, "Their posts and analysis go with them.", "Delete", () => { remove("competitors", c.id); S.ui.competitor = null; render(); })}, "trash"))),
     c.bio || c.notes ? h("p", {class:"prose", text:[c.bio, c.notes].filter(Boolean).join(" · ")}) : null,
+    cpReadNote(c, reading),
     claudeGate("competitor analysis"),
     h("div", {class:"grid2", style:"grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)"},
-      h("div", {class:"stack-s"}, h("div", {class:"card-h"}, h("h3", {text:"Posts"}), h("span", {class:"muted small", text:posts.length + ""}), h("span", {style:"flex:1"}), h("select", {class:"ctl", style:"height:30px", "aria-label":"Sort", onchange:e => { CP.sort = e.target.value; render(); }, value:CP.sort}, opt("views", "Most views"), opt("date", "Newest"))),
+      h("div", {class:"stack-s"}, h("div", {class:"card-h"}, h("h3", {text:"Posts"}), h("span", {class:"muted small", text:posts.length + ""}), h("span", {style:"flex:1"}), h("select", {class:"ctl", style:"height:30px", "aria-label":"Sort", onchange:e => { CP.sort = e.target.value; render(); }, value:CP.sort}, opt("views", "Most views"), opt("date", "Newest")), btn("Add by hand", {class:"btn sm ghost", onclick:() => addPostsModal(c.id)}, "plus")),
         posts.length ? h("div", {class:"tbl-wrap"}, h("table", {class:"tbl"}, h("thead", null, h("tr", null, h("th", {text:"Post"}), h("th", {text:"Hook type"}), h("th", {class:"num", text:"Views"}), h("th", {class:"num", text:"Likes"}), h("th", {class:"num", text:"Comments"}), h("th", {text:"CTA"}), h("th", {text:"Date"}), h("th"))),
-          h("tbody", null, posts.map(p => h("tr", null, h("td", null, h("b", {text:p.title}), p.notes ? h("div", {class:"muted small", text:p.notes}) : null, p.url ? h("a", {class:"small", href:p.url, target:"_blank", rel:"noopener noreferrer", text:"Open ↗"}) : null), h("td", null, h("span", {class:"muted small", text:p.type || ""}), h("div", {text:p.hookType || "—"})), h("td", {class:"num", text:compact(p.views)}), h("td", {class:"num", text:compact(p.likes)}), h("td", {class:"num", text:compact(p.comments)}), h("td", {text:p.cta || ""}), h("td", {text:p.date ? fmtD(p.date, {day:"numeric", month:"short"}) : ""}),
+          h("tbody", null, posts.map(p => h("tr", null, h("td", null, h("b", {text:p.title}), p.hook && p.hook !== p.title ? h("div", {class:"small", text:"Opens with: “" + p.hook + "”"}) : null, p.notes ? h("div", {class:"muted small", text:p.notes}) : null, p.url ? h("a", {class:"small", href:p.url, target:"_blank", rel:"noopener noreferrer", text:"Open ↗"}) : null), h("td", null, h("span", {class:"muted small", text:p.type || ""}), h("div", {text:p.hookType || "—"})), h("td", {class:"num", text:compact(p.views)}), h("td", {class:"num", text:compact(p.likes)}), h("td", {class:"num", text:compact(p.comments)}), h("td", {text:p.cta || ""}), h("td", {text:p.date ? fmtD(p.date, {day:"numeric", month:"short"}) : ""}),
             h("td", null, btn("", {class:"btn icon sm ghost", "aria-label":"Remove post", onclick:() => upsert("competitors", c.id, {posts:(c.posts || []).filter(x => x.id !== p.id)})}, "close"))))))) :
-          h("div", {class:"empty", style:"max-width:none"}, h("p", {text:"No posts yet. Add their best posts of the week. Screenshots of the grid or the insights page are enough; the captions and numbers are read for you."}), h("div", {class:"toolbar"}, btn("Add posts", {class:"btn", onclick:() => addPostsModal(c.id)}, "plus")))),
+          h("div", {class:"empty", style:"max-width:none"}, h("p", {text:"No posts yet. Press Read their Instagram and their posts, with the numbers, are read for you."}), h("div", {class:"toolbar"}, btn(reading ? "Reading their Instagram…" : "Read their Instagram", {class:"btn primary", disabled:!!CP.reading || !claudeOK(), onclick:() => readCompetitor(c.id)}, reading ? null : "instagram")))),
       h("div", {class:"stack-s"}, h("div", {class:"card-h"}, h("h3", {text:"Analysis"}), an ? h("span", {class:"muted small", text:fmtStamp(an.at)}) : null),
-        an ? analysisCard(c, an) : h("div", {class:"card sunk"}, h("p", {class:"prose", text:"Once a few posts are in you get hook types ranked by views, the frameworks they lean on, the CTA pattern, the cadence, what to steal, and five hooks adapted to your niche."})))));
+        an ? analysisCard(c, an) : h("div", {class:"card sunk"}, h("p", {class:"prose", text:"Once their posts are in you get what is working for them, why it works, how to use it in your niche, and ideas with hooks written for you."})))));
 }
 function analysisCard(c, an){
   const chart = barChart({data:(an.hookTypes || []).map(x => ({label:x.type, value:x.avgViews, hint:x.posts + " post" + (x.posts === 1 ? "" : "s")})), horizontal:true, note:"Average views by hook type"});
   return h("div", {class:"stack-s"},
     h("div", {class:"card"}, h("p", {style:"font:600 15px/1.4 var(--f-display)", text:an.summary})),
+    (an.working || []).length ? h("div", {class:"card", id:"cp-working"}, h("div", {class:"card-h"}, h("h3", {text:"What is working for them"})), h("div", {class:"stack-s"}, an.working.map(w => h("div", {class:"hook"}, h("div", {class:"line", style:"font-size:15px", text:"“" + w.hook + "”"}), h("div", {class:"os", text:[w.post && w.post !== w.hook ? w.post : "", w.views ? compact(w.views) + " views" : ""].filter(Boolean).join(" · ")}), h("p", {class:"prose small", style:"margin:6px 0 0", text:w.why}))))) : null,
+    (an.apply || []).length ? h("div", {class:"card", id:"cp-apply"}, h("div", {class:"card-h"}, h("h3", {text:"How to use it yourself"})), h("ol", {class:"prose", style:"margin:0;padding-left:18px"}, an.apply.map(x => h("li", {text:x})))) : null,
+    (an.ideas || []).length ? h("div", {class:"card", id:"cp-ideas"}, h("div", {class:"card-h"}, h("h3", {text:"Ideas for you"})), h("div", {class:"stack-s"}, an.ideas.map(it => h("div", {class:"hook"}, h("div", {class:"line", style:"font-size:15px", text:it.title}), it.hook ? h("div", {class:"os", text:"Open with: " + it.hook}) : null, h("div", {class:"foot"}, h("span", {class:"pill neutral", text:it.type || "Reel"}), h("span", {style:"flex:1"}),
+      btn("Write the script", {class:"btn sm", onclick:() => { HK.form.topic = it.title; go("scripts"); }}, "pen"),
+      btn("Add to planner", {class:"btn sm ghost", onclick:() => openItemDrawer(null, {title:it.title, type:TYPES.includes(it.type) ? it.type : "Reel", notes:it.hook ? "Hook: " + it.hook : ""})}, "columns")))))) : null,
     h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"Hook types that work for them"})), chart),
-    h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"What to steal"})), h("ol", {class:"prose", style:"margin:0;padding-left:18px"}, (an.steal || []).map(s => h("li", {text:s})))),
+    (an.apply || []).length ? null : h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"What to steal"})), h("ol", {class:"prose", style:"margin:0;padding-left:18px"}, (an.steal || []).map(s => h("li", {text:s})))),
     h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"Patterns"})), h("div", {class:"prose"}, h("h4", {text:"Frameworks"}), h("ul", null, (an.frameworks || []).map(s => h("li", {text:s}))), h("h4", {text:"Calls to action"}), h("ul", null, (an.ctas || []).map(s => h("li", {text:s}))), an.cadence ? h("p", {style:"margin-top:10px"}, h("strong", {text:"Cadence: "}), an.cadence) : null)),
     h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"Hooks for you, in their pattern"})), h("div", {class:"stack-s"}, (an.hooks || []).map(hk => h("div", {class:"hook"}, h("div", {class:"line", style:"font-size:15px", text:hk.spoken}), h("div", {class:"os", text:"On screen: " + hk.onScreen}), h("div", {class:"foot"}, h("span", {class:"pill neutral", text:hk.type}), h("span", {style:"flex:1"}),
       btn("Write the script", {class:"btn sm", onclick:() => { HK.form.topic = hk.onScreen || hk.spoken; go("scripts"); }}, "pen"),
@@ -3476,16 +3597,16 @@ async function analyzeCompetitor(id, silent){
   try {
     const r = await skillJSON("competitor_analyze", {profile:profileBlock(),
       competitor:`${c.name} ${c.handle || ""} on ${c.platform || "Instagram"}. Niche: ${c.niche || "unknown"}.` + (c.bio ? " Bio: " + c.bio : "") + (c.followers ? " Followers: " + c.followers : "") + (c.notes ? " Notes: " + c.notes : ""),
-      posts:(c.posts || []).map(p => `- [${p.type || "post"}] "${p.title}" | hook type: ${p.hookType || "unknown"} | views ${p.views ?? "?"} | likes ${p.likes ?? "?"} | comments ${p.comments ?? "?"} | CTA ${p.cta || "none"} | date ${p.date || "?"}${p.notes ? " | notes: " + p.notes : ""}`).join("\n")}) || {};
-    const analysis = {at:new Date().toISOString(), summary:String(r.summary || ""), hookTypes:(r.hookTypes || []).map(x => ({type:String(x.type || "Other"), posts:Number(x.posts) || 0, avgViews:Math.round(Number(x.avgViews) || 0)})).sort((a, b) => b.avgViews - a.avgViews).slice(0, 10), frameworks:(r.frameworks || []).map(String).slice(0, 6), ctas:(r.ctas || []).map(String).slice(0, 5), cadence:String(r.cadence || ""), steal:(r.steal || []).map(String).slice(0, 5), hooks:(r.hooks || []).map(x => ({spoken:String(x.spoken || ""), onScreen:String(x.onScreen || ""), type:String(x.type || "")})).filter(x => x.spoken).slice(0, 6)};
+      posts:(c.posts || []).map(p => `- [${p.type || "post"}] "${p.title}" ${p.hook ? ` | opens with: "${p.hook}"` : ""} | hook type: ${p.hookType || "unknown"} | views ${p.views ?? "?"} | likes ${p.likes ?? "?"} | comments ${p.comments ?? "?"} | CTA ${p.cta || "none"} | date ${p.date || "?"}${p.notes ? " | notes: " + p.notes : ""}`).join("\n")}) || {};
+    const analysis = {at:new Date().toISOString(), summary:String(r.summary || ""), hookTypes:(r.hookTypes || []).map(x => ({type:String(x.type || "Other"), posts:Number(x.posts) || 0, avgViews:Math.round(Number(x.avgViews) || 0)})).sort((a, b) => b.avgViews - a.avgViews).slice(0, 10), frameworks:(r.frameworks || []).map(String).slice(0, 6), ctas:(r.ctas || []).map(String).slice(0, 5), cadence:String(r.cadence || ""), steal:(r.steal || []).map(String).slice(0, 5), working:(Array.isArray(r.working) ? r.working : []).map(x => ({hook:String((x && x.hook) || "").slice(0, 240), post:String((x && x.post) || "").slice(0, 200), views:numOrNull(x && x.views), why:String((x && x.why) || "").slice(0, 500)})).filter(x => x.hook).slice(0, 5), apply:(Array.isArray(r.apply) ? r.apply : []).map(String).filter(Boolean).slice(0, 5), ideas:(Array.isArray(r.ideas) ? r.ideas : []).map(x => ({title:String((x && x.title) || "").slice(0, 160), hook:String((x && x.hook) || "").slice(0, 240), type:String((x && x.type) || "Reel")})).filter(x => x.title).slice(0, 4), hooks:(r.hooks || []).map(x => ({spoken:String(x.spoken || ""), onScreen:String(x.onScreen || ""), type:String(x.type || "")})).filter(x => x.spoken).slice(0, 6)};
     upsert("competitors", id, {analysis}); if (!silent) toast("Analysis ready");
   } catch (e){ if (!silent) toast(claudeCopy(e)); else throw e; } finally { CP.busy = false; render(); }
 }
-function normalizeCompetitorPosts(r){ return (Array.isArray(r) ? r : []).map(p => ({title:String((p && (p.title || p.hook)) || "").slice(0, 200), type:TYPES.includes(p.type) ? p.type : "Reel", hookType:String(p.hookType || ""), views:numOrNull(p.views), likes:numOrNull(p.likes), comments:numOrNull(p.comments), date:/^\d{4}-\d{2}-\d{2}$/.test(p.date || "") ? p.date : "", cta:String(p.cta || "").slice(0, 30), url:String(p.url || ""), notes:String(p.notes || "").slice(0, 300)})).filter(p => p.title); }
+function normalizeCompetitorPosts(r){ return (Array.isArray(r) ? r : []).map(p => ({title:String((p && (p.title || p.hook)) || "").slice(0, 200), hook:String((p && p.hook) || "").slice(0, 200), type:TYPES.includes(p.type) ? p.type : "Reel", hookType:String(p.hookType || ""), views:numOrNull(p.views), likes:numOrNull(p.likes), comments:numOrNull(p.comments), date:/^\d{4}-\d{2}-\d{2}$/.test(p.date || "") ? p.date : "", cta:String(p.cta || "").slice(0, 30), url:String(p.url || ""), notes:String(p.notes || "").slice(0, 300)})).filter(p => p.title); }
 function addPostsModal(cid){
   const c = getDoc("competitors", cid); if (!c) return;
   let tab = claudeOK() ? "paste" : "hand"; const content = h("div", {class:"stack-s"});
-  const tabs = h("div", {class:"segm", role:"tablist"}, [["paste","Paste text"],["shots","Screenshots"],["hand","By hand"]].map(([id, l]) => h("button", {type:"button", role:"tab", "aria-selected":String(tab === id), onclick:e => { tab = id; tabs.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b === e.currentTarget))); build(); }}, l)));
+  const tabs = h("div", {class:"segm", role:"tablist"}, [["paste","Paste text"],["hand","By hand"]].map(([id, l]) => h("button", {type:"button", role:"tab", "aria-selected":String(tab === id), onclick:e => { tab = id; tabs.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b === e.currentTarget))); build(); }}, l)));
   const addMany = list => { const posts = [...(getDoc("competitors", cid).posts || []), ...list.map(p => ({id:uid("p"), ...p}))]; upsert("competitors", cid, {posts}); closeLayer(); toast(list.length + " post" + (list.length === 1 ? "" : "s") + " added"); };
   const preview = (list, note) => { content.replaceChildren(h("p", {class:"small muted", text:note}), h("div", {class:"list"}, list.map(p => h("div", {class:"lrow"}, h("span", {class:"t", text:p.title}), h("span", {class:"m", text:(p.hookType || "") + " · " + compact(p.views) + " views"})))), h("div", {class:"modal-f"}, btn("Back", {class:"btn ghost", onclick:build}), btn("Add " + list.length, {class:"btn primary", onclick:() => addMany(list)}))); };
   function build(){
@@ -3502,15 +3623,42 @@ function addPostsModal(cid){
       const ta = h("textarea", {rows:"8", class:"in", placeholder:"Paste captions with their numbers, or notes like “Reel: ‘This is what people get wrong…’ 36K views, 2.2K likes”"});
       const err = h("span", {class:"err grow"});
       content.append(claudeGate("parsing pasted text"), ta, h("div", {class:"modal-f"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Extract posts", {class:"btn ai", disabled:!claudeOK(), onclick:async e => { if (!ta.value.trim()){ err.textContent = "Paste something first."; return; } e.currentTarget.disabled = true; err.textContent = ""; try { const r = await skillJSON("competitor_extract", {text:ta.value.slice(0, 20000)}); const list = normalizeCompetitorPosts(r); if (!list.length) throw {code:"invalid_json"}; preview(list, "Check the numbers, then add."); } catch (ex){ err.textContent = claudeCopy(ex); e.currentTarget.disabled = false; } }}, "wand")));
-    } else {
-      const files = h("input", {type:"file", accept:"image/*", multiple:true, class:"in", "aria-label":"Screenshots"});
-      const err = h("span", {class:"err grow"});
-      content.append(claudeGate("reading screenshots"), h("p", {class:"small muted", text:"Up to 6 screenshots of their grid, a post with its caption, or the insights list. The text and the numbers are read for you."}), files,
-        h("div", {class:"modal-f"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Extract posts", {class:"btn ai", disabled:!claudeOK(), onclick:async e => { const list = [...(files.files || [])].slice(0, 6); if (!list.length){ err.textContent = "Choose at least one screenshot."; return; } e.currentTarget.disabled = true; err.textContent = ""; try { const r = await skillJSON("competitor_extract", {}, {images:list}); const out = normalizeCompetitorPosts(r); if (!out.length) throw {code:"invalid_json"}; preview(out, "Read from " + list.length + " screenshot" + (list.length === 1 ? "" : "s") + ". Check the numbers, then add."); } catch (ex){ err.textContent = claudeCopy(ex); e.currentTarget.disabled = false; } }}, "wand")));
     }
   }
   build();
   openModal({title:"Add posts for " + c.name, body:h("div", {class:"stack-s"}, tabs, content), wide:true});
+}
+/* Their posts come from their public Instagram: opened in the creator's own Chrome and read, nothing typed or uploaded. */
+function cpPickSelect(){
+  const sel = h("select", {class:"ctl", id:"cp-pick", "aria-label":"Which posts to read", disabled:!!CP.reading, onchange:e => { CP.pick = e.target.value; }}, CP_PICKS.map(([v, l]) => opt(v, l))); sel.value = CP.pick;
+  return sel;
+}
+function cpReadNote(c, reading){
+  if (reading){ const p = cpPending(); return h("p", {class:"meta", id:"cp-read-msg", text:p && p.progress ? p.progress : p && p.status === "queued" ? (codeSeen() ? "Waiting for Claude Code on your computer. Keep it open and it starts by itself." : "This reads Instagram in your own Chrome, so it needs Claude Code on your computer. Connect it once in Settings and it starts by itself.") : "Starting…"}); }
+  if (CP.err && CP.errFor === c.id) return h("p", {class:"err", id:"cp-read-msg", text:CP.err});
+  return c.readNote ? h("p", {class:"meta", text:c.readNote}) : null;
+}
+async function readCompetitor(id){
+  const c = getDoc("competitors", id); if (!c || CP.reading) return;
+  const handle = cpHandle(c);
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(handle)){ toast("Add their Instagram handle first."); competitorDrawer(id); return; }
+  CP.reading = id; CP.err = ""; CP.errFor = id; render();
+  try {
+    const r = (await queueCall("competitor_sync", {handle, pick:CP.pick, count:CP.count, today:todayStr()}, {})).json || {};
+    const list = normalizeCompetitorPosts(r.posts);
+    const cur = getDoc("competitors", id); if (!cur) return;
+    const posts = [...(cur.posts || [])]; let added = 0;
+    for (const p of list){ const key = x => (x.url || "").replace(/[?#].*$/, "").replace(/\/$/, "") || (x.title || "").toLowerCase(); const i = posts.findIndex(x => key(x) === key(p)); if (i >= 0) posts[i] = {...posts[i], ...p, hookType:p.hookType || posts[i].hookType}; else { posts.push({id:uid("p"), ...p}); added++; } }
+    const patch = {posts, lastRead:new Date().toISOString(), readNote:String(r.note || "").slice(0, 300)};
+    const f = numOrNull(r.followers); if (f) patch.followers = f; if (r.bio) patch.bio = String(r.bio).slice(0, 300);
+    if (r.name && (!cur.name || cur.name === handle || cur.name === "@" + handle)) patch.name = String(r.name).slice(0, 80);
+    upsert("competitors", id, patch);
+    if (!list.length){ CP.err = "No posts could be read from @" + handle + ". Try another choice of posts."; return; }
+    toast(list.length + " post" + (list.length === 1 ? "" : "s") + " read" + (added < list.length ? ", " + (list.length - added) + " updated" : "") + ". Working out what works…");
+    CP.reading = null; render();
+    try { await analyzeCompetitor(id, true); toast("Analysis ready"); } catch (e){ CP.err = "Their posts are in. The analysis did not finish: press Analyze to try again."; }
+  } catch (e){ if (!e || e.code !== "cancelled") CP.err = e && e.code === "job_failed" && e.message ? e.message : claudeCopy(e); }
+  finally { CP.reading = null; render(); }
 }
 
 
@@ -3820,10 +3968,20 @@ const HP = {busy:false, err:"", ctl:null, msgs:null};
 const HELP_KEY = "ch-help";
 const HELP_STARTERS = ["My footage looks washed out after the grade", "Why does my footage look double graded?", "My edit is stuck on Waiting to start", "The captions have wrong words", "What export settings for Instagram?"];
 function helpMsgs(){
-  if (!HP.msgs){ try { HP.msgs = JSON.parse(localStorage.getItem(HELP_KEY) || "[]"); } catch (e) { HP.msgs = []; } if (!Array.isArray(HP.msgs)) HP.msgs = []; }
+  if (!Array.isArray(HP.msgs)) HP.msgs = [];
   return HP.msgs;
 }
-function saveHelp(){ try { localStorage.setItem(HELP_KEY, JSON.stringify(HP.msgs.slice(-40))); } catch (e) {} }
+function saveHelp(){ if (S.caps.db) S.caps.db.doc(userRoot() + "/help").set({msgs:HP.msgs.slice(-40)}); }
+/* The conversation is part of the workspace: it is saved with the account and comes back on any device. */
+function subscribeHelp(db){
+  db.doc(userRoot() + "/help").onSnapshot(snap => {
+    if (HP.busy) return;
+    if (snap.exists){ const m = snap.data().msgs; HP.msgs = Array.isArray(m) ? m : []; if (S.view === "help") scheduleRender(); return; }
+    // once: a conversation kept only in this browser by an older version moves into the workspace
+    let old = []; try { old = JSON.parse(localStorage.getItem(HELP_KEY) || "[]"); localStorage.removeItem(HELP_KEY); } catch (e){}
+    if (Array.isArray(old) && old.length){ HP.msgs = old; saveHelp(); } else if (HP.msgs && HP.msgs.length && !SYNC.on){ HP.msgs = []; }
+  });
+}
 function recentEditsText(){
   return edits().slice(0, 6).map(p => "- " + (p.name || "Untitled edit") + ": " + (p.status || "") + ", " + (p.styleName || "") + ", " + engineName(p.engine) + (p.summary ? ". " + trunc(p.summary, 240) : "") + (p.reason ? ". It failed: " + trunc(p.reason, 200) : "")).join("\n");
 }
@@ -3853,8 +4011,8 @@ function helpBubbles(){
 async function askHelp(text){
   text = String(text || "").trim(); if (!text || HP.busy) return;
   if (!claudeOK()){ HP.err = "Connect Claude Code to turn on Ask AI."; render(); return; }
-  const msgs = helpMsgs(); msgs.push({role:"user", content:text}); saveHelp();
-  HP.busy = true; HP.err = ""; HP.ctl = new AbortController(); render();
+  HP.busy = true; HP.err = ""; HP.ctl = new AbortController();
+  const msgs = helpMsgs(); msgs.push({role:"user", content:text}); saveHelp(); render();
   const ta = $("#hp-q"); if (ta) ta.value = "";
   try {
     const r = await skillText("editor_help", {profile:profileBlock(), edits:recentEditsText(), history:msgs.slice(-12)}, {signal:HP.ctl.signal});
@@ -4057,7 +4215,7 @@ function connectionsSection(){
 }
 function dataSection(){
   return h("div", {class:"grid2"},
-    h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"Your data"})), h("p", {class:"prose small", text:"Everything you make is saved in this browser, on this device. Export it to keep a copy or move it. Your footage and finished videos stay in their folders on your computer."}),
+    h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"Your data"})), h("p", {class:"prose small", text:"Everything you make is saved to your CreatorHub account as you work, and loads on any device you sign in on. Updates to the app never touch it. Your footage and finished videos stay in their folders on your computer."}),
       h("div", {class:"toolbar", style:"margin-top:12px"}, btn("Export workspace (JSON)", {class:"btn sm", onclick:exportWorkspace}, "download"), hasExamples() ? btn("Clear example data", {class:"btn sm", onclick:() => confirmModal("Clear example data", "Everything marked “example” is removed. Your own work stays.", "Clear", clearExamples)}) : null, btn("Reset workspace", {class:"btn sm ghost danger", onclick:() => confirmModal("Reset your workspace", "Deletes every piece, task, project, competitor, post, script and read, and your profile. The files on your computer are not touched.", "Reset everything", resetWorkspace)}))),
     h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:"About CreatorHub"}), h("span", {class:"pill neutral", text:"Beta"})),
       h("div", {class:"prose small"}, h("p", {text:"CreatorHub is the interface. Claude Code does the work on your computer: it edits with HyperFrames or in Premiere Pro, and writes your scripts. Connecting Instagram for automatic numbers and scheduled publishing come next."}))));
@@ -4085,7 +4243,8 @@ function accountSection(){
   const l = loginInfo() || {};
   return h("div", {class:"card stack", style:"gap:12px"},
     h("div", {class:"toolbar"}, h("span", {class:"tile sm"}, icon("user")), h("div", {class:"grow"}, h("b", {id:"acct-user", text:l.username ? "@" + l.username : "Not signed in"}), h("div", {class:"meta", text:l.at ? "Signed in on this browser since " + fmtD(String(l.at).slice(0, 10), {day:"numeric", month:"long", year:"numeric"}) : ""})),
-      btn("Sign out", {class:"btn", id:"acct-out", onclick:() => confirmModal("Sign out of CreatorHub", "Your work stays saved in this browser. You need your username and private key to sign in again.", "Sign out", () => signOut(""))}, "logout")),
+      btn("Sign out", {class:"btn", id:"acct-out", onclick:() => confirmModal("Sign out of CreatorHub", "Your work is saved to your account. Sign in again with your username and private key, on this device or any other, and it is all there.", "Sign out", () => signOut(""))}, "logout")),
+    h("p", {class:"small", id:"acct-saved", style:"margin:0", text:syncLine()}),
     h("p", {class:"muted small", style:"margin:0", text:"Keep your private key to yourself. Anyone with your username and key can sign in as you."}));
 }
 
@@ -4141,7 +4300,7 @@ function maybeAutopilot(){
     if (e.key === "Escape" && Layers.stack.length) closeLayer();
   });
   S.ui.lastVisit = pref("lastVisit", null); setPref("lastVisit", new Date().toISOString());
-  const db = localDb();
+  const db = localDb(); syncAttach(db);
   S.caps = {db, user:null, sample:null, downloads:null, mcp:null};
   S.me = {id:"me", name:""}; S.meId = "me"; S.isOwner = true; S.canAdmin = false; S.canWrite = true;
   S.claude.status = brainState();
@@ -4150,8 +4309,10 @@ function maybeAutopilot(){
   if (signedIn()){ brainCheck(); pulse(); }
   window.addEventListener("online", () => { if (signedIn() && !claudeOK()) brainCheck(); });
   await db.ready;
-  subscribeUser(db);
+  subscribeUser(db); subscribeHelp(db);
   render();
+  if (signedIn()) syncStart();
+  syncWatch();
   setTimeout(autoSync, 20000); setInterval(autoSync, 10 * 60000);
 })();
 
