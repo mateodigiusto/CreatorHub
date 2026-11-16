@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap">
+<script>try { if (localStorage.getItem("ch-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}</script>
 <script>window.CH_CONFIG = {"brain":"https://knlkkdabdhficbzxtffb.supabase.co/functions/v1/studio"};</script>
 <style>
 /* Layout: tree sidebar, breadcrumb bar, white cards on a cool grey page.
@@ -1088,36 +1089,36 @@ h1,.h1{font-size:34px;font-weight:700;letter-spacing:-.045em;line-height:1}
 h2,.h2{font-weight:700;letter-spacing:-.03em}
 h3,.h3{font-weight:700;letter-spacing:-.02em}
 /* buttons are pills; the main action is the black pill with a soft ring */
-.btn{border-radius:9999px;padding:8px 16px;background:rgba(255,255,255,.7);border-color:var(--line-2);box-shadow:none}
+.btn{border-radius:9999px;padding:8px 16px;background:var(--pill-bg);border-color:var(--line-2);box-shadow:none}
 .btn.sm,.btn.icon,.btn.icon.sm{border-radius:9999px}
 .btn.lg{border-radius:9999px;padding:14px 26px}
 .btn.primary{background:var(--btn);border-color:var(--btn);color:var(--btn-ink);font-weight:500;box-shadow:none}
-.btn.primary:hover{filter:none;background:#1d2535;border-color:#1d2535}
-.btn.lg.primary{box-shadow:0 0 0 4px rgba(12,16,24,.06),0 14px 30px -14px rgba(12,16,24,.6)}
+.btn.primary:hover{filter:none;background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn.lg.primary{box-shadow:var(--btn-glow)}
 .btn.ai,.btn.accent{background:var(--btn);border-color:var(--btn);color:var(--btn-ink);font-weight:500;box-shadow:none}
-.btn.ai:hover,.btn.accent:hover{filter:none;background:#1d2535}
+.btn.ai:hover,.btn.accent:hover{filter:none;background:var(--btn-hover)}
 .btn.ghost{background:none}
 /* cards: white, 22px, the long soft shadow */
-.card{border-radius:22px;border-color:var(--line);background:rgba(255,255,255,.7);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 20px 40px -24px rgba(28,40,64,.25);backdrop-filter:none;-webkit-backdrop-filter:none;padding:20px}
+.card{border-radius:22px;border-color:var(--line);background:var(--card-bg);box-shadow:var(--card-shadow);backdrop-filter:none;-webkit-backdrop-filter:none;padding:20px}
 .card::before{display:none}
 .card.pad-s{padding:14px}
-.card.sunk{background:rgba(12,16,24,.03);box-shadow:none}
-.card.lift:hover{background:#fff}
+.card.sunk{background:var(--glass-2);box-shadow:none}
+.card.lift:hover{background:var(--card-solid)}
 .card.ghost{box-shadow:none}
-.modal{border-radius:26px;background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}
+.modal{border-radius:26px;background:var(--card-solid);backdrop-filter:none;-webkit-backdrop-filter:none}
 .style-card{border-radius:16px}
-.blank-cta{border-radius:26px;background:#fff}
+.blank-cta{border-radius:26px;background:var(--card-solid)}
 /* fields */
-.in,.f input:not([type="checkbox"]):not([type="range"]):not([type="color"]),.f select,.f textarea,.ctl,.ec-drop input,.ec-insp input{background:#fff;border-color:var(--line-2);border-radius:14px}
+.in,.f input:not([type="checkbox"]):not([type="range"]):not([type="color"]),.f select,.f textarea,.ctl,.ec-drop input,.ec-insp input{background:var(--field-bg);border-color:var(--line-2);border-radius:14px}
 .ctl{border-radius:9999px;padding:0 14px}
-.srch{border-radius:9999px;background:rgba(255,255,255,.7);box-shadow:none}
-.chip{background:rgba(255,255,255,.7);border-color:var(--line-2)}
+.srch{border-radius:9999px;background:var(--pill-bg);box-shadow:none}
+.chip{background:var(--pill-bg);border-color:var(--line-2)}
 .banner{border-radius:16px}
 .banner.ai{background:rgba(58,79,240,.08);color:var(--accent-text)}
 /* sidebar: the page shows through, the current item is a white pill */
-.rail{background:rgba(243,246,250,.75);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.rail{background:var(--rail-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .tree-item,.tree-gh,.status{border-radius:9999px;padding-left:12px}
-.tree-item[aria-current="page"]{background:#fff;box-shadow:0 0 0 1px var(--line),0 8px 18px -12px rgba(28,40,64,.35)}
+.tree-item[aria-current="page"]{background:var(--current-bg);box-shadow:0 0 0 1px var(--line),0 8px 18px -12px rgba(28,40,64,.35)}
 .tree-item[aria-current="page"]::after{display:none}
 .tree-item .count.badge{background:var(--ink)}
 /* the wordmark: bold first word, light second, like "MDG Editor" */
@@ -1126,11 +1127,92 @@ h3,.h3{font-weight:700;letter-spacing:-.02em}
 .ws.brand .nm b i{font-style:normal;font-weight:400}
 .ws.brand .by{display:block;font-size:11px;color:var(--ink-3);letter-spacing:0;margin-top:1px}
 /* numbered steps and tiles in ink, never coloured */
-.tile{background:var(--ink);border-color:transparent;box-shadow:none;color:#f3f6fa}
+.tile{background:var(--ink);border-color:transparent;box-shadow:none;color:var(--bg)}
 .tile svg{filter:none}
 .toast{border-radius:9999px}
 .brand.wm{font-size:20px;font-weight:400;letter-spacing:-.04em;gap:0;display:block}
 .brand.wm b{font-weight:700}
+
+/* ===================== v7: numbers from screenshots ===================== */
+.shot-drop{display:flex;gap:12px;align-items:center;padding:16px 18px;border:1.5px dashed var(--line-2);border-radius:16px;cursor:pointer;text-align:left;background:var(--pill-bg);transition:border-color .15s,background .15s;width:100%}
+.shot-drop:hover,.shot-drop.over{border-color:var(--ink);background:var(--card-solid)}
+.shot-drop > svg{width:22px;height:22px;color:var(--ink-2);flex:none}
+.shot-drop .grow{display:grid;gap:2px;min-width:0}
+.shot-drop b{font-weight:700;letter-spacing:-.01em}
+.shot-drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.or-line{display:flex;align-items:center;gap:12px;width:100%;color:var(--ink-3);font-size:12.5px}
+.or-line::before,.or-line::after{content:"";flex:1;height:1px;background:var(--line-2)}
+.shot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.shot-th{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--sunk)}
+.shot-th img{width:100%;height:100%;object-fit:cover;display:block}
+.shot-th .btn{position:absolute;top:6px;right:6px;background:var(--card-solid);border-color:transparent;padding:4px}
+.lrow .m.late{color:var(--warn)}
+.blank-dash{min-height:520px}
+
+/* ===================== v8: theme tokens, centered windows, the calendar, reports ===================== */
+:root{--card-bg:rgba(255,255,255,.7);--card-solid:#fff;--field-bg:#fff;--pill-bg:rgba(255,255,255,.7);--rail-bg:rgba(243,246,250,.75);--current-bg:#fff;--btn-hover:#1d2535;
+  --btn-glow:0 0 0 4px rgba(12,16,24,.06),0 14px 30px -14px rgba(12,16,24,.6);--card-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 20px 40px -24px rgba(28,40,64,.25)}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#06080c;--bg-glow:radial-gradient(60% 50% at 75% 0%,rgba(40,56,130,.28),transparent 70%),radial-gradient(50% 40% at 10% 20%,rgba(30,40,100,.2),transparent 70%);
+  --panel:#0d1016;--panel-2:#12161e;--sunk:#0a0d12;--glass:rgba(255,255,255,.04);--glass-flat:rgba(255,255,255,.05);--glass-2:rgba(255,255,255,.06);--hover:rgba(255,255,255,.07);
+  --ink:#f3f6fa;--ink-2:#a3abb8;--ink-3:#727c8d;--line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.16);
+  --btn:#f3f6fa;--btn-ink:#0c1018;--accent:#5b6cff;--accent-ink:#fff;--accent-text:#a3adff;--accent-soft:rgba(91,108,255,.16);
+  --series-1:#7b88ff;--grid:rgba(255,255,255,.08);--scrim:rgba(0,0,0,.6);--shadow:0 30px 80px rgba(0,0,0,.6),0 2px 10px rgba(0,0,0,.4);--shadow-s:0 20px 40px -24px rgba(0,0,0,.7);
+  --card-bg:rgba(255,255,255,.035);--card-solid:#0f131a;--field-bg:rgba(255,255,255,.05);--pill-bg:rgba(255,255,255,.06);--rail-bg:rgba(8,10,14,.82);--current-bg:rgba(255,255,255,.1);--btn-hover:#dfe4ec;
+  --btn-glow:0 0 0 4px rgba(255,255,255,.06),0 14px 30px -14px rgba(0,0,0,.8);--card-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 20px 40px -24px rgba(0,0,0,.7)}
+:root[data-theme="dark"] .tree-item[aria-current="page"]{box-shadow:0 0 0 1px var(--line)}
+:root[data-theme="dark"] .banner.ai{background:rgba(91,108,255,.12)}
+/* windows open in the middle of the screen, not from the side */
+.drawer{top:0;right:0;bottom:0;left:0;margin:auto;height:fit-content;max-height:min(88vh,900px);width:min(660px,calc(100vw - 24px));border:1px solid var(--line-2);border-radius:26px;background:var(--card-solid);backdrop-filter:none;-webkit-backdrop-filter:none;overflow:hidden;z-index:41;animation:popIn .22s cubic-bezier(.2,.7,.2,1) both}
+.dr-h{padding:14px 18px 12px 24px}
+.dr-h .kind{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.dr-b{padding:18px 24px 22px}
+/* the calendar */
+.dp-btn{display:inline-flex;align-items:center;gap:8px;width:100%;min-height:38px;padding:8px 14px;border:1px solid var(--line-2);border-radius:14px;background:var(--field-bg);text-align:left;font-size:13.5px;color:var(--ink);cursor:pointer;transition:border-color .15s}
+.dp-btn:hover{border-color:var(--ink-3)}
+.dp-btn svg{width:16px;height:16px;color:var(--ink-3)}
+.dp-btn.empty .dp-l{color:var(--ink-3)}
+.dp-btn.sm{width:auto;min-height:0;padding:3px 10px;border-radius:9999px;font-size:12px;gap:6px}
+.dp-btn.sm svg{width:13px;height:13px}
+.dp-btn.sm.late{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.dp-pop{position:fixed;z-index:90;width:292px;padding:12px;border-radius:20px;border:1px solid var(--line-2);background:var(--card-solid);box-shadow:var(--shadow);animation:popIn .16s cubic-bezier(.2,.7,.2,1) both}
+.dp-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.dp-h b{font-size:14px;letter-spacing:-.01em}
+.dp-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-w{font-size:10.5px;color:var(--ink-3);text-align:center;padding:4px 0}
+.dp-d{all:unset;box-sizing:border-box;cursor:pointer;height:36px;border-radius:10px;display:grid;place-items:center;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dp-d:hover{background:var(--hover)}
+.dp-d:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.dp-d.out{color:var(--ink-3);opacity:.6}
+.dp-d.today{box-shadow:inset 0 0 0 1px var(--line-2);font-weight:700}
+.dp-d.on{background:var(--ink);color:var(--bg);font-weight:700}
+.dp-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.dp-f .chip{cursor:pointer}
+.dp-clear{all:unset;cursor:pointer;margin-left:auto;font-size:12px;color:var(--ink-3);padding:4px 6px}
+.dp-clear:hover{color:var(--ink)}
+/* reports */
+.report{display:grid;gap:18px}
+.rep-h{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.rep-h h2{font-size:28px;letter-spacing:-.04em;line-height:1.05}
+.rep-sec{display:grid;gap:14px}
+.rep-sec > h3{font-size:20px;letter-spacing:-.03em}
+.row5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.rep-comp{display:grid;gap:10px}
+.rep-comp .top{display:flex;gap:12px;align-items:center}
+.rep-comp ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:13.5px}
+.rep-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (max-width:980px){.row5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff!important}
+  body *{visibility:hidden}
+  #report,#report *{visibility:visible}
+  #report{position:absolute;left:0;top:0;width:100%}
+  #report .card{box-shadow:none;break-inside:avoid;border:1px solid #dde3ea;background:#fff}
+  #report .rep-sec{break-inside:auto}
+  .rail,.tabbar,#toast{display:none!important}
+}
+a.tree-item{text-decoration:none}
 
 </style>
 </head>
@@ -1151,7 +1233,7 @@ h3,.h3{font-weight:700;letter-spacing:-.02em}
 /* ---- 00-core.js ---- */
 /* ===================== Core: vocabulary, state, helpers ===================== */
 const FEATURES = {posts:false};
-const VIEWS = ["home","performance","posts","editor","scripts","tracker","competitors","academy","settings"].filter(v => v !== "posts" || FEATURES.posts);
+const VIEWS = ["home","performance","posts","editor","scripts","tracker","competitors","reports","academy","settings"].filter(v => v !== "posts" || FEATURES.posts);
 const VIEW_META = {
   home:{label:"Home", icon:"home", hint:"Today at a glance"},
   performance:{label:"Performance", icon:"chart", hint:"Your numbers and what works"},
@@ -1160,10 +1242,11 @@ const VIEW_META = {
   scripts:{label:"Scripts", icon:"pen", hint:"Scripts with hook options"},
   tracker:{label:"Planner", icon:"columns", hint:"What to make and when"},
   competitors:{label:"Competitors", icon:"users", hint:"What works for others"},
+  reports:{label:"Reports", icon:"file", hint:"Your numbers and competitors, to save or send"},
   academy:{label:"Academy", icon:"book", hint:"Courses on using all of this"},
   settings:{label:"Settings", icon:"settings", hint:"Profile, style, connections"},
 };
-const NAV_GROUPS = [["", ["home","performance","posts","editor","scripts","tracker","competitors"].filter(v => VIEWS.includes(v))], ["", ["academy"]]];
+const NAV_GROUPS = [["", ["home","performance","posts","editor","scripts","tracker","competitors","reports"].filter(v => VIEWS.includes(v))], ["", ["academy"]]];
 const STAGES = [
   {id:"idea", label:"Idea", v:"--s-idea"},
   {id:"script", label:"Scripting", v:"--s-script"},
@@ -1205,6 +1288,8 @@ const ICONS = {
   stop:"M6 6h12v12H6z",
   scissors:"M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M20 4L8.1 15.9 M14.5 14.5L20 20 M8.1 8.1L12 12",
   download:"M12 3v12 M7 10l5 5 5-5 M4 21h16",
+  sun:"M12 3v2 M12 19v2 M5.6 5.6l1.4 1.4 M17 17l1.4 1.4 M3 12h2 M19 12h2 M5.6 18.4 7 17 M17 7l1.4-1.4 M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",
   upload:"M12 21V9 M7 14l5-5 5 5 M4 3h16",
   close:"M18 6L6 18 M6 6l12 12",
   chevR:"M9 6l6 6-6 6", chevD:"M6 9l6 6 6-6", chevL:"M15 6l-6 6 6 6", chevUD:"M8 9l4-4 4 4 M8 15l4 4 4-4",
@@ -1405,6 +1490,7 @@ function openLayer(kind, el, onClose, opts){
   return el;
 }
 function closeLayer(){
+  closeCalendar();
   const top = Layers.stack.pop();
   if (!top) return;
   const a = document.activeElement; if (a && top.el.contains(a)) a.blur();
@@ -1928,9 +2014,81 @@ function localDb(){
 }
 
 
+/* ---- 06-datepick.js ---- */
+/* ===================== Dates are picked on a calendar, never typed ===================== */
+const DP = {pop:null};
+function closeCalendar(){ if (!DP.pop) return; const p = DP.pop; DP.pop = null; p.cleanup(); p.el.remove(); }
+/* A month calendar that opens next to anchor. onPick gets "YYYY-MM-DD", or "" when cleared. */
+function openCalendar(anchor, value, onPick, opts){
+  closeCalendar(); opts = opts || {};
+  const t = todayStr(); let sel = /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : ""; let focus = sel || t;
+  let month = focus.slice(0, 7);
+  const el = h("div", {class:"dp-pop", role:"dialog", "aria-label":"Choose a date"});
+  const pick = v => { closeCalendar(); onPick(v); if (anchor && anchor.focus) anchor.focus(); };
+  const nextMonday = () => { let d = addDays(t, 1); while (parseD(d).getDay() !== 1) d = addDays(d, 1); return d; };
+  function paint(){
+    const first = parseD(month + "-01"); const lead = (first.getDay() + 6) % 7; const start = addDays(month + "-01", -lead);
+    const days = Array.from({length:42}, (_, i) => addDays(start, i));
+    const cells = days.map(d => h("button", {type:"button", class:"dp-d" + (d.slice(0, 7) !== month ? " out" : "") + (d === t ? " today" : "") + (d === sel ? " on" : ""), "data-date":d, tabindex:d === focus ? "0" : "-1", "aria-label":fmtD(d, {weekday:"long", day:"numeric", month:"long", year:"numeric"}), "aria-pressed":String(d === sel), onclick:() => pick(d)}, String(parseD(d).getDate())));
+    el.replaceChildren(
+      h("div", {class:"dp-h"}, btn("", {class:"btn icon sm ghost", "aria-label":"Previous month", onclick:() => shift(-1)}, "chevL"), h("b", {text:first.toLocaleDateString("en-GB", {month:"long", year:"numeric"})}), btn("", {class:"btn icon sm ghost", "aria-label":"Next month", onclick:() => shift(1)}, "chevR")),
+      h("div", {class:"dp-g"}, ["Mo","Tu","We","Th","Fr","Sa","Su"].map(x => h("span", {class:"dp-w", text:x})), cells),
+      h("div", {class:"dp-f"}, h("button", {type:"button", class:"chip", onclick:() => pick(t)}, "Today"), h("button", {type:"button", class:"chip", onclick:() => pick(addDays(t, 1))}, "Tomorrow"), h("button", {type:"button", class:"chip", onclick:() => pick(nextMonday())}, "Next Monday"),
+        opts.clearable === false ? null : h("button", {type:"button", class:"dp-clear", onclick:() => pick("")}, "No date")));
+  }
+  function shift(n){ const d = parseD(month + "-01"); d.setMonth(d.getMonth() + n); month = ymd(d).slice(0, 7); if (focus.slice(0, 7) !== month) focus = month + "-01"; paint(); }
+  el.addEventListener("keydown", e => {
+    if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeCalendar(); if (anchor && anchor.focus) anchor.focus(); return; }
+    const step = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-7, ArrowDown:7}[e.key]; if (!step || !e.target.classList.contains("dp-d")) return;
+    e.preventDefault(); focus = addDays(e.target.dataset.date, step); month = focus.slice(0, 7); paint(); const b = el.querySelector('[data-date="' + focus + '"]'); if (b) b.focus();
+  });
+  paint();
+  document.body.append(el);
+  // place it under the field, or above it when there is no room below
+  const r = anchor.getBoundingClientRect(); const w = el.offsetWidth, hgt = el.offsetHeight;
+  const left = Math.max(8, Math.min(r.left, innerWidth - w - 8)); const below = r.bottom + 6 + hgt < innerHeight - 8;
+  el.style.left = left + "px"; el.style.top = (below ? r.bottom + 6 : Math.max(8, r.top - hgt - 6)) + "px";
+  const away = e => { if (!el.contains(e.target) && !anchor.contains(e.target)) closeCalendar(); };
+  const moved = () => closeCalendar();
+  setTimeout(() => { document.addEventListener("pointerdown", away, true); }, 0);
+  addEventListener("resize", moved);
+  DP.pop = {el, cleanup:() => { document.removeEventListener("pointerdown", away, true); removeEventListener("resize", moved); }};
+  const f = el.querySelector(".dp-d[tabindex='0']"); if (f) f.focus();
+  return el;
+}
+/* A date field: a button that shows the date in words and opens the calendar. */
+function datePick({id, value, onChange, placeholder, clearable, small, late, text}){
+  let v = /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : "";
+  const label = h("span", {class:"dp-l"});
+  const b = h("button", {type:"button", class:"dp-btn" + (small ? " sm" : "") + (late ? " late" : ""), id:id || null, "aria-haspopup":"dialog", "aria-label":small ? (v ? "Due " + relDate(v) + ". Change the date" : "Add a date") : null, "data-value":v}, icon("calendar"), label);
+  const paint = () => { label.textContent = v ? (text && small ? text : relDate(v)) : (placeholder || "Pick a date"); b.classList.toggle("empty", !v); b.dataset.value = v; };
+  b.addEventListener("click", () => { if (DP.pop) { closeCalendar(); return; } openCalendar(b, v, nv => { v = nv; paint(); if (onChange) onChange(v); }, {clearable}); });
+  paint();
+  return b;
+}
+/* "Today", "Tomorrow", or "Mon 16 Nov" (with the year only when it is not this year). */
+function relDate(d){
+  const t = todayStr(); if (d === t) return "Today · " + fmtD(d, {day:"numeric", month:"short"}); if (d === addDays(t, 1)) return "Tomorrow · " + fmtD(d, {day:"numeric", month:"short"}); if (d === addDays(t, -1)) return "Yesterday · " + fmtD(d, {day:"numeric", month:"short"});
+  return fmtD(d, d.slice(0, 4) === t.slice(0, 4) ? {weekday:"short", day:"numeric", month:"short"} : {day:"numeric", month:"short", year:"numeric"});
+}
+
+/* ===================== Light or dark, remembered in this browser ===================== */
+function getTheme(){ return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+function setTheme(theme){
+  if (theme === "dark") document.documentElement.dataset.theme = "dark"; else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem("ch-theme", theme === "dark" ? "dark" : "light"); } catch (e) {}
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = theme === "dark" ? "#06080c" : "#f3f6fa";
+  render();
+}
+function themeButton(){
+  const dark = getTheme() === "dark";
+  return h("button", {type:"button", class:"tree-item", id:"theme-toggle", "aria-pressed":String(dark), title:dark ? "Switch to light mode" : "Switch to dark mode", onclick:() => setTheme(dark ? "light" : "dark")}, icon(dark ? "sun" : "moon"), h("span", {class:"lab", text:dark ? "Light mode" : "Dark mode"}));
+}
+
+
 /* ---- 10-data.js ---- */
 /* ===================== Seeds: shared content fallback, editing styles, example workspace ===================== */
-const ACADEMY_SEED = [{"id":"start-here","title":"How to use CreatorHub","subtitle":"From your invite to a finished video","level":"Beginner","hue":0,"order":1,"description":"Get in, connect Claude Code, run your first edit, and learn every screen. Twenty-two short lessons, click by click.","modules":[{"title":"Getting in","lessons":[{"id":"h-01","title":"Welcome and a quick tour","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub is the interface. You say what you want and Claude does the work on your own computer, on your own Claude plan.\n\n## Steps\n1. Editor: where your videos get edited. You point it at your footage, say what you want and pick a style.\n2. Scripts: one line in, a full script out. Or write your own.\n3. Planner: everything you are making, on one board.\n4. Performance and Competitors: your numbers, and what works for accounts ahead of you.\n5. The light at the bottom left tells you if Claude Code is connected. Setting that up is the next lesson, and you do it once.\n\nYour footage never leaves your computer."},{"id":"h-02","title":"Connecting Claude Code","duration":"5 min","status":"coming","video":"","resources":[],"notes":"This is the only setup, and you do it once per computer. There is no API key and no extra bill.\n\n## Steps\n1. Open your invite link. Your invite is already filled in; if not, paste the code and press Continue.\n2. Install Claude from claude.com/download and sign in. You need a paid Claude plan.\n3. In CreatorHub press Copy next to \"Your connect line\". It contains your invite, so do not share it.\n4. Open Terminal, paste the line, press Enter.\n5. Open Claude Code and type: run CreatorHub.\n6. The card in CreatorHub turns green and reads \"Claude Code is connected\".\n\n## Without Terminal\nIn Claude open Customize, then Connectors, then Add custom connector. Paste the server URL and the request header shown under the connect steps.\n\n## The routine from now on\nQueue work in CreatorHub. Then open Claude Code and say \"run CreatorHub\"."},{"id":"h-03","title":"Setting up your workspace","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Three short screens. Everything Claude writes and edits for you starts from these answers.\n\n## Steps\n1. You: your name, your handle, where you post. Write your niche in one sentence a stranger would understand: who it is for and what it does for them.\n2. Your goal: what would make the next 90 days a win, what is in your way, how much time you have.\n3. Your videos: pick HyperFrames if you do not use an editing program, Premiere Pro if you edit in it. You can change it for any single video.\n4. Pick a look to start with and press \"Create my workspace\".\n\nChange any of it later under Settings."}]},{"title":"Claude Code basics","lessons":[{"id":"h-18","title":"What Claude Code is, and the plan you need","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Claude Code is Claude with hands. It can open your files and run things on your computer, which is how it edits your video.\n\n## Steps\n1. It is part of the Claude desktop app, under the Code tab.\n2. You need a paid Claude plan. That is the only cost: CreatorHub does not add a bill on top.\n3. You never write code. You type one sentence and it does the work."},{"id":"h-19","title":"Installing it and signing in","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Download, open, sign in. That is the whole install.\n\n## Steps\n1. Download Claude from claude.com/download and open it.\n2. Sign in with your Claude account.\n3. Open the Code tab. It asks which folder to work in: pick the folder your footage is in."},{"id":"h-20","title":"Your first conversation, and the questions it asks","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Ask it something simple first, so you see how it answers.\n\n## Steps\n1. Type: what is in this folder?\n2. Before it runs anything on your computer, it asks you. \"Yes\" means once.\n3. \"Yes, and don't ask again\" lets it repeat that kind of step. For editing, allow the ones it repeats."},{"id":"h-21","title":"Where your files go, and what to do when it stops","duration":"3 min","status":"coming","video":"","resources":[],"notes":"It never changes your originals. Everything it makes goes in a new folder beside them.\n\n## Steps\n1. If it stops and asks you something, answer in a sentence and it carries on.\n2. If you reach your plan's limit, it tells you when it resets. Your edit is not lost: say \"run CreatorHub\" again later.\n3. If anything looks stuck, close Claude Code, open it, and say \"run CreatorHub\"."},{"id":"h-22","title":"Quick start: invite to finished video in 10 minutes","duration":"10 min","status":"coming","video":"","resources":[],"notes":"The whole path in one go. This is the lesson to watch if you only watch one.\n\n## Steps\n1. Open your invite link.\n2. Connect Claude Code with the connect line.\n3. Editor: choose a clip, say what you want, pick a style, press \"Run it through Claude\".\n4. In Claude Code say \"run CreatorHub\".\n5. Open the finished video from the location shown on the edit."}]},{"title":"The editor","lessons":[{"id":"h-04","title":"Your first edit, start to finish","duration":"6 min","status":"coming","video":"","resources":[],"notes":"Four things: your footage, what you want, a style, and how it is made.\n\n## Steps\n1. Sidebar, Editor.\n2. Your footage: in Finder select the folder, press Option + Command + C, and paste it into the box. Nothing uploads. It only saves the location.\n3. What do you want: say it the way you would to an editor. \"Cut the pauses, add captions, under 40 seconds.\"\n4. Pick a style.\n5. Leave HyperFrames selected and press \"Run it through Claude\". The edit appears under \"Your edits\" as waiting.\n6. Open Claude Code and say \"run CreatorHub\". It finds the footage, cuts it, builds the captions and graphics, checks its own frames and renders.\n7. CreatorHub shows each stage. When it reads Ready you get a summary and the location of the finished file.\n\nA talking-head clip under three minutes is the best first test. The first edit on a computer takes longer, because Claude Code sets up its tools once."},{"id":"h-05","title":"Your footage: folders, files and links","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub never uploads your footage. It only needs to know where it is.\n\n## Steps\n1. A whole shoot: select the folder in Finder, press Option + Command + C, paste.\n2. Specific clips: select them in Finder, press Option + Command + C, paste. Each one becomes its own line.\n3. Footage somewhere else: paste a Google Drive, Dropbox or YouTube link. Claude Code downloads it to your computer first.\n4. Remove a line with the x next to it.\n5. Leave it empty and Claude Code uses the folder it is open in.\n\nIf you drag a file onto the box, CreatorHub only gets its name. Paste the folder too, or Claude searches your computer for the name.\nA Drive link has to be set to \"anyone with the link\"."},{"id":"h-06","title":"Telling it what you want","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Three things make a good brief: what to cut, how long, and how it should open.\n\n## Steps\n1. Type it, or press Talk and say it. Press Talk again to stop.\n2. The buttons under the box add the common requests for you.\n3. Filmed from a script? Pick it, so Claude knows what you meant to say.\n4. Going for a specific look? Under the styles, paste a link to an edit you like or add screenshots. Claude studies them before it starts.\n\n\"Make it good\" gets you an average edit. \"Open on the line about the price, cut every pause, 30 seconds\" gets you yours."},{"id":"h-07","title":"Picking a style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Each style is a complete look: captions, graphics, pace and camera.\n\n## Steps\n1. Big Caps: the short-form standard. Opinions and myth-busting.\n2. Apple UI: everything on frosted glass. Calm and premium.\n3. Real Estate: property reels. Green numbers and location tags.\n4. Rating: a score card for everything you rate.\n5. Comparison: this against that, with a winner.\n6. Podcast: clips from long conversations, with a name tag.\n7. Tutorial: numbered steps and a progress bar.\n8. Clean, Editorial, Minimal: calmer looks for advice, stories and quiet brands.\n\nPick the closest one. Bend it in the brief, or make your own."},{"id":"h-08","title":"HyperFrames or Premiere Pro","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Claude does the editing either way. This decides where the video gets built.\n\n## Steps\n1. HyperFrames needs no editing program. You get a finished video file.\n2. Premiere Pro leaves a finished sequence in a copy of your project. You look it over and export. Premiere has to be open with its panel connected.\n3. Set your usual one under Settings. Change it for any single video on the Editor screen."},{"id":"h-09","title":"What happens in Claude Code","duration":"4 min","status":"coming","video":"","resources":[],"notes":"\"run CreatorHub\" is the only thing you ever type there.\n\n## Steps\n1. Claude Code asks before it runs things on your computer. Choose \"Yes, and don't ask again\" for the ones it repeats.\n2. The first edit takes longer, because it sets up its tools once.\n3. It works through everything you queued, one after the other.\n4. It never touches your original files. Everything it makes goes in a new folder next to them.\n5. Leave Claude Code open while it works. You can close CreatorHub; the result is there when you come back."},{"id":"h-10","title":"Your finished edit and asking for changes","duration":"3 min","status":"coming","video":"","resources":[],"notes":"The first version is close. This is how you get it right.\n\n## Steps\n1. A Ready card shows what was cut and what was added.\n2. Copy the location and open the video.\n3. Write what should change under the edit: \"Make the captions bigger.\" \"Cut the part about pricing.\" Press \"Send changes to Claude\".\n4. It picks up the same project and gives you version 2. The first one stays.\n\nOne change per sentence works best."},{"id":"h-11","title":"Create your own style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Describe your look once and pick it for any edit.\n\n## Steps\n1. Editor, \"Create a style\".\n2. Name it.\n3. Describe it the way you would to an editor: \"Big white captions, two words at a time. Green for numbers. Slow zoom on every key line.\"\n4. Optional: point it at videos you like. Paste a folder or links.\n5. Pick the closest starting look and press \"Save and use it\".\n\nYour styles sit first in the gallery, marked Yours. The pen on the card changes one."},{"id":"h-12","title":"When something goes wrong","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Most problems are one of these five.\n\n## Steps\n1. An edit sits on \"Waiting for Claude Code\": open Claude Code and say \"run CreatorHub\".\n2. \"Couldn't finish\": the card says why. Fix that and press \"Run it again\".\n3. The light reads \"Connect Claude Code\" on a new computer: paste the connect line again.\n4. A Premiere edit fails: open Premiere and connect its panel, or switch that edit to HyperFrames.\n5. \"Invite not valid\" or \"switched off\": ask for a new invite link.\n\nYou can stop or remove any edit. Your files are never deleted."}]},{"title":"The rest of the app","lessons":[{"id":"h-13","title":"Scripts","duration":"3 min","status":"coming","video":"","resources":[],"notes":"One line in, a full script out. Or write your own and keep it here.\n\n## Steps\n1. Sidebar, Scripts. Type what the video is about and pick the format.\n2. Press \"Write the script\", then say \"run CreatorHub\" in Claude Code.\n3. Pick the opening you would say.\n4. Press \"Make it sound like me\" if anything reads stiff.\n5. \"Write it myself\" keeps your own script here.\n6. \"Edit a video from it\" starts an edit with the script attached."},{"id":"h-14","title":"Planner","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Everything you are making and where each piece is.\n\n## Steps\n1. Type in any column and press Enter to add a card.\n2. Drag a card as it moves forward.\n3. Open a card for its date, your notes and its script.\n4. The calendar shows the same pieces by date. Tasks is a plain to-do list."},{"id":"h-15","title":"Performance","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Your numbers as charts, read for you.\n\n## Steps\n1. Sidebar, Performance. Press \"Connect Instagram\".\n2. Until Instagram login is switched on, press \"Or import a table\" and paste a table copied from your insights.\n3. The charts show views over time, which openings work, which format and which day.\n4. Press \"What's working\" for what to repeat next week."},{"id":"h-16","title":"Competitors","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Find out why their posts work before you guess.\n\n## Steps\n1. Sidebar, Competitors, \"Add competitor\". Type the handle of an account one step ahead of you.\n2. Add their best posts: paste the captions with their numbers.\n3. Press Analyze, then say \"run CreatorHub\" in Claude Code.\n4. Read what their openings have in common and the five ideas adapted for you."},{"id":"h-17","title":"Settings and your profile","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Everything Claude writes and edits starts from your profile. Keep it current.\n\n## Steps\n1. Settings, Profile: niche, audience, offer, tone.\n2. \"How your videos are made\": the style and the program every new edit starts with.\n3. Connections: reconnect Claude Code on a new computer.\n4. Your data: export everything you have made, or reset."}]}]}];
+const ACADEMY_SEED = [{"id":"start-here","title":"How to use CreatorHub","subtitle":"From your invite to a finished video","level":"Beginner","hue":0,"order":1,"description":"Get in, connect Claude Code, run your first edit, and learn every screen. Twenty-two short lessons, click by click.","modules":[{"title":"Getting in","lessons":[{"id":"h-01","title":"Welcome and a quick tour","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub is the interface. You say what you want and Claude does the work on your own computer, on your own Claude plan.\n\n## Steps\n1. Editor: where your videos get edited. You point it at your footage, say what you want and pick a style.\n2. Scripts: one line in, a full script out. Or write your own.\n3. Planner: everything you are making, on one board.\n4. Performance and Competitors: your numbers, and what works for accounts ahead of you.\n5. The light at the bottom left tells you if Claude Code is connected. Setting that up is the next lesson, and you do it once.\n\nYour footage never leaves your computer."},{"id":"h-02","title":"Connecting Claude Code","duration":"5 min","status":"coming","video":"","resources":[],"notes":"This is the only setup, and you do it once per computer. There is no API key and no extra bill.\n\n## Steps\n1. Open your invite link. Your invite is already filled in; if not, paste the code and press Continue.\n2. Install Claude from claude.com/download and sign in. You need a paid Claude plan.\n3. In CreatorHub press Copy next to \"Your connect line\". It contains your invite, so do not share it.\n4. Open Terminal, paste the line, press Enter.\n5. Open Claude Code and type: run CreatorHub.\n6. The card in CreatorHub turns green and reads \"Claude Code is connected\".\n\n## Without Terminal\nIn Claude open Customize, then Connectors, then Add custom connector. Paste the server URL and the request header shown under the connect steps.\n\n## The routine from now on\nQueue work in CreatorHub. Then open Claude Code and say \"run CreatorHub\"."},{"id":"h-03","title":"Setting up your workspace","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Three short screens. Everything Claude writes and edits for you starts from these answers.\n\n## Steps\n1. You: your name, your handle, where you post. Write your niche in one sentence a stranger would understand: who it is for and what it does for them.\n2. Your goal: what would make the next 90 days a win, what is in your way, how much time you have.\n3. Your videos: pick HyperFrames if you do not use an editing program, Premiere Pro if you edit in it. You can change it for any single video.\n4. Pick a look to start with and press \"Create my workspace\".\n\nChange any of it later under Settings."}]},{"title":"Claude Code basics","lessons":[{"id":"h-18","title":"What Claude Code is, and the plan you need","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Claude Code is Claude with hands. It can open your files and run things on your computer, which is how it edits your video.\n\n## Steps\n1. It is part of the Claude desktop app, under the Code tab.\n2. You need a paid Claude plan. That is the only cost: CreatorHub does not add a bill on top.\n3. You never write code. You type one sentence and it does the work."},{"id":"h-19","title":"Installing it and signing in","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Download, open, sign in. That is the whole install.\n\n## Steps\n1. Download Claude from claude.com/download and open it.\n2. Sign in with your Claude account.\n3. Open the Code tab. It asks which folder to work in: pick the folder your footage is in."},{"id":"h-20","title":"Your first conversation, and the questions it asks","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Ask it something simple first, so you see how it answers.\n\n## Steps\n1. Type: what is in this folder?\n2. Before it runs anything on your computer, it asks you. \"Yes\" means once.\n3. \"Yes, and don't ask again\" lets it repeat that kind of step. For editing, allow the ones it repeats."},{"id":"h-21","title":"Where your files go, and what to do when it stops","duration":"3 min","status":"coming","video":"","resources":[],"notes":"It never changes your originals. Everything it makes goes in a new folder beside them.\n\n## Steps\n1. If it stops and asks you something, answer in a sentence and it carries on.\n2. If you reach your plan's limit, it tells you when it resets. Your edit is not lost: say \"run CreatorHub\" again later.\n3. If anything looks stuck, close Claude Code, open it, and say \"run CreatorHub\"."},{"id":"h-22","title":"Quick start: invite to finished video in 10 minutes","duration":"10 min","status":"coming","video":"","resources":[],"notes":"The whole path in one go. This is the lesson to watch if you only watch one.\n\n## Steps\n1. Open your invite link.\n2. Connect Claude Code with the connect line.\n3. Editor: choose a clip, say what you want, pick a style, press \"Run it through Claude\".\n4. In Claude Code say \"run CreatorHub\".\n5. Open the finished video from the location shown on the edit."}]},{"title":"The editor","lessons":[{"id":"h-04","title":"Your first edit, start to finish","duration":"6 min","status":"coming","video":"","resources":[],"notes":"Four things: your footage, what you want, a style, and how it is made.\n\n## Steps\n1. Sidebar, Editor.\n2. Your footage: in Finder select the folder, press Option + Command + C, and paste it into the box. Nothing uploads. It only saves the location.\n3. What do you want: say it the way you would to an editor. \"Cut the pauses, add captions, under 40 seconds.\"\n4. Pick a style.\n5. Leave HyperFrames selected and press \"Run it through Claude\". The edit appears under \"Your edits\" as waiting.\n6. Open Claude Code and say \"run CreatorHub\". It finds the footage, cuts it, builds the captions and graphics, checks its own frames and renders.\n7. CreatorHub shows each stage. When it reads Ready you get a summary and the location of the finished file.\n\nA talking-head clip under three minutes is the best first test. The first edit on a computer takes longer, because Claude Code sets up its tools once."},{"id":"h-05","title":"Your footage: folders, files and links","duration":"3 min","status":"coming","video":"","resources":[],"notes":"CreatorHub never uploads your footage. It only needs to know where it is.\n\n## Steps\n1. A whole shoot: select the folder in Finder, press Option + Command + C, paste.\n2. Specific clips: select them in Finder, press Option + Command + C, paste. Each one becomes its own line.\n3. Footage somewhere else: paste a Google Drive, Dropbox or YouTube link. Claude Code downloads it to your computer first.\n4. Remove a line with the x next to it.\n5. Leave it empty and Claude Code uses the folder it is open in.\n\nIf you drag a file onto the box, CreatorHub only gets its name. Paste the folder too, or Claude searches your computer for the name.\nA Drive link has to be set to \"anyone with the link\"."},{"id":"h-06","title":"Telling it what you want","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Three things make a good brief: what to cut, how long, and how it should open.\n\n## Steps\n1. Type it, or press Talk and say it. Press Talk again to stop.\n2. The buttons under the box add the common requests for you.\n3. Filmed from a script? Pick it, so Claude knows what you meant to say.\n4. Going for a specific look? Under the styles, paste a link to an edit you like or add screenshots. Claude studies them before it starts.\n\n\"Make it good\" gets you an average edit. \"Open on the line about the price, cut every pause, 30 seconds\" gets you yours."},{"id":"h-07","title":"Picking a style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Each style is a complete look: captions, graphics, pace and camera.\n\n## Steps\n1. Big Caps: the short-form standard. Opinions and myth-busting.\n2. Apple UI: everything on frosted glass. Calm and premium.\n3. Real Estate: property reels. Green numbers and location tags.\n4. Rating: a score card for everything you rate.\n5. Comparison: this against that, with a winner.\n6. Podcast: clips from long conversations, with a name tag.\n7. Tutorial: numbered steps and a progress bar.\n8. Clean, Editorial, Minimal: calmer looks for advice, stories and quiet brands.\n\nPick the closest one. Bend it in the brief, or make your own."},{"id":"h-08","title":"HyperFrames or Premiere Pro","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Claude does the editing either way. This decides where the video gets built.\n\n## Steps\n1. HyperFrames needs no editing program. You get a finished video file.\n2. Premiere Pro leaves a finished sequence in a copy of your project. You look it over and export. Premiere has to be open with its panel connected.\n3. Set your usual one under Settings. Change it for any single video on the Editor screen."},{"id":"h-09","title":"What happens in Claude Code","duration":"4 min","status":"coming","video":"","resources":[],"notes":"\"run CreatorHub\" is the only thing you ever type there.\n\n## Steps\n1. Claude Code asks before it runs things on your computer. Choose \"Yes, and don't ask again\" for the ones it repeats.\n2. The first edit takes longer, because it sets up its tools once.\n3. It works through everything you queued, one after the other.\n4. It never touches your original files. Everything it makes goes in a new folder next to them.\n5. Leave Claude Code open while it works. You can close CreatorHub; the result is there when you come back."},{"id":"h-10","title":"Your finished edit and asking for changes","duration":"3 min","status":"coming","video":"","resources":[],"notes":"The first version is close. This is how you get it right.\n\n## Steps\n1. A Ready card shows what was cut and what was added.\n2. Copy the location and open the video.\n3. Write what should change under the edit: \"Make the captions bigger.\" \"Cut the part about pricing.\" Press \"Send changes to Claude\".\n4. It picks up the same project and gives you version 2. The first one stays.\n\nOne change per sentence works best."},{"id":"h-11","title":"Create your own style","duration":"4 min","status":"coming","video":"","resources":[],"notes":"Describe your look once and pick it for any edit.\n\n## Steps\n1. Editor, \"Create a style\".\n2. Name it.\n3. Describe it the way you would to an editor: \"Big white captions, two words at a time. Green for numbers. Slow zoom on every key line.\"\n4. Optional: point it at videos you like. Paste a folder or links.\n5. Pick the closest starting look and press \"Save and use it\".\n\nYour styles sit first in the gallery, marked Yours. The pen on the card changes one."},{"id":"h-12","title":"When something goes wrong","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Most problems are one of these five.\n\n## Steps\n1. An edit sits on \"Waiting for Claude Code\": open Claude Code and say \"run CreatorHub\".\n2. \"Couldn't finish\": the card says why. Fix that and press \"Run it again\".\n3. The light reads \"Connect Claude Code\" on a new computer: paste the connect line again.\n4. A Premiere edit fails: open Premiere and connect its panel, or switch that edit to HyperFrames.\n5. \"Invite not valid\" or \"switched off\": ask for a new invite link.\n\nYou can stop or remove any edit. Your files are never deleted."}]},{"title":"The rest of the app","lessons":[{"id":"h-13","title":"Scripts","duration":"3 min","status":"coming","video":"","resources":[],"notes":"One line in, a full script out. Or write your own and keep it here.\n\n## Steps\n1. Sidebar, Scripts. Type what the video is about and pick the format.\n2. Press \"Write the script\", then say \"run CreatorHub\" in Claude Code.\n3. Pick the opening you would say.\n4. Press \"Make it sound like me\" if anything reads stiff.\n5. \"Write it myself\" keeps your own script here.\n6. \"Edit a video from it\" starts an edit with the script attached."},{"id":"h-14","title":"Planner","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Everything you are making and where each piece is.\n\n## Steps\n1. Type in any column and press Enter to add a card.\n2. Drag a card as it moves forward.\n3. Open a card for its date, your notes and its script.\n4. The calendar shows the same pieces by date. Tasks is a plain to-do list."},{"id":"h-15","title":"Performance","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Your numbers as charts, read for you.\n\n## Steps\n1. Sidebar, Performance. Press \"Connect Instagram\".\n2. Until Instagram login is switched on, take screenshots of your posts grid or your insights and drop them in the box under it. Or click the box and choose them, or paste one with Cmd+V. Up to 12 at a time.\n3. Press \"Read screenshots\". Claude reads every post, its date and its numbers.\n4. Check the list. A post with no date shows it in orange. Press Import.\n5. Do it again next week. Posts you already have get their new numbers; new posts are added.\n6. The charts show views over time, which openings work, which format and which day. Press \"What's working\" for what to repeat next week."},{"id":"h-16","title":"Competitors","duration":"3 min","status":"coming","video":"","resources":[],"notes":"Find out why their posts work before you guess.\n\n## Steps\n1. Sidebar, Competitors, \"Add competitor\". Type the handle of an account one step ahead of you.\n2. Add their best posts: paste the captions with their numbers.\n3. Press Analyze, then say \"run CreatorHub\" in Claude Code.\n4. Read what their openings have in common and the five ideas adapted for you."},{"id":"h-17","title":"Settings and your profile","duration":"2 min","status":"coming","video":"","resources":[],"notes":"Everything Claude writes and edits starts from your profile. Keep it current.\n\n## Steps\n1. Settings, Profile: niche, audience, offer, tone.\n2. \"How your videos are made\": the style and the program every new edit starts with.\n3. Connections: reconnect Claude Code on a new computer.\n4. Your data: export everything you have made, or reset."}]}]}];
 const LIBRARY_SEED = [{"id":"myth-bust","name":"Myth-bust","kind":"hook","structure":"Name the belief everyone repeats → show the gap it hides → correct it honestly, costs included → one next step","bestFor":"Expert niches where misleading advice is common (tax, fitness, business, health)","hookLine":"This is what people don’t understand about…","example":"Everyone says you need to post every day. Here’s what actually moved the needle for me, and it wasn’t volume.","notes":"Works because the honesty is the sell. Say what it really costs and who it is not for. Face-to-camera beats text-only on the same idea by a wide margin.","order":1},{"id":"objection","name":"Objection-bust","kind":"hook","structure":"State the number-one fear out loud → disarm with an unexpected story or analogy → pivot: “but here’s the reality” → proof → normalize","bestFor":"Offers people hesitate on: money, relocation, big purchases, new tools","hookLine":"Do you think [the scary thing] is actually safe?","example":"Is it safe to let AI touch your footage? Here’s what happened the first time I let it cut a client reel.","notes":"Name the exact hesitation your DMs keep raising. Use a real historical fact as the proof beat, then land on “it’s just new, and new brings fear.”","order":2},{"id":"contrast","name":"Contrast / number","kind":"hook","structure":"Before number → after number in one breath → reframe the gap as a system change, not more work → CTA keyword","bestFor":"Any outcome you can put a number on: views, revenue, time saved, tax paid","hookLine":"Make X here, you keep Y. Make X there, you keep X.","example":"Last month this account did 280 views on a text reel and 5,900 on the same idea face to camera. Same topic. Different delivery.","notes":"The gap must be visceral. Pair it with a human on screen: pure text versions of this hook underperform the spoken version 5 to 10 times.","order":3},{"id":"story-analogy","name":"Story → analogy → point","kind":"hook","structure":"Open mid-story with something unexpected → the analogy lands the idea → self-correct (“that was a silly answer, right? but…”) → the real point → one proof","bestFor":"Dry topics that need a pattern interrupt before the lesson","hookLine":"I live down a private road with five houses…","example":"My neighbour parks two sports cars outside. I park a scooter. Guess whose house gets broken into. That’s how I think about where the attention goes on a feed.","notes":"Fast pace in the story, slow down on the point. The self-correction is the trust move: you show the audience you know it was a joke.","order":4},{"id":"proof-carousel","name":"Result proof carousel","kind":"format","structure":"Slide 1: the result and a date → slides 2–4: the system in numbers, a client case, the margin → slide 5: “I recorded a breakdown on…” → slide 6: comment keyword CTA","bestFor":"Carousels that turn proof into DMs","hookLine":"Bought my dream car at 21. Here’s the business behind it.","example":"75% of sales closed in DMs. No guarantees, all paid in full. A 4-person team at a 79% margin. Comment PIF and I’ll send the breakdown.","notes":"Every slide carries one number. The last slide is the only ask. Keep the photos candid, not stock.","order":5},{"id":"new-here","name":"“New here?” lesson series","kind":"format","structure":"Numbered lesson for new followers → “You might… you might have…” → “but you don’t have [the predictable thing]” → one principle in quotes","bestFor":"Stories and pinned posts that onboard new followers to your point of view","hookLine":"New here? Lesson 2: Predictability.","example":"You might run ads. You might have got a few clients from them. But you don’t have a way to predictably get 300 qualified followers a day. “When you can predict, you can scale.”","notes":"Keep each lesson to one idea. Number them so people binge. Reuse the frame weekly.","order":6},{"id":"comment-keyword","name":"Comment-keyword CTA","kind":"cta","structure":"Name one word → promise the exact thing they get → qualify who should comment","bestFor":"Every reel or carousel whose job is leads","hookLine":"Comment “WORD” and I’ll send you…","example":"Comment SYSTEM if you post more than twice a week and still can’t predict your views. I’ll send the exact weekly plan.","notes":"The word should match the thing (DUBAI, PIF, SYSTEM). Qualify the ask (“if you’re paying over £25K in tax”) to filter for intent. Pair with DM automation.","order":7},{"id":"documentary","name":"Documentary episode","kind":"format","structure":"Interview spine → real in-the-moment footage of the thing being built → one tension per episode → end on what happens next","bestFor":"Founder-led YouTube series; 10–20 minute standalone episodes","hookLine":"Episode 3: the week the deal nearly fell through","example":"Not vloggy, not staged. Capture what is actually happening while it happens, then cut it around one question per episode.","notes":"Shoot four episodes per trip. Keep one edited episode in the buffer before weekly releases start. Pull clips for short-form from every episode.","order":8},{"id":"story-funnel","name":"Live-session story funnel","kind":"format","structure":"Promise frame → remove the three objections in three frames (“you don’t need an audience / experience / to show your face”) → repeat the one thing → watch CTA with link","bestFor":"Selling a live session, a webinar or the next episode of a series through Stories","hookLine":"Today I’m sharing a new way to…","example":"You don’t need to build an audience. You don’t need experience. If you want to make this work without showing your face, you’ll love this one. Watch the live session →","notes":"One idea per frame, big text, high contrast. End on a frame that is only the CTA.","order":9},{"id":"lifestyle-curiosity","name":"Day-in-the-life curiosity","kind":"hook","structure":"Lifestyle visual → never say what the business is → let comments ask → answer in the DMs or a later reel","bestFor":"Lifestyle-led accounts building curiosity before a reveal","hookLine":"Day in the life on the coast. Morning missions first.","example":"Morning run, two calls, one shoot. Nobody in the comments knows what I actually do, and that is the point.","notes":"The curiosity is the asset. Monetize it later with a reveal series or a comment-keyword offer.","order":10}];
 
 /* Editing styles: how captions, the hook and the pacing look. The first is the house style. */
@@ -2099,14 +2257,16 @@ function renderRail(){
     apiOK() ? h("button", {type:"button", class:"srch", onclick:() => openAssistant(), "aria-label":"Search or ask"}, icon("search"), h("span", {text:"Search or ask"}), h("span", {class:"kbd", text:"⌘K"})) : null,
     tree,
     h("div", {class:"rail-foot"}, aiStatus(),
+      h("a", {class:"tree-item", id:"to-website", href:"../index.html", title:"The CreatorHub front page"}, icon("globe"), h("span", {class:"lab", text:"CreatorHub website"})),
+      themeButton(),
       h("button", {type:"button", class:"tree-item", "aria-current":S.view === "settings" ? "page" : null, onclick:() => go("settings", {settingsTab:"brand"})}, icon("settings"), h("span", {class:"lab", text:"Settings"}))));
 }
 function renderTopbar(){ $("#topbar").replaceChildren(wsButton(true), apiOK() ? btn("", {class:"btn ghost icon", "aria-label":"Assistant", onclick:() => openAssistant()}, "message") : btn("", {class:"btn ghost icon", "aria-label":"Settings", onclick:() => go("settings", {settingsTab:"brand"})}, "settings")); }
 function renderTabbar(){
   const tabs = [["home","Home","home"],["performance","Performance","chart"],["editor","Editor","film"],FEATURES.posts ? ["posts","Posts","layers"] : ["scripts","Scripts","pen"],["more","More","grid"]];
-  const moreViews = ["scripts","tracker","competitors","academy","settings"].filter(v => !tabs.some(t => t[0] === v));
+  const moreViews = ["scripts","tracker","competitors","reports","academy","settings"].filter(v => !tabs.some(t => t[0] === v));
   $("#tabbar").replaceChildren(tabs.map(([v, l, ic]) => h("button", {type:"button", "aria-current":(S.view === v || (v === "more" && moreViews.includes(S.view))) ? "page" : null,
-    onclick:() => v === "more" ? openSheet([...moreViews.map(mv => ({label:VIEW_META[mv].label, icon:VIEW_META[mv].icon, onClick:() => go(mv, viewSub(mv))})), ...(apiOK() ? [{label:"Assistant", icon:"message", onClick:() => openAssistant()}] : [])]) : go(v, viewSub(v))},
+    onclick:() => v === "more" ? openSheet([...moreViews.map(mv => ({label:VIEW_META[mv].label, icon:VIEW_META[mv].icon, onClick:() => go(mv, viewSub(mv))})), ...(apiOK() ? [{label:"Assistant", icon:"message", onClick:() => openAssistant()}] : []), {label:getTheme() === "dark" ? "Light mode" : "Dark mode", icon:getTheme() === "dark" ? "sun" : "moon", onClick:() => setTheme(getTheme() === "dark" ? "light" : "dark")}, {label:"CreatorHub website", icon:"globe", onClick:() => { location.href = "../index.html"; }}]) : go(v, viewSub(v))},
     icon(ic), l)));
 }
 
@@ -2400,7 +2560,7 @@ function taskRow(t, opts){
   return h("div", {class:"task" + (t.done ? " done" : "")},
     h("input", {type:"checkbox", checked:!!t.done, "aria-label":"Done", onchange:e => upsert("tasks", t.id, {done:e.target.checked})}),
     h("span", {class:"t"}, t.title, t.itemId && getDoc("items", t.itemId) ? h("span", {class:"muted small", text:" · " + getDoc("items", t.itemId).title}) : null),
-    t.due ? h("span", {class:"m" + (!t.done && t.due < todayStr() ? " late" : ""), text:relDay(t.due)}) : null,
+    datePick({value:t.due, placeholder:"Add date", small:true, late:!t.done && t.due && t.due < todayStr(), text:t.due ? relDay(t.due) : "", onChange:v => upsert("tasks", t.id, {due:v})}),
     opts && opts.noDelete ? null : h("button", {type:"button", class:"x", "aria-label":"Delete task", onclick:() => remove("tasks", t.id)}, icon("close")));
 }
 function addTaskInline(defaultDue){
@@ -2432,7 +2592,7 @@ function startSteps(){
     {title:"Make your first edit", text:"Say what you want, pick a style, run it through Claude.", done:own("projects"), go:() => go("editor", {project:null})},
     {title:"Create your own style", text:"Describe the look, or point it at videos you like.", done:listCol("styles").length > 0, go:() => openStyleBuilder(null)}];
   if (FEATURES.posts) steps.push({title:"Make your first post", text:"A story sequence or carousel in about a minute.", done:own("queue"), go:() => go("posts", {post:null})});
-  steps.push({title:"Bring in your numbers (optional)", text:"Paste a table or drop screenshots of your insights.", done:own("posts"), go:() => go("performance")});
+  steps.push({title:"Bring in your numbers (optional)", text:"Drop screenshots of your insights. Claude reads the dates and the numbers.", done:own("posts"), go:() => go("performance")});
   if (!FEATURES.posts) steps.push({title:"Study a competitor", text:"Add a handle. Their patterns, and five hooks for you.", done:listCol("competitors").some(c => !c.example && c.analysis), go:() => go("competitors", {competitor:null})});
   steps.push({title:"Watch the first lesson", text:"Ten minutes on how it all fits together.", done:Object.keys((S.progress && S.progress.done) || {}).length > 0, go:() => { const nl = nextLesson(); if (nl) go("academy", {course:nl.course.id, lesson:nl.lesson.id}); else go("academy", {course:null, lesson:null}); }});
   return steps;
@@ -3037,7 +3197,7 @@ function openItemDrawer(id, preset){
     const title = bindText(h("input", {class:"in title-in", id:"it-title", value:it.title, placeholder:"Name this piece", "aria-label":"Title"}), v => set({title:v.trim()}), 400);
     const type = h("select", {id:"it-type", onchange:e => set({type:e.target.value})}, TYPES.map(t => opt(t, t))); type.value = it.type;
     const plat = h("select", {id:"it-plat", onchange:e => set({platform:e.target.value})}, PLATFORMS.map(p => opt(p, p))); plat.value = it.platform;
-    const due = h("input", {id:"it-due", type:"date", value:it.due || "", onchange:e => set({due:e.target.value})});
+    const due = datePick({id:"it-due", value:it.due, placeholder:"No due date", onChange:v => set({due:v})});
     const hook = h("select", {id:"it-hook", onchange:e => set({hookType:e.target.value})}, opt("", "Not tagged"), HOOK_TYPES.map(x => opt(x, x))); hook.value = it.hookType || "";
     const cta = bindText(h("input", {id:"it-cta", value:it.cta || "", placeholder:"SYSTEM"}), v => set({cta:v.toUpperCase().trim()}), 400);
     const notes = bindText(h("textarea", {id:"it-notes", rows:"4", placeholder:"Angle, talking points, shots, links"}), v => set({notes:v}), 500); notes.value = it.notes || "";
@@ -3165,10 +3325,10 @@ function addPostsModal(cid){
       const type = h("select", {id:"ap-type", onchange:e => { d.type = e.target.value; }}, TYPES.map(t => opt(t, t)));
       const hook = h("select", {id:"ap-hook", onchange:e => { d.hookType = e.target.value; }}, opt("", "Unknown"), HOOK_TYPES.map(x => opt(x, x)));
       const err = h("span", {class:"err grow"});
-      content.append(f("title", "Hook line or title"), h("div", {class:"row2"}, fld("Type", type, "ap-type"), fld("Hook type", hook, "ap-hook")), h("div", {class:"row3"}, f("views", "Views", {type:"number", inputmode:"numeric"}), f("likes", "Likes", {type:"number"}), f("comments", "Comments", {type:"number"})), h("div", {class:"row3"}, f("date", "Date", {type:"date"}), f("cta", "CTA keyword"), f("url", "Link", {type:"url"})), f("notes", "Notes"),
+      content.append(f("title", "Hook line or title"), h("div", {class:"row2"}, fld("Type", type, "ap-type"), fld("Hook type", hook, "ap-hook")), h("div", {class:"row3"}, f("views", "Views", {type:"number", inputmode:"numeric"}), f("likes", "Likes", {type:"number"}), f("comments", "Comments", {type:"number"})), h("div", {class:"row3"}, fld("Date", datePick({id:"ap-date", value:d.date, placeholder:"No date", onChange:v => { d.date = v; }}), "ap-date"), f("cta", "CTA keyword"), f("url", "Link", {type:"url"})), f("notes", "Notes"),
         h("div", {class:"modal-f"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Add post", {class:"btn primary", onclick:() => { if (!d.title.trim()){ err.textContent = "Add the hook line."; return; } addMany([{...d, title:d.title.trim(), views:d.views === "" ? null : Number(d.views), likes:d.likes === "" ? null : Number(d.likes), comments:d.comments === "" ? null : Number(d.comments)}]); }})));
     } else if (tab === "paste"){
-      const ta = h("textarea", {rows:"8", class:"in", placeholder:"Paste captions with their numbers, a table copied from their insights, or notes like “Reel: ‘This is what people get wrong…’ 36K views, 2.2K likes”"});
+      const ta = h("textarea", {rows:"8", class:"in", placeholder:"Paste captions with their numbers, or notes like “Reel: ‘This is what people get wrong…’ 36K views, 2.2K likes”"});
       const err = h("span", {class:"err grow"});
       content.append(claudeGate("parsing pasted text"), ta, h("div", {class:"modal-f"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Extract posts", {class:"btn ai", disabled:!claudeOK(), onclick:async e => { if (!ta.value.trim()){ err.textContent = "Paste something first."; return; } e.currentTarget.disabled = true; err.textContent = ""; try { const r = await skillJSON("competitor_extract", {text:ta.value.slice(0, 20000)}); const list = normalizeCompetitorPosts(r); if (!list.length) throw {code:"invalid_json"}; preview(list, "Check the numbers, then add."); } catch (ex){ err.textContent = claudeCopy(ex); e.currentTarget.disabled = false; } }}, "wand")));
     } else {
@@ -3192,7 +3352,7 @@ Views.performance = {
   mount(root){ this.update(root); },
   update(root){
     const all = listCol("posts"); const t = todayStr(); const untagged = all.filter(p => !p.hookType).length;
-    const actions = [btn("Add post", {class:"btn ghost", onclick:() => openPostForm(null, {date:t})}, "plus"), btn("Import", {class:"btn", onclick:() => importModal()}, "upload"), untagged && claudeOK() ? btn("Tag hooks", {class:"btn", onclick:() => tagHooks()}, "wand") : null, btn(PF.busy ? "Reading…" : "What’s working?", {class:"btn ai", disabled:PF.busy || !claudeOK() || !all.length, onclick:() => readNumbers()}, "wand")];
+    const actions = [btn("Add post", {class:"btn ghost", onclick:() => openPostForm(null, {date:t})}, "plus"), btn("Add screenshots", {class:"btn", onclick:() => importModal()}, "image"), untagged && claudeOK() ? btn("Tag hooks", {class:"btn", onclick:() => tagHooks()}, "wand") : null, btn(PF.busy ? "Reading…" : "What’s working?", {class:"btn ai", disabled:PF.busy || !claudeOK() || !all.length, onclick:() => readNumbers()}, "wand")];
     root.replaceChildren(
       pageHead("Performance", "Which openings work, which formats, which days, and what to make next.", all.length ? actions : null, h("div", {class:"sub"}, h("span", null, h("b", {text:String(all.length)}), " posts tracked"), untagged ? h("span", {class:"late"}, h("b", {text:String(untagged)}), " untagged") : null)),
       all.length ? connectCards(all) : null,
@@ -3201,8 +3361,18 @@ Views.performance = {
 };
 function connectCards(all){
   return h("div", {class:"card pad-s connect connects"}, h("span", {class:"tile", style:"--hue:var(--h-performance)"}, icon("instagram")),
-    h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:all.length + " post" + (all.length === 1 ? "" : "s") + " tracked"}), h("div", {class:"meta", text:"Connect your profiles and new posts load by themselves."})),
-    btn("Connect Instagram", {class:"btn sm primary", onclick:connectProfile}, "instagram"), btn("Import", {class:"btn sm ghost", onclick:() => importModal()}, "upload"));
+    h("div", {style:"flex:1;min-width:0"}, h("b", {style:"font-weight:600;display:block", text:all.length + " post" + (all.length === 1 ? "" : "s") + " tracked"}), h("div", {class:"meta", text:"Connect your profiles and new posts load by themselves. Until then, drop new screenshots and the numbers update."})),
+    btn("Connect Instagram", {class:"btn sm primary", onclick:connectProfile}, "instagram"), btn("Add screenshots", {class:"btn sm ghost", onclick:() => importModal()}, "image"));
+}
+/* A box that takes screenshots: click to choose, or drop them on it. Hands the files on; nothing is uploaded until Claude is asked to read them. */
+function shotDrop(id, onFiles, big){
+  const input = h("input", {type:"file", accept:"image/*", multiple:true, id:id + "-files", class:"sr", "aria-label":"Choose screenshots", onchange:e => { const f = [...(e.target.files || [])]; e.target.value = ""; if (f.length) onFiles(f); }});
+  const zone = h("label", {class:"shot-drop" + (big ? " big" : ""), id, for:id + "-files"}, input, icon("image"),
+    h("span", {class:"grow"}, h("b", {text:"Drop screenshots of your insights"}), h("span", {class:"small muted", text:"Or click to choose them. Claude reads every post, its date and its numbers."})));
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("over"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+  zone.addEventListener("drop", e => { e.preventDefault(); zone.classList.remove("over"); const f = [...(e.dataTransfer.files || [])].filter(x => /^image\//.test(x.type)); if (f.length) onFiles(f); });
+  return zone;
 }
 /* Before there are numbers: the charts are there, empty, and there is one obvious thing to do. */
 function blankDashboard(){
@@ -3213,16 +3383,17 @@ function blankDashboard(){
       h("div", {class:"row4"}, tile("Views"), tile("Average views per post"), tile("Engagement rate"), tile("Posts")),
       h("div", {class:"card ghost"}, h("div", {class:"card-h"}, h("h3", {text:"Views over time"})), h("div", {class:"gline"})),
       h("div", {class:"grid2"}, bars("By opening", 5), bars("By weekday", 7))),
-    h("div", {class:"blank-cta"}, h("h2", {text:"Connect your profiles"}), h("p", {text:"Log in once and your numbers load by themselves. No screenshots."}),
+    h("div", {class:"blank-cta"}, h("h2", {text:"Connect your profiles"}), h("p", {text:"Log in once and your numbers load by themselves."}),
       h("div", {class:"toolbar", style:"justify-content:center"}, btn("Connect Instagram", {class:"btn primary lg", id:"perf-connect", onclick:connectProfile}, "instagram")),
       h("div", {class:"toolbar", style:"justify-content:center"}, h("span", {class:"chip"}, icon("tiktok"), "TikTok soon"), h("span", {class:"chip"}, icon("youtube"), "YouTube soon")),
-      h("button", {type:"button", class:"lnk", id:"perf-import", onclick:() => importModal(), text:"Or import a table for now"})));
+      h("div", {class:"or-line"}, h("span", {text:"or"})),
+      shotDrop("perf-drop", files => importModal({files}))));
 }
 /* Logging in to Instagram needs CreatorHub's app to be approved by Meta. Until the server says it is on, say so plainly. */
 function connectProfile(){
   if (BRAIN.instagram){ location.href = BRAIN.url + "/ig/start?code=" + encodeURIComponent(BRAIN.code); return; }
-  openModal({title:"Instagram login is not switched on yet", body:h("div", {class:"stack-s"}, h("p", {class:"prose", text:"Logging in with Instagram needs CreatorHub to be approved by Meta first. That approval is in progress."}), h("p", {class:"prose", text:"Until then, importing a table from your insights fills the same charts."})),
-    actions:[btn("Close", {class:"btn ghost", onclick:() => closeLayer()}), btn("Import a table", {class:"btn primary", onclick:() => { closeLayer(); importModal(); }}, "upload")]});
+  openModal({title:"Instagram login is not switched on yet", body:h("div", {class:"stack-s"}, h("p", {class:"prose", text:"Logging in with Instagram needs CreatorHub to be approved by Meta first. That approval is in progress."}), h("p", {class:"prose", text:"Until then, take screenshots of your posts or your insights and drop them in. Claude reads every post, its date and its numbers, and fills the same charts."})),
+    actions:[btn("Close", {class:"btn ghost", onclick:() => closeLayer()}), btn("Add screenshots", {class:"btn primary", onclick:() => { closeLayer(); importModal(); }}, "image")]});
 }
 function rangeFilter(){
   const t = todayStr();
@@ -3309,7 +3480,7 @@ function openPostForm(id, preset){
     const hook = h("select", {id:"po-hook", onchange:e => { p.hookType = e.target.value; }}, opt("", "Not tagged"), HOOK_TYPES.map(x => opt(x, x))); hook.value = HOOK_TYPES.includes(p.hookType) ? p.hookType : "";
     const err = h("span", {class:"err grow"});
     body.append(h("div", {class:"f"}, h("label", {for:"po-title", class:"sr", text:"Title"}), bindText(h("input", {id:"po-title", class:"in title-in", value:p.title, placeholder:"Hook line or title"}), v => { p.title = v; }, 0)),
-      h("div", {class:"row3"}, fld("Type", type, "po-type"), fld("Platform", plat, "po-plat"), f("date", "Published", {type:"date"})),
+      h("div", {class:"row3"}, fld("Type", type, "po-type"), fld("Platform", plat, "po-plat"), fld("Published", datePick({id:"po-date", value:p.date, placeholder:"No date", onChange:v => { p.date = v; }}), "po-date")),
       fld("Hook type", hook, "po-hook"),
       h("div", {class:"row3"}, f("views", "Views", {type:"number", inputmode:"numeric"}), f("likes", "Likes", {type:"number"}), f("comments", "Comments", {type:"number"})),
       h("div", {class:"row3"}, f("saves", "Saves", {type:"number"}), f("shares", "Shares", {type:"number"}), f("url", "Link", {type:"url"})),
@@ -3319,51 +3490,70 @@ function openPostForm(id, preset){
 }
 
 function numOrNull(v){ if (v == null || v === "") return null; const n = Number(v); return Number.isFinite(n) ? Math.round(n) : parseNum(String(v)); }
-/* ---------- Import ---------- */
+/* ---------- Screenshots in, posts out ---------- */
 function parseNum(s){ if (s == null) return null; s = String(s).trim().replace(/,/g, ""); const m = s.match(/^(-?\d+(?:\.\d+)?)\s*([kKmM])?$/); if (!m) return null; let n = Number(m[1]); if (/k/i.test(m[2] || "")) n *= 1000; if (/m/i.test(m[2] || "")) n *= 1e6; return Math.round(n); }
-function parseTable(text){
-  const lines = text.split(/\r?\n/).filter(l => l.trim()); if (lines.length < 2) return [];
-  const delim = (lines[0].match(/\t/g) || []).length >= 2 ? "\t" : (lines[0].match(/;/g) || []).length >= 2 ? ";" : ",";
-  const split = l => { const out = []; let cur = "", q = false; for (const ch of l){ if (ch === '"'){ q = !q; continue; } if (ch === delim && !q){ out.push(cur); cur = ""; } else cur += ch; } out.push(cur); return out.map(x => x.trim()); };
-  const head = split(lines[0]).map(x => x.toLowerCase());
-  const find = re => head.findIndex(x => re.test(x));
-  const col = {title:find(/title|caption|description|^name|post|text/), views:find(/^views?$|plays|video views|impressions|reach/), likes:find(/like/), comments:find(/comment/), saves:find(/save/), shares:find(/share/), date:find(/date|publish|time/), type:find(/type|format|media/), url:find(/url|link|permalink/)};
-  if (col.title < 0 && col.views < 0) return [];
-  const out = [];
-  for (const l of lines.slice(1)){
-    const c = split(l); const get = k => col[k] >= 0 ? c[col[k]] : undefined;
-    const title = (get("title") || "").slice(0, 200); if (!title && parseNum(get("views")) == null) continue;
-    let date = ""; const ds = get("date"); if (ds){ const d = new Date(ds); if (!isNaN(d)) date = ymd(d); }
-    const tp = (get("type") || "").toLowerCase(); const type = /carousel|album|sidecar/.test(tp) ? "Carousel" : /story/.test(tp) ? "Story" : /short/.test(tp) ? "Short" : /video|reel|clip/.test(tp) ? "Reel" : /image|photo|static/.test(tp) ? "Static post" : "Reel";
-    out.push({title:title || "Untitled post", type, views:parseNum(get("views")), likes:parseNum(get("likes")), comments:parseNum(get("comments")), saves:parseNum(get("saves")), shares:parseNum(get("shares")), date, url:get("url") || ""});
-  }
-  return out;
-}
 function normalizePosts(r){ return (Array.isArray(r) ? r : []).map(p => ({title:String((p && p.title) || "").slice(0, 200), type:TYPES.includes(p.type) ? p.type : "Reel", hookType:HOOK_TYPES.includes(p.hookType) ? p.hookType : "", views:numOrNull(p.views), likes:numOrNull(p.likes), comments:numOrNull(p.comments), saves:numOrNull(p.saves), shares:numOrNull(p.shares), date:/^\d{4}-\d{2}-\d{2}$/.test(p.date || "") ? p.date : "", url:String(p.url || "")})).filter(p => p.title); }
 function mergePosts(a, b){
   const out = a.map(x => ({...x}));
-  for (const q of b){ const m = out.find(x => (q.url && x.url && x.url === q.url) || x.title === q.title); if (m){ for (const k of ["views","likes","comments","saves","shares"]) if (q[k] != null) m[k] = q[k]; if (!m.date) m.date = q.date; if (!m.url) m.url = q.url; } else out.push(q); }
+  for (const q of b){ const m = out.find(x => (q.url && x.url && x.url === q.url) || x.title === q.title); if (m){ for (const k of ["views","likes","comments","saves","shares"]) if (q[k] != null) m[k] = q[k]; if (!m.date) m.date = q.date; if (!m.url) m.url = q.url; if (!m.hookType) m.hookType = q.hookType; } else out.push(q); }
   return out;
 }
-function importModal(pre){
-  let tab = "paste"; const content = h("div", {class:"stack-s"}); let platform = PLATFORMS.includes(pre) ? pre : "Instagram";
-  const tabs = h("div", {class:"segm", role:"tablist"}, [["paste","Paste a table"],["shots","Screenshots"]].map(([id, l]) => h("button", {type:"button", role:"tab", "aria-selected":String(tab === id), onclick:e => { tab = id; tabs.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b === e.currentTarget))); build(); }}, l)));
+/* The same post read again a week later updates its numbers instead of appearing twice. */
+function savePosts(list, platform){
+  const have = listCol("posts").filter(x => (x.platform || "Instagram") === platform); let added = 0, updated = 0;
+  for (const q of list){
+    const m = have.find(x => (q.url && x.url && x.url === q.url) || x.title.trim().toLowerCase() === q.title.trim().toLowerCase());
+    if (m){ const patch = {}; for (const k of ["views","likes","comments","saves","shares"]) if (q[k] != null) patch[k] = q[k]; if (!m.date && q.date) patch.date = q.date; if (!m.url && q.url) patch.url = q.url; if (!m.hookType && q.hookType) patch.hookType = q.hookType; upsert("posts", m.id, patch); updated++; }
+    else { upsert("posts", uid("po"), {...q, platform}); added++; }
+  }
+  return {added, updated};
+}
+const SHOTS_MAX = 12, SHOTS_PER_READ = 4;
+function importModal(o){
+  o = o || {}; let platform = PLATFORMS.includes(o.platform) ? o.platform : "Instagram"; let busy = false; let ctl = null;
+  const shots = []; // {file, url}
+  const content = h("div", {class:"stack-s"});
   const plat = h("select", {class:"ctl", "aria-label":"Platform", onchange:e => { platform = e.target.value; }}, PLATFORMS.map(x => opt(x, x))); plat.value = platform;
-  const preview = (list, note) => { content.replaceChildren(h("p", {class:"small muted", text:note}), h("div", {class:"list", style:"max-height:300px;overflow:auto"}, list.map(p => h("div", {class:"lrow"}, h("span", {class:"t", text:p.title}), h("span", {class:"m", text:compact(p.views) + " views · " + (p.date || "no date")})))), h("div", {class:"modal-f"}, btn("Back", {class:"btn ghost", onclick:build}), btn("Import " + list.length, {class:"btn primary", onclick:() => { list.forEach(p => upsert("posts", uid("po"), {...p, platform})); closeLayer(); toast(list.length + " posts imported" + (claudeOK() ? ". Press Tag hooks to classify them." : ".")); }}))); };
+  const add = files => { for (const f of files){ if (shots.length >= SHOTS_MAX) break; if (!/^image\//.test(f.type || "")) continue; shots.push({file:f, url:URL.createObjectURL(f)}); } build(); };
+  const drop = shotDrop("imp-drop", add, false);
+  // a screenshot on the clipboard (Cmd+Shift+Ctrl+4 on a Mac) can be pasted straight in
+  const onPaste = e => { const f = [...((e.clipboardData && e.clipboardData.files) || [])].filter(x => /^image\//.test(x.type)); if (f.length){ e.preventDefault(); add(f.map((x, i) => x.name && x.name !== "image.png" ? x : new File([x], "pasted-" + Date.now() + "-" + i + ".png", {type:x.type}))); } };
+  document.addEventListener("paste", onPaste);
+  const preview = (list, note) => {
+    const rows = list.map(p => h("div", {class:"lrow"}, h("span", {class:"t", text:p.title}), h("span", {class:"m" + (p.date ? "" : " late"), text:(p.views != null ? compact(p.views) + " views" : "no views") + " · " + (p.date || "no date")})));
+    content.replaceChildren(h("p", {class:"small muted", text:note}), h("div", {class:"list", id:"imp-list", style:"max-height:320px;overflow:auto"}, rows),
+      h("div", {class:"modal-f"}, btn("Back", {class:"btn ghost", onclick:build}), btn("Import " + list.length, {class:"btn primary", id:"imp-save", onclick:() => { const r = savePosts(list, platform); closeLayer(); toast([r.added ? r.added + " new post" + (r.added === 1 ? "" : "s") : "", r.updated ? r.updated + " updated" : ""].filter(Boolean).join(", ") + (claudeOK() && listCol("posts").some(p => !p.hookType) ? ". Press Tag hooks to sort the openings." : ".")); }})));
+  };
   function build(){
-    content.replaceChildren();
-    if (tab === "paste"){
-      const ta = h("textarea", {rows:"8", class:"in", placeholder:"Paste the exported table (CSV or copied from a spreadsheet). A header row with columns like Title, Views, Likes, Comments, Date works best."});
-      const err = h("span", {class:"err grow"});
-      content.append(ta, h("div", {class:"modal-f"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Read", {class:"btn primary", onclick:async e => { const text = ta.value.trim(); if (!text){ err.textContent = "Paste something first."; return; } const parsed = parseTable(text); if (parsed.length){ preview(parsed, "Parsed " + parsed.length + " rows. Check, then import."); return; } if (!claudeOK()){ err.textContent = "Couldn’t read that table. Use a header row with Title and Views columns."; return; } e.currentTarget.disabled = true; try { const r = await skillJSON("posts_extract", {today:todayStr(), text:text.slice(0, 24000)}); const list = normalizePosts(r); if (!list.length) throw {code:"invalid_json"}; preview(list, "Read by the assistant. Check the numbers, then import."); } catch (ex){ err.textContent = claudeCopy(ex); e.currentTarget.disabled = false; } }})));
-    } else {
-      const files = h("input", {type:"file", accept:"image/*", multiple:true, class:"in", "aria-label":"Screenshots"}); const err = h("span", {class:"err grow"});
-      content.append(claudeGate("reading screenshots"), h("p", {class:"small muted", text:"Up to 6 screenshots of your insights list or individual posts with their numbers."}), files,
-        h("div", {class:"modal-f"}, err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), btn("Read screenshots", {class:"btn ai", disabled:!claudeOK(), onclick:async e => { const list = [...(files.files || [])].slice(0, 6); if (!list.length){ err.textContent = "Choose at least one screenshot."; return; } e.currentTarget.disabled = true; try { const r = await skillJSON("posts_extract", {today:todayStr()}, {images:list}); const out = normalizePosts(r); if (!out.length) throw {code:"invalid_json"}; preview(out, "Read from " + list.length + " screenshot" + (list.length === 1 ? "" : "s") + ". Check, then import."); } catch (ex){ err.textContent = claudeCopy(ex); e.currentTarget.disabled = false; } }}, "wand")));
+    const err = h("span", {class:"err grow", id:"imp-err"}); const status = h("span", {class:"small muted grow", id:"imp-status"});
+    const thumbs = shots.length ? h("div", {class:"shot-grid", id:"imp-thumbs"}, shots.map((x, i) => h("div", {class:"shot-th"}, h("img", {src:x.url, alt:x.file.name || "Screenshot " + (i + 1)}),
+      btn("", {class:"btn icon sm", "aria-label":"Remove this screenshot", disabled:busy, onclick:() => { URL.revokeObjectURL(x.url); shots.splice(i, 1); build(); }}, "close")))) : null;
+    const go = btn(busy ? "Reading…" : "Read " + (shots.length > 1 ? shots.length + " screenshots" : "screenshot"), {class:"btn ai", id:"imp-read", disabled:busy || !shots.length || !claudeOK(), onclick:read}, "wand");
+    content.replaceChildren(
+      claudeGate("reading screenshots") || h("span"),
+      shots.length < SHOTS_MAX ? drop : null,
+      thumbs,
+      h("p", {class:"small muted", text:"Screenshots of your posts grid with the view counts, your insights list, or single posts with their numbers. Up to " + SHOTS_MAX + " at a time. You can also paste one with \u2318V."}),
+      h("div", {class:"modal-f"}, busy ? status : err, btn("Cancel", {class:"btn ghost", onclick:() => closeLayer()}), go));
+    async function read(){
+      busy = true; ctl = new AbortController(); build();
+      const batches = []; for (let i = 0; i < shots.length; i += SHOTS_PER_READ) batches.push(shots.slice(i, i + SHOTS_PER_READ).map(x => x.file));
+      let got = [];
+      try {
+        for (let i = 0; i < batches.length; i++){
+          const st = $("#imp-status"); if (st) st.textContent = batches.length > 1 ? "Claude is reading part " + (i + 1) + " of " + batches.length + "…" : "Claude is reading your screenshots…";
+          const r = await skillJSON("posts_extract", {today:todayStr()}, {images:batches[i], signal:ctl.signal});
+          got = mergePosts(got, normalizePosts(r));
+        }
+        busy = false;
+        if (!got.length){ build(); const e = $("#imp-err"); if (e) e.textContent = "Claude found no posts with numbers in those screenshots. Try screenshots that show the view counts."; return; }
+        preview(got, "Claude read " + got.length + " post" + (got.length === 1 ? "" : "s") + " from " + shots.length + " screenshot" + (shots.length === 1 ? "" : "s") + ". Check the numbers and the dates, then import.");
+      } catch (ex){ busy = false; if (ex && ex.code === "cancelled") return; build(); const e = $("#imp-err"); if (e) e.textContent = claudeCopy(ex); }
     }
   }
-  build();
-  openModal({title:"Import posts", body:h("div", {class:"stack-s"}, h("div", {class:"toolbar"}, h("span", {class:"muted small", text:"Platform"}), plat, h("span", {class:"grow"}), tabs), content), wide:true});
+  if (o.files) add(o.files); else build();
+  openModal({title:"Add your numbers from screenshots", body:h("div", {class:"stack-s"}, h("div", {class:"toolbar"}, h("span", {class:"muted small", text:"Platform"}), plat), content), wide:true,
+    onClose:() => { document.removeEventListener("paste", onPaste); if (ctl) ctl.abort(); shots.forEach(x => URL.revokeObjectURL(x.url)); }});
 }
 async function tagHooks(silent){
   const list = listCol("posts").filter(p => !p.hookType).slice(0, 60); if (!list.length || !claudeOK()) return; if (!silent) toast("Tagging " + list.length + " posts…");
@@ -3380,6 +3570,100 @@ async function readNumbers(silent){
     upsert("insights", uid("in"), {kind:"performance", at:new Date().toISOString(), headline:String(r.headline || ""), patterns:(r.patterns || []).map(String).slice(0, 6), recommendations:(r.recommendations || []).map(String).slice(0, 5), nextIdeas:(r.nextIdeas || []).map(i => ({title:String(i.title || ""), hook:String(i.hook || ""), type:String(i.type || "Reel")})).slice(0, 5), postingWindows:String(r.postingWindows || "")});
     if (!silent) toast("Read ready");
   } catch (e){ if (!silent) toast(claudeCopy(e)); } finally { PF.busy = false; render(); }
+}
+
+
+/* ---- 85-reports.js ---- */
+/* ===================== Reports: your numbers and your competitors on one page, to save or send ===================== */
+const RP = {range:30};
+Views.reports = {
+  crumb(){ return ""; },
+  mount(root){ this.update(root); },
+  update(root){
+    const posts = listCol("posts"); const comps = listCol("competitors"); const t = todayStr();
+    const dated = posts.map(p => p.date).filter(Boolean).sort();
+    const from = RP.range ? addDays(t, -RP.range + 1) : (dated[0] || t);
+    const inRange = posts.filter(p => RP.range === 0 || (p.date && p.date >= from)).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const actions = [
+      btn("Save as PDF", {class:"btn primary", id:"rep-pdf", disabled:!posts.length && !comps.length, onclick:() => printReport()}, "download"),
+      btn("Posts as CSV", {class:"btn ghost", id:"rep-csv", disabled:!inRange.length, onclick:() => downloadCSV("creatorhub-posts-" + t + ".csv", postsRows(inRange))}, "file"),
+      comps.length ? btn("Competitors as CSV", {class:"btn ghost", id:"rep-csv-comp", onclick:() => downloadCSV("creatorhub-competitors-" + t + ".csv", competitorRows(comps))}, "file") : null];
+    if (!posts.length && !comps.length){
+      root.replaceChildren(pageHead("Reports", "Your numbers and your competitors on one page. Save it as a PDF or send it."),
+        emptyState("Nothing to report yet", "Add your numbers on Performance and a competitor or two. The report builds itself from them.",
+          [btn("Go to Performance", {class:"btn primary", onclick:() => go("performance")}, "chart"), btn("Go to Competitors", {class:"btn", onclick:() => go("competitors", {competitor:null})}, "users")]));
+      return;
+    }
+    const range = segmented("repRange", [["7","7 days"],["30","30 days"],["90","90 days"],["0","All time"]], () => { RP.range = Number(S.ui.repRange); render(); });
+    range.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-selected", String(["7","30","90","0"][i] === String(RP.range))));
+    root.replaceChildren(
+      pageHead("Reports", "Your numbers and your competitors on one page. Save it as a PDF or send it.", actions),
+      h("div", {class:"rep-tools"}, range, h("span", {class:"muted small", text:inRange.length + " of your posts in this period"})),
+      reportBody(inRange, comps, from, t));
+  }
+};
+function reportBody(posts, comps, from, t){
+  const sum = (list, k) => list.reduce((s, p) => s + (Number(p[k]) || 0), 0);
+  const views = sum(posts, "views"); const eng = views ? (sum(posts, "likes") + sum(posts, "comments") + sum(posts, "saves") + sum(posts, "shares")) / views * 100 : 0;
+  const best = [...posts].sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0));
+  const latest = listCol("insights").filter(x => x.kind === "performance").sort((a, b) => (b.at || "").localeCompare(a.at || ""))[0];
+  const stat = (label, value, sub) => h("div", {class:"stat"}, h("span", {class:"l", text:label}), h("span", {class:"v", text:value}), sub ? h("span", {class:"d", text:sub}) : null);
+  const card = (title, sub, body) => h("div", {class:"card"}, h("div", {class:"card-h"}, h("h3", {text:title}), sub ? h("span", {class:"muted small", text:sub}) : null), body);
+  const who = S.profile && (S.profile.name || S.profile.handle) ? [S.profile.name, S.profile.handle].filter(Boolean).join(" · ") : "Your content";
+  const myAvg = posts.length ? views / posts.length : 0;
+  return h("article", {class:"report", id:"report"},
+    h("header", {class:"rep-h"}, h("div", null, h("div", {class:"eyebrow", text:"CreatorHub report"}), h("h2", {text:who}),
+        h("p", {class:"muted", text:(RP.range ? fmtD(from, {day:"numeric", month:"long"}) + " to " + fmtD(t, {day:"numeric", month:"long", year:"numeric"}) : "All time, up to " + fmtD(t, {day:"numeric", month:"long", year:"numeric"}))})),
+      h("span", {class:"muted small", text:"Made " + fmtD(t, {day:"numeric", month:"long", year:"numeric"})})),
+    h("section", {class:"rep-sec", id:"rep-perf"}, h("h3", {text:"Performance"}),
+      posts.length ? [
+        h("div", {class:"row5"}, stat("Posts", String(posts.length)), stat("Views", compact(views)), stat("Average views per post", compact(myAvg)), stat("Engagement rate", views ? (Math.round(eng * 10) / 10) + "%" : "—", "likes, comments, saves, shares ÷ views"), stat("Saves", compact(sum(posts, "saves")))),
+        card("Views per week", null, barChart({data:weekly(posts, w => sum(w, "views")), height:200})),
+        h("div", {class:"grid2"},
+          card("Views by hook type", "average per post", barChart({data:groupAvg(posts, "hookType", "views").map(g => ({label:g.key || "Untagged", value:g.avg, hint:g.n + " post" + (g.n === 1 ? "" : "s")})), horizontal:true})),
+          card("Views by format", "average per post", barChart({data:groupAvg(posts, "type", "views").map(g => ({label:g.key || "—", value:g.avg, hint:g.n + " post" + (g.n === 1 ? "" : "s")})), horizontal:true}))),
+        card("Top posts", "by views", h("div", {class:"tbl-wrap"}, h("table", {class:"tbl"}, h("thead", null, h("tr", null, h("th", {text:"#"}), h("th", {text:"Post"}), h("th", {text:"Date"}), h("th", {class:"num", text:"Views"}), h("th", {class:"num", text:"Likes"}), h("th", {class:"num", text:"Comments"}), h("th", {class:"num", text:"Saves"}))),
+          h("tbody", null, best.slice(0, 10).map((p, i) => h("tr", null, h("td", {class:"rk", text:String(i + 1)}), h("td", null, h("b", {style:"font-weight:500", text:p.title}), h("div", {class:"muted small", text:[p.type, p.platform, p.hookType].filter(Boolean).join(" · ")})), h("td", {text:p.date ? fmtD(p.date, {day:"numeric", month:"short"}) : ""}), h("td", {class:"num", text:full(p.views)}), h("td", {class:"num", text:full(p.likes)}), h("td", {class:"num", text:full(p.comments)}), h("td", {class:"num", text:full(p.saves)}))))))),
+        latest ? card("What’s working", "read " + fmtD(latest.at.slice(0, 10), {day:"numeric", month:"short"}), h("div", {class:"stack-s"}, h("p", {style:"font-weight:600;font-size:15px;line-height:1.4;margin:0", text:latest.headline}),
+          (latest.recommendations || []).length ? h("ol", {class:"prose", style:"margin:0"}, latest.recommendations.map(r => h("li", {text:r}))) : null)) : null]
+      : h("p", {class:"muted", text:"No posts in this period. Pick a longer period above, or add screenshots on Performance."})),
+    comps.length ? h("section", {class:"rep-sec", id:"rep-comp"}, h("h3", {text:"Competitors"}),
+      card("Average views per post", "you in this period, them across the posts you added", barChart({data:[{label:"You", value:Math.round(myAvg), hint:posts.length + " posts"}, ...comps.map(c => { const ps = c.posts || []; return {label:c.name, value:ps.length ? Math.round(sum(ps, "views") / ps.length) : 0, hint:ps.length + " posts"}; })], horizontal:true})),
+      h("div", {class:"grid2"}, comps.map(c => {
+        const ps = c.posts || []; const top = [...ps].sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0))[0]; const an = c.analysis;
+        return h("div", {class:"card rep-comp"},
+          h("div", {class:"top"}, h("span", {class:"avi", style:"width:36px;height:36px;border-radius:10px", text:initials(c.name)}), h("div", null, h("b", {text:c.name}), h("div", {class:"muted small", text:[c.handle, c.platform, ps.length + " posts"].filter(Boolean).join(" · ")}))),
+          top ? h("p", {class:"small", style:"margin:0"}, h("span", {class:"muted", text:"Best post: "}), top.title + " (" + compact(top.views) + " views)") : null,
+          an && an.summary ? h("p", {class:"small", style:"margin:0", text:an.summary}) : h("p", {class:"muted small", style:"margin:0", text:"Not analyzed yet."}),
+          an && (an.hookTypes || []).length ? h("p", {class:"small", style:"margin:0"}, h("span", {class:"muted", text:"Their best openings: "}), an.hookTypes.slice(0, 3).map(x => x.type).join(", ")) : null,
+          an && (an.steal || []).length ? h("ul", null, an.steal.slice(0, 3).map(x => h("li", {text:x}))) : null);
+      }))) : null);
+}
+/* The browser's print window saves a PDF. The report prints on white, whatever the theme. */
+let RP_PRINT = null;
+function printReport(){
+  RP_PRINT = {title:document.title, theme:getTheme()};
+  const who = S.profile && S.profile.name ? S.profile.name + " " : "";
+  document.title = "CreatorHub report " + who + todayStr();
+  if (RP_PRINT.theme === "dark") delete document.documentElement.dataset.theme;
+  toast("Choose “Save as PDF” in the print window.");
+  setTimeout(() => window.print(), 60);
+}
+addEventListener("afterprint", () => { if (!RP_PRINT) return; document.title = RP_PRINT.title; if (RP_PRINT.theme === "dark") document.documentElement.dataset.theme = "dark"; RP_PRINT = null; });
+function postsRows(posts){
+  return [["Date","Platform","Type","Title","Hook type","Views","Likes","Comments","Saves","Shares","Link"], ...posts.map(p => [p.date || "", p.platform || "", p.type || "", p.title || "", p.hookType || "", p.views ?? "", p.likes ?? "", p.comments ?? "", p.saves ?? "", p.shares ?? "", p.url || ""])];
+}
+function competitorRows(comps){
+  const rows = [["Competitor","Handle","Platform","Post","Date","Type","Hook type","Views","Likes","Comments","CTA","Link"]];
+  for (const c of comps) for (const p of (c.posts || [])) rows.push([c.name || "", c.handle || "", c.platform || "", p.title || "", p.date || "", p.type || "", p.hookType || "", p.views ?? "", p.likes ?? "", p.comments ?? "", p.cta || "", p.url || ""]);
+  return rows;
+}
+function downloadCSV(name, rows){
+  const cell = v => { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) || /^[=+\-@]/.test(s) ? '"' + (/^[=+\-@]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
+  const blob = new Blob(["﻿" + rows.map(r => r.map(cell).join(",")).join("\r\n")], {type:"text/csv;charset=utf-8"});
+  const a = h("a", {href:URL.createObjectURL(blob), download:name}); document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Saved " + name);
 }
 
 
@@ -3529,6 +3813,7 @@ Views.settings = {
       S.profile ? sec("brand", "Profile", "Every script, post and analysis starts from this", brandSection()) : null,
       S.profile ? sec("style", "Style", "How your content sounds and how your videos look", styleSection()) : null,
       sec("integrations", "Connections", "Claude does the work behind CreatorHub", connectionsSection()),
+      sec("look", "Appearance", "Light or dark, for the whole app", appearanceSection()),
       sec("data", "Data", "Saved in this browser", dataSection()));
     const want = S.ui.settingsTab || "brand";
     if (SET.shown !== want){ SET.shown = want; if (want !== "brand") setTimeout(() => { const el = root.querySelector("#set-" + want); if (el) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 60); }
@@ -3589,6 +3874,13 @@ async function resetWorkspace(){
   S.profile = null; persist(userRoot() + "/profile", null); S.progress = {done:{}}; persist(userRoot() + "/progress", null);
   HK.result = null; PO.chat = []; Assist.turns = []; WZ.draft = null; WZ.step = 0;
   toast("Workspace reset"); go("home");
+}
+
+function appearanceSection(){
+  const cur = getTheme();
+  return h("div", {class:"card stack", style:"gap:12px"},
+    h("div", {class:"seg", role:"group", "aria-label":"Theme"}, [["light", "Light", "sun"], ["dark", "Dark", "moon"]].map(([v, l, ic]) => h("button", {type:"button", id:"set-theme-" + v, "aria-pressed":String(cur === v), onclick:() => setTheme(v)}, icon(ic), l))),
+    h("p", {class:"muted small", style:"margin:0", text:"Saved in this browser. The same switch sits at the bottom of the sidebar."}));
 }
 
 
